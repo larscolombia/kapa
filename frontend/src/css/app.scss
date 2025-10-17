@@ -1,0 +1,35 @@
+// app global css in SCSS form
+body {
+    background: $background;
+}
+
+.kapa-title {
+    border-bottom: solid 2px #dfdfec;
+    padding-bottom: 0.5rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.text-kapa-blue {
+    color: $kapa-blue !important;
+}
+
+.bg-kapa-blue {
+    background: $kapa-blue !important;
+}
+
+.text-kapa-green {
+    color: $kapa-green !important;
+}
+
+.bg-kapa-green {
+    background: $kapa-green !important;
+}
+
+.text-kapa-orange {
+    color: $kapa-orange !important;
+}
+
+.bg-kapa-orange {
+    background: $kapa-orange !important;
+}
