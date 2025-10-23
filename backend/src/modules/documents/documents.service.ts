@@ -11,22 +11,60 @@ import { ProjectContractorCriterionsService } from '../project-contractor-criter
 import { ProjectContractorsService } from '../project-contractors/project-contractors.service';
 import { MailUtil } from '@common/utils/mail.util';
 import { Employee } from '@entities/employee.entity';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { DocumentStateAudit } from '@entities/document-state-audit.entity';
 // import { Project } from '@entities/project.entity';
 // import { ContractorEmail } from '@entities/contractor-email.entity';
 
 @Injectable()
 export class DocumentService {
+  private s3Client: S3Client;
+  private bucketName = process.env.AWS_S3_BUCKET || 'repositorio-documental-kapa';
+
   constructor(
     @InjectRepository(Document)
     private documentRepository: Repository<Document>,
     @InjectRepository(Subcriterion)
     private subcriterionRepository: Repository<Subcriterion>,
+    @InjectRepository(DocumentStateAudit)
+    private auditRepository: Repository<DocumentStateAudit>,
+    @InjectRepository(Employee)
+    private employeeRepository: Repository<Employee>,
     private projectContractorCriterionsService: ProjectContractorCriterionsService,
     private projectContrators: ProjectContractorsService,
     private projectContractorService: ProjectContractorsService,
-    @InjectRepository(Employee)
-    private employeeRepository: Repository<Employee>,
-  ) {}
+  ) {
+    this.s3Client = new S3Client({
+      region: process.env.AWS_REGION || 'us-east-1',
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      },
+    });
+  }
+
+  async getPresignedUrl(fileKey: string, disposition: 'inline' | 'attachment' = 'attachment'): Promise<string> {
+    try {
+      const fileName = fileKey.split('/').pop(); // Obtener solo el nombre del archivo
+      const contentDisposition = disposition === 'inline'
+        ? 'inline'
+        : `attachment; filename="${fileName}"`;
+
+      const command = new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: fileKey,
+        ResponseContentDisposition: contentDisposition,
+      });
+
+      // URL válida por 1 hora
+      const presignedUrl = await getSignedUrl(this.s3Client, command, { expiresIn: 3600 });
+      return presignedUrl;
+    } catch (error) {
+      throw new BadRequestException('Error al generar URL firmada');
+    }
+  }
+
   async getDocuments(): Promise<Document[] | undefined> {
     return this.documentRepository.find({
       relations: [
@@ -106,11 +144,23 @@ export class DocumentService {
       relations: ['projectContractor', 'employee', 'subcriterion'],
     });
   }
-  async create(documentData: Document): Promise<Document> {
+  async create(documentData: Document, userEmail?: string, userId?: number): Promise<Document> {
     try {
       await this.validateDocumentRequiredFields(documentData);
       const document = this.documentRepository.create(documentData);
       const createdDocument = await this.documentRepository.save(document);
+
+      // Registrar auditoría de creación
+      await this.createAuditLog({
+        document_id: createdDocument.document_id,
+        previous_state: 'none',
+        new_state: createdDocument.state,
+        comments: 'Documento creado',
+        changed_by_email: userEmail,
+        changed_by_user_id: userId,
+        time_in_previous_state_hours: 0,
+      });
+
       const criterionId = await this.subcriterionRepository
         .findOneBy({ subcriterion_id: document.subcriterion.subcriterion_id })
         .then((subcriterion) => subcriterion.criterion.criterion_id);
@@ -126,16 +176,39 @@ export class DocumentService {
       console.log(error);
     }
   }
-  async update(documentData: Document): Promise<Document> {
+  async update(documentData: Document, userEmail?: string, userId?: number): Promise<Document> {
     const { document_id } = documentData;
     const document = await this.documentRepository.findOneBy({ document_id });
     if (!document) throw new NotFoundException('El documento no existe');
+
+    // Guardar estado anterior para auditoría
+    const previousState = document.state;
+    const stateChangeTime = await this.getLastStateChangeTime(document_id);
+
     await this.validateDocumentRequiredFields(documentData, true);
     const updatedDocument = this.documentRepository.merge(
       document,
       documentData,
     );
     const createdDocument = await this.documentRepository.save(updatedDocument);
+
+    // Registrar auditoría si cambió el estado
+    if (previousState !== createdDocument.state) {
+      const timeInPreviousState = stateChangeTime
+        ? Math.floor((Date.now() - stateChangeTime.getTime()) / (1000 * 60 * 60))
+        : 0;
+
+      await this.createAuditLog({
+        document_id: createdDocument.document_id,
+        previous_state: previousState,
+        new_state: createdDocument.state,
+        comments: documentData.comments || '',
+        changed_by_email: userEmail,
+        changed_by_user_id: userId,
+        time_in_previous_state_hours: timeInPreviousState,
+      });
+    }
+
     await this.updatePercentageByCriterion(
       document.projectContractor.project_contractor_id,
       document.subcriterion.criterion.criterion_id,
@@ -312,6 +385,25 @@ export class DocumentService {
     projectContractorId: number,
   ): Promise<number> {
     try {
+      const details = await this.calculateCompletionPercentageWithDetails(projectContractorId);
+      return details.percentage;
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async calculateCompletionPercentageWithDetails(
+    projectContractorId: number,
+  ): Promise<{
+    percentage: number;
+    loadedDocuments: number;
+    totalSubcriterions: number;
+    notApplicable: number;
+    approved: number;
+    submitted: number;
+    rejected: number;
+  }> {
+    try {
       // Obtener todos los subcriterios para los criterios de tipo "Ingreso (1)"
       const subcriterions = await this.subcriterionRepository.find({
         where: {
@@ -322,7 +414,7 @@ export class DocumentService {
           },
         },
       });
-      
+
       // Calcular el total de subcriterios, teniendo en cuenta si se requiere un documento por empleado.
       const employees = await this.employeeRepository
         .createQueryBuilder('employee')
@@ -350,10 +442,24 @@ export class DocumentService {
         .distinct(true)
         .getRawMany();
 
-      // Contar Los documentos con estado "not_applicable" para saber cuantos subcriterios se deben omitir.
+      // Contar documentos por estado
       const notApplicableDocuments = loadedDocuments.filter(
         (doc) => doc.state === 'not_applicable',
       ).length;
+
+      const approvedDocuments = loadedDocuments.filter(
+        (doc) => doc.state === 'approved',
+      ).length;
+
+      const submittedDocuments = loadedDocuments.filter(
+        (doc) => doc.state === 'submitted',
+      ).length;
+
+      const rejectedDocuments = loadedDocuments.filter(
+        (doc) => doc.state === 'rejected',
+      ).length;
+
+      const totalSubcriterionsOriginal = totalSubcriterions;
       totalSubcriterions -= notApplicableDocuments;
 
       // Contar los demas documentos.
@@ -361,9 +467,27 @@ export class DocumentService {
 
       // Calcular el porcentaje de completitud
       const completionPercentage = totalSubcriterions > 0 ? (loadedDocumentsCount / totalSubcriterions) * 100 : 0;
-      return parseInt(completionPercentage.toFixed(0));
+
+      return {
+        percentage: parseInt(completionPercentage.toFixed(0)),
+        loadedDocuments: loadedDocumentsCount,
+        totalSubcriterions: totalSubcriterions,
+        notApplicable: notApplicableDocuments,
+        approved: approvedDocuments,
+        submitted: submittedDocuments,
+        rejected: rejectedDocuments,
+      };
     } catch (error) {
       console.log(error);
+      return {
+        percentage: 0,
+        loadedDocuments: 0,
+        totalSubcriterions: 0,
+        notApplicable: 0,
+        approved: 0,
+        submitted: 0,
+        rejected: 0,
+      };
     }
   }
   async sendNotification(
@@ -579,5 +703,56 @@ export class DocumentService {
       .getMany();
 
     return documents;
+  }
+
+  // ==================== MÉTODOS DE AUDITORÍA ====================
+
+  private async createAuditLog(auditData: {
+    document_id: number;
+    previous_state: string;
+    new_state: string;
+    comments?: string;
+    changed_by_email?: string;
+    changed_by_user_id?: number;
+    time_in_previous_state_hours?: number;
+  }): Promise<void> {
+    try {
+      const audit = this.auditRepository.create({
+        document_id: auditData.document_id,
+        previous_state: auditData.previous_state,
+        new_state: auditData.new_state,
+        comments: auditData.comments || '',
+        changed_by_email: auditData.changed_by_email,
+        changed_by_user_id: auditData.changed_by_user_id,
+        time_in_previous_state_hours: auditData.time_in_previous_state_hours || 0,
+      });
+
+      await this.auditRepository.save(audit);
+      console.log(`[AUDIT] Documento ${auditData.document_id}: ${auditData.previous_state} → ${auditData.new_state} (${auditData.time_in_previous_state_hours}h)`);
+    } catch (error) {
+      console.error('Error al crear registro de auditoría:', error);
+    }
+  }
+
+  private async getLastStateChangeTime(documentId: number): Promise<Date | null> {
+    try {
+      const lastAudit = await this.auditRepository.findOne({
+        where: { document_id: documentId },
+        order: { changed_at: 'DESC' },
+      });
+
+      return lastAudit ? lastAudit.changed_at : null;
+    } catch (error) {
+      console.error('Error al obtener último cambio de estado:', error);
+      return null;
+    }
+  }
+
+  async getDocumentAuditHistory(documentId: number): Promise<DocumentStateAudit[]> {
+    return await this.auditRepository.find({
+      where: { document_id: documentId },
+      relations: ['changed_by_user'],
+      order: { changed_at: 'DESC' },
+    });
   }
 }

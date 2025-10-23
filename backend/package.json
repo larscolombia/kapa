@@ -20,6 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@aws-sdk/s3-request-presigner": "^3.914.0",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.2.3",
     "@nestjs/core": "^10.0.0",
@@ -30,6 +31,7 @@
     "axios": "^1.7.4",
     "bcrypt": "^5.1.1",
     "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
     "nodemailer": "^6.9.14",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
@@ -77,6 +79,10 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@entities/(.*)$": "<rootDir>/database/entities/$1",
+      "^@common/(.*)$": "<rootDir>/common/$1"
+    }
   }
 }

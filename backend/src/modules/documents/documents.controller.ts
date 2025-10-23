@@ -13,10 +13,34 @@ import {
 } from '@nestjs/common';
 import { DocumentService } from './documents.service';
 import { Document } from '@entities/document.entity';
+import { Public } from '@common/decorators/public.decorator';
 
 @Controller('document')
 export class DocumentController {
   constructor(private DocumentService: DocumentService) { }
+
+  @Public()
+  @Get('/presigned-url/:fileKey(*)')
+  async getPresignedUrl(
+    @Param('fileKey') fileKey: string,
+    @Query('disposition') disposition?: 'inline' | 'attachment'
+  ) {
+    try {
+      // Decodificar el fileKey que viene URL encoded desde el frontend
+      const decodedFileKey = decodeURIComponent(fileKey);
+      const presignedUrl = await this.DocumentService.getPresignedUrl(
+        decodedFileKey,
+        disposition || 'attachment'
+      );
+      return { url: presignedUrl };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new BadRequestException('Error al generar URL firmada');
+    }
+  }
+
   @Get('/')
   async getDocuments() {
     try {
@@ -122,9 +146,11 @@ export class DocumentController {
   }
 
   @Post('/')
-  async postDocuments(@Body() documentData) {
+  async postDocuments(@Body() documentData, @Request() req) {
     try {
-      const documents = await this.DocumentService.create(documentData);
+      const userEmail = req.user?.email;
+      const userId = req.user?.userId;
+      const documents = await this.DocumentService.create(documentData, userEmail, userId);
       return documents;
     } catch (error) {
       if (error instanceof HttpException) {
@@ -165,9 +191,11 @@ export class DocumentController {
   }
 
   @Put('/')
-  async PutDocuments(@Body() documentData) {
+  async PutDocuments(@Body() documentData, @Request() req) {
     try {
-      const documents = await this.DocumentService.update(documentData);
+      const userEmail = req.user?.email;
+      const userId = req.user?.userId;
+      const documents = await this.DocumentService.update(documentData, userEmail, userId);
       return documents;
     } catch (error) {
       if (error instanceof HttpException) {

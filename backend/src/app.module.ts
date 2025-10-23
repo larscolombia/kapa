@@ -13,6 +13,8 @@ import { DocumentsModule } from './modules/documents/documents.module';
 import { EmployeesModule } from './modules/employees/employees.module';
 import { ProjectContractorsModule } from './modules/project-contractors/project-contractors.module';
 import { ProjectContractorCriterionsModule } from './modules/project-contractor-criterions/project-contractor-criterions.module';
+import { SupportsModule } from './modules/supports/supports.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -28,8 +30,10 @@ import { ProjectContractorCriterionsModule } from './modules/project-contractor-
     DocumentsModule,
     EmployeesModule,
     ProjectContractorsModule,
-    ProjectContractorCriterionsModule
+    ProjectContractorCriterionsModule,
+    SupportsModule,
+    ReportsModule
   ],
   controllers: [AppController],
 })
-export class AppModule {}
+export class AppModule { }

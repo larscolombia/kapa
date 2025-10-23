@@ -131,6 +131,18 @@ const pages = [
     icon: 'engineering',
     routeName: 'adminContractors',
     moduleName: 'contractor_management',
+  },
+  {
+    name: 'Administrador de soportes',
+    icon: 'folder_special',
+    routeName: 'adminSupports',
+    moduleName: 'supports_management',
+  },
+  {
+    name: 'Reportes de Auditoría',
+    icon: 'assessment',
+    routeName: 'adminReports',
+    moduleName: 'reports_management',
   }
 ]
 
