@@ -3,6 +3,9 @@
     <div class="row" v-if="subCriterions.length > 0">
       <h4 class="col-12 text-h4 q-pl-md kapa-title" >
         {{ route.params.typeDocs == 1 ? 'Ingreso' : route.params.typeDocs == 2 ? 'Egreso' : 'Desconocido' }}
+        <span v-if="projectContractor.contractor" class="text-kapa-green q-ml-sm">
+          - {{ projectContractor.contractor.name }}
+        </span>
       </h4>
       <SubCriterionCard v-for="(subCri, index) in subCriterions" :key="index" :subcriterion="subCri" :projectContractor="projectContractor" />
     </div>

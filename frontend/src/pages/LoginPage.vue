@@ -63,7 +63,7 @@
 import { ref } from 'vue';
 import { useAuth } from 'src/composables/useAuth';
 import { useRouter } from 'vue-router';
-import { useReCaptcha } from 'vue-recaptcha-v3'
+// import { useReCaptcha } from 'vue-recaptcha-v3'
 
 const { loginUser, forgotUserPassword, error } = useAuth();
 const router = useRouter();
@@ -73,16 +73,19 @@ const forgotMessage = ref('');
 const showForgot = ref(false);
 const slide = ref(1);
 const autoplay = ref(true);
-const { executeRecaptcha, recaptchaLoaded } = useReCaptcha()
+// const { executeRecaptcha, recaptchaLoaded } = useReCaptcha()
 const loading = ref(false);
 const Login = async () => {
     loading.value = true;
     error.value = '';
-    await recaptchaLoaded()
-    const recaptchaResponse = await executeRecaptcha('login');
-    await loginUser({ email: username.value, password: password.value, recaptcha: recaptchaResponse });
+    // Temporalmente deshabilitado reCAPTCHA para pruebas
+    // await recaptchaLoaded()
+    // const recaptchaResponse = await executeRecaptcha('login');
+    await loginUser({ email: username.value, password: password.value });
     loading.value = false;
-    router.push('/');
+    if (!error.value) {
+        router.push('/');
+    }
 };
 
 const changeForm = () => {

@@ -8,9 +8,10 @@ import { ProjectContractor } from '@entities/project-contractor.entity';
 import { Project } from '@entities/project.entity';
 import { ProjectContractorsModule } from '../project-contractors/project-contractors.module';
 import { ProjectContractorCriterionsModule } from '../project-contractor-criterions/project-contractor-criterions.module';
+import { DocumentsModule } from '../documents/documents.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Contractor, ContractorEmail, Project, ProjectContractor]), ProjectContractorsModule, ProjectContractorCriterionsModule],
+  imports: [TypeOrmModule.forFeature([Contractor, ContractorEmail, Project, ProjectContractor]), ProjectContractorsModule, ProjectContractorCriterionsModule, DocumentsModule],
   providers: [ContractorsService],
   exports: [ContractorsService],
   controllers: [ContractorsController],

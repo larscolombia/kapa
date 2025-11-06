@@ -18,12 +18,15 @@
             Contratista: {{ parentContractor.name }}
           </span>
           <simple-card :cardTitle="parentContractor.name" :percentage="parentContractor.completition_percentage || 0"
+            :percentageDetails="parentContractor.percentage_details"
             @click="goTo('criterion', { contractorId: parentContractor.contractor_id, projectId: $route.params.projectId })"
             :cardDescription="'Contratista principal'" />
 
           <!-- Subcontratistas -->
           <simple-card v-for="(child, childIndex) in parentContractor.children" :key="childIndex"
-            :cardTitle="child.name" :percentage="child.completition_percentage || 0" :cardDescription="'Subcontratista'"
+            :cardTitle="child.name" :percentage="child.completition_percentage || 0" 
+            :percentageDetails="child.percentage_details"
+            :cardDescription="'Subcontratista'"
             @click="goTo('criterion', { contractorId: child.contractor_id, projectId: $route.params.projectId })" />
         </div>
       </div>
@@ -32,6 +35,7 @@
       <div v-else class="col-12 row q-pb-xl items-center">
         <simple-card v-for="(contractor, index) in filteredContractors" :key="index" :cardTitle="contractor.name"
           :percentage="contractor.completition_percentage || 0"
+          :percentageDetails="contractor.percentage_details"
           @click="goTo('criterion', { contractorId: contractor.contractor_id, projectId: $route.params.projectId })"
           :cardDescription="'Subcontratista'" />
       </div>

@@ -13,6 +13,7 @@ import { ProjectContractor } from '@entities/project-contractor.entity';
 import { ProjectContractorsService } from '../project-contractors/project-contractors.service';
 import { ProjectContractorCriterionsService } from '../project-contractor-criterions/project-contractor-criterions.service';
 import { MailUtil } from '@common/utils/mail.util';
+import { DocumentService } from '../documents/documents.service';
 
 @Injectable()
 export class ContractorsService {
@@ -30,6 +31,7 @@ export class ContractorsService {
     private readonly projectContractorRepository: Repository<ProjectContractor>,
     private projectContractorService: ProjectContractorsService,
     private projectContractorCriterionsService: ProjectContractorCriterionsService,
+    private documentsService: DocumentService,
   ) { }
 
   private MAX_SUBCONTRACTORS = 5;
@@ -274,15 +276,19 @@ export class ContractorsService {
 
     const contractorDto = await Promise.all(
       contractors.map(async (contractor) => {
-        const completitionPercentage =
-          await this.projectContractorService.getProjectContractorPercentageByContractorIdAndProjectId(
-            contractor.contractor_id,
-            projectId,
-          );
+        const projectContractor = await this.projectContractorService.getProjectContractorByContractorIdAndProjectId(
+          contractor.contractor_id,
+          projectId,
+        );
+
+        const percentageDetails = await this.documentsService.calculateCompletionPercentageWithDetails(
+          projectContractor.project_contractor_id,
+        );
 
         return {
           ...contractor,
-          completition_percentage: completitionPercentage,
+          completition_percentage: percentageDetails.percentage,
+          percentage_details: percentageDetails,
         };
       }),
     );
@@ -312,15 +318,19 @@ export class ContractorsService {
       );
     const contractorDto = await Promise.all(
       contractors.map(async (contractor) => {
-        const completitionPercentage =
-          await this.projectContractorService.getProjectContractorPercentageByContractorIdAndProjectId(
-            contractor.contractor_id,
-            projectId,
-          );
+        const projectContractor = await this.projectContractorService.getProjectContractorByContractorIdAndProjectId(
+          contractor.contractor_id,
+          projectId,
+        );
+
+        const percentageDetails = await this.documentsService.calculateCompletionPercentageWithDetails(
+          projectContractor.project_contractor_id,
+        );
 
         return {
           ...contractor,
-          completition_percentage: completitionPercentage,
+          completition_percentage: percentageDetails.percentage,
+          percentage_details: percentageDetails,
         };
       }),
     );

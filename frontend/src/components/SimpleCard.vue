@@ -9,8 +9,46 @@
                 <q-icon :name="cardIcon" size="64px" />
             </q-card-section>
             <q-card-section class="column col-12" v-if="percentage >= 0">
+                <!-- Ícono de información -->
+                <div class="row justify-center q-mb-sm" v-if="percentageDetails">
+                    <q-icon name="info" size="20px" color="primary" class="cursor-pointer">
+                        <q-tooltip 
+                            class="bg-primary text-body2" 
+                            anchor="top middle" 
+                            self="bottom middle"
+                            max-width="300px"
+                        >
+                            <div class="text-weight-bold q-mb-xs">Detalle del Porcentaje</div>
+                            <div class="q-mb-xs">
+                                <q-icon name="description" size="16px" /> 
+                                Documentos cargados: <strong>{{ percentageDetails.loadedDocuments }}</strong>
+                            </div>
+                            <div class="q-mb-xs">
+                                <q-icon name="assignment" size="16px" /> 
+                                Total requerido: <strong>{{ percentageDetails.totalSubcriterions }}</strong>
+                            </div>
+                            <div class="q-mb-xs">
+                                <q-icon name="verified" size="16px" color="green-3" /> 
+                                Aprobados: <strong>{{ percentageDetails.approved }}</strong>
+                            </div>
+                            <div class="q-mb-xs" v-if="percentageDetails.submitted > 0">
+                                <q-icon name="error" size="16px" color="blue-3" /> 
+                                En revisión: <strong>{{ percentageDetails.submitted }}</strong>
+                            </div>
+                            <div class="q-mb-xs" v-if="percentageDetails.rejected > 0">
+                                <q-icon name="feedback" size="16px" color="red-3" /> 
+                                Rechazados: <strong>{{ percentageDetails.rejected }}</strong>
+                            </div>
+                            <div v-if="percentageDetails.notApplicable > 0">
+                                <q-icon name="indeterminate_check_box" size="16px" color="grey-3" /> 
+                                No aplica: <strong>{{ percentageDetails.notApplicable }}</strong>
+                            </div>
+                        </q-tooltip>
+                    </q-icon>
+                </div>
+                
                 <q-circular-progress show-value class="q-ma-md text-weight-bolder self-center" :value="percentage"
-                    size="5vw" :color="percentage < 30 ? 'red-5' : value < 60 ? 'yellow-5' : 'kapa-green'" track-color="grey-3">
+                    size="5vw" :color="percentage < 30 ? 'red-5' : percentage < 60 ? 'yellow-5' : 'kapa-green'" track-color="grey-3">
                     {{ percentage }} <q-icon name="percent" />
                 </q-circular-progress>
             </q-card-section>
@@ -21,7 +59,7 @@
 defineOptions({
     name: 'SimpleCard'
 })
-const props = defineProps(['cardTitle', 'cardDescription', 'cardIcon', 'percentage']);
+const props = defineProps(['cardTitle', 'cardDescription', 'cardIcon', 'percentage', 'percentageDetails']);
 </script>
 <style>
 .kapa-card {

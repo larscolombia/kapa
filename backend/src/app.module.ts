@@ -15,6 +15,8 @@ import { ProjectContractorsModule } from './modules/project-contractors/project-
 import { ProjectContractorCriterionsModule } from './modules/project-contractor-criterions/project-contractor-criterions.module';
 import { SupportsModule } from './modules/supports/supports.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { IlvModule } from './modules/ilv/ilv.module';
+import { TestUploadController } from './test-upload.controller';
 
 @Module({
   imports: [
@@ -32,8 +34,9 @@ import { ReportsModule } from './modules/reports/reports.module';
     ProjectContractorsModule,
     ProjectContractorCriterionsModule,
     SupportsModule,
-    ReportsModule
+    ReportsModule,
+    IlvModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, TestUploadController],
 })
 export class AppModule { }

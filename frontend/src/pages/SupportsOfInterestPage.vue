@@ -4,8 +4,16 @@
       <h4 class="col-12 text-h4 q-pl-md kapa-title row justify-between">
         Soportes de interés - {{ divisionDisplayName }}
       </h4>
-      <SimpleCard v-for="(file, index) in files" :key="index" :cardTitle="file.displayName" cardIcon="description"
-        @click="downloadSupportOfInterest(file.url, file.displayName)" />
+    </div>
+    <div v-if="loading" class="row justify-center q-mt-lg">
+      <q-spinner color="primary" size="3em" />
+    </div>
+    <div v-else class="row q-gutter-md justify-start">
+      <FileCard 
+        v-for="(file, index) in files" 
+        :key="index" 
+        :file="file"
+      />
     </div>
   </div>
 </template>
@@ -13,32 +21,21 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import SimpleCard from 'components/SimpleCard.vue';
+import FileCard from 'components/FileCard.vue';
+import { getSupportsByCategoryService } from 'src/services/supportsService';
+import { Notify } from 'quasar';
 
 const route = useRoute();
 const div = route.params.div;
 
-const importFiles = [
-
-  { name: 'Apendice A Aplicacion y aprobacion de la empresa contratista.xlsx', category: 'appendices' },
-  { name: 'Apendice B Preinicio del contrato.xlsx', category: 'appendices' },
-  { name: 'Apendice C Declaracion de productos quimicos.xlsx', category: 'appendices' },
-  { name: 'Apendice D Plan de trabajo en sitio.xlsx', category: 'appendices' },
-  { name: 'Apendice E Lista de puntos de contacto.xlsx', category: 'appendices' },
-
-  { name: 'Apéndice G Evaluación del Contratista.xlsx', category: 'appendices' },
-  { name: 'Aceptación de manual de contratistas.docx', category: 'contractors-manual' },
-  { name: 'Manual de contratistas versión 8.pdf', category: 'contractors-manual' },
-  { name: 'Lista de chequeo de finalización de contratación (Dossier).DOCX', category: 'dossier' },
-  { name: 'Formato Reporte final EHS O-I proyecto (Dossier).xlsx', category: 'dossier' },
-  { name: 'Solicitud de Ingreso Personal Contratista.xlsx', category: 'others' },
-  { name: 'Estandares de alto riesgo.pdf', category: 'ehs-procedures-standards' },
-  { name: 'Estándar Diseño Escaleras Barandas Pasamanos y Controles Acceso.pdf', category: 'ehs-procedures-standards' },
-  { name: 'Procedimiento para Izar Cargas.pdf', category: 'ehs-procedures-standards' },
-  { name: 'Procedimiento para Trabajo en alturas Actualización.pdf', category: 'ehs-procedures-standards' },
-  { name: 'Procedimiento para Trabajo en Espacio Confinado.pdf', category: 'ehs-procedures-standards' },
-  { name: 'Procedimiento para trabajos en caliente.pdf', category: 'ehs-procedures-standards' },
-];
+// Mapeo de categorías de URL a categorías de DB
+const categoryMapping = {
+  'appendices': 'apendices',
+  'contractors-manual': 'manual_contratistas',
+  'dossier': 'otros',
+  'others': 'otros',
+  'ehs-procedures-standards': ['procedimientos', 'estandares']
+};
 
 const division = [
   { name: 'appendices', displayName: 'Apéndices' },
@@ -50,26 +47,63 @@ const division = [
 
 const files = ref([]);
 const divisionDisplayName = ref('');
+const loading = ref(false);
 
-onMounted(() => {
+const loadFiles = async () => {
+  loading.value = true;
+  try {
+    const dbCategories = categoryMapping[div];
+    console.log('📁 Categoría URL:', div);
+    console.log('📁 Categoría DB mapeada:', dbCategories);
+    let allFiles = [];
+    
+    if (Array.isArray(dbCategories)) {
+      // Si hay múltiples categorías, obtener archivos de todas
+      for (const category of dbCategories) {
+        console.log('📥 Obteniendo archivos de categoría:', category);
+        const response = await getSupportsByCategoryService(category);
+        console.log('📦 Respuesta recibida:', response);
+        if (Array.isArray(response)) {
+          allFiles = [...allFiles, ...response];
+        }
+      }
+    } else {
+      // Categoría única
+      const category = dbCategories || div;
+      console.log('📥 Obteniendo archivos de categoría única:', category);
+      const response = await getSupportsByCategoryService(category);
+      console.log('📦 Respuesta recibida:', response);
+      allFiles = Array.isArray(response) ? response : [];
+    }
+    
+    console.log('📚 Total archivos antes de mapear:', allFiles.length);
+    
+    files.value = allFiles.map(file => ({
+      displayName: file.display_name,
+      name: file.name,
+      url: file.file_path,
+      support_file_id: file.support_file_id,
+      isS3: true
+    }));
+    
+    console.log('✅ Archivos mapeados:', files.value.length);
+  } catch (error) {
+    console.error('❌ Error cargando archivos:', error);
+    Notify.create({
+      type: 'negative',
+      message: 'Error al cargar los archivos de soporte',
+      position: 'top-right'
+    });
+    files.value = [];
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(async () => {
   const foundDivision = division.find(d => d.name === div);
   divisionDisplayName.value = foundDivision?.displayName || 'Categoría no encontrada';
-
-  files.value = importFiles
-    .filter(file => file.category === div)
-    .map(file => ({
-      displayName: file.name.substring(0, file.name.lastIndexOf('.')),
-      name: file.name,
-      url: `/soportes-de-interes/${file.name}`
-    }));
+  
+  await loadFiles();
 });
-
-function downloadSupportOfInterest(url, displayName) {
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = displayName;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
 </script>

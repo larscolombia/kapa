@@ -5,6 +5,7 @@ import {
   DeleteObjectCommand,
   DeleteObjectsCommand,
   ListObjectsV2Command,
+  HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
@@ -109,6 +110,29 @@ class S3Manager {
     }
   }
 
+  async checkFileExists(fileName) {
+    try {
+      const command = new HeadObjectCommand({
+        Bucket: this.awsBucketName,
+        Key: fileName,
+      });
+
+      await this.client.send(command);
+      return true;
+    } catch (error) {
+      if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
+        return false;
+      }
+      console.error("Error al verificar archivo en S3:", error);
+      throw new Error("Error al verificar el archivo en S3");
+    }
+  }
+
 }
+
+const s3Manager = new S3Manager();
+
+// Exportar funciones individuales para facilitar el uso
+export const checkFileExists = (fileName) => s3Manager.checkFileExists(fileName);
 
 export default S3Manager;

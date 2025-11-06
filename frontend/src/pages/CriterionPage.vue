@@ -2,7 +2,12 @@
   <div class="q-pa-md">
     <div class="row">
       <h4 class="col-12 text-h4 q-pl-md kapa-title row items-center">
-        <span class="q-mr-auto">Ingreso</span>
+        <span class="q-mr-auto">
+          Ingreso
+          <span v-if="contractor" class="text-kapa-green q-ml-sm">
+            - {{ contractor.name }}
+          </span>
+        </span>
         <div class="q-gutter-md">
           <q-btn v-if="authStore.hasPermission('send_results', 'can_view')" class="q-mr-sm" color="light-green-8"
             label="Enviar resultados" :loading="loading" @click="sendRes" />
@@ -43,6 +48,7 @@ import { ref, onBeforeMount, getCurrentInstance } from 'vue';
 import { getCriterionsByProjectContractor } from 'src/services/criterionService.js';
 import { getProject } from 'src/services/projectService';
 import { sendResults } from 'src/services/contractorService.js';
+import { getContractor } from 'src/services/contractorService.js';
 import { sendNotification } from 'src/services/documentService';
 import PercentageCard from 'src/components/PercentageCard.vue';
 import { useRouter } from 'vue-router';
@@ -57,10 +63,19 @@ const incomeCriterions = ref(null);
 const egressCriterions = ref(null);
 const loading = ref(false);
 const loadingNot = ref(false);
+const contractor = ref(null);
 
 onBeforeMount(async () => {
   loading.value = true;
-  allCriterions.value = await getCriterionsByProjectContractor($route.params.projectId, $route.params.contractorId);
+  
+  // Cargar criterios y contratista en paralelo
+  const [criterions, contractorData] = await Promise.all([
+    getCriterionsByProjectContractor($route.params.projectId, $route.params.contractorId),
+    getContractor($route.params.contractorId)
+  ]);
+  
+  allCriterions.value = criterions;
+  contractor.value = contractorData;
   incomeCriterions.value = allCriterions.value.filter(crit => crit.documentType.type_id === 1);
   egressCriterions.value = allCriterions.value.filter(crit => crit.documentType.type_id === 2);
   loading.value = false;

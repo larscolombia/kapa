@@ -143,6 +143,18 @@ const pages = [
     icon: 'assessment',
     routeName: 'adminReports',
     moduleName: 'reports_management',
+  },
+  {
+    name: 'ILV - Dashboard',
+    icon: 'dashboard',
+    routeName: 'ilvDashboard',
+    moduleName: 'ilv_management',
+  },
+  {
+    name: 'ILV - Reportes',
+    icon: 'report_problem',
+    routeName: 'ilvReportes',
+    moduleName: 'ilv_management',
   }
 ]
 

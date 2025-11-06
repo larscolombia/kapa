@@ -1,5 +1,13 @@
 <template>
   <div class="q-pa-md">
+    <div class="row q-mb-md" v-if="contractor">
+      <h4 class="col-12 text-h4 q-pl-md kapa-title">
+        Empleados
+        <span class="text-kapa-green q-ml-sm">
+          - {{ contractor.name }}
+        </span>
+      </h4>
+    </div>
     <q-table class="kapa-table q-pa-md" flat :rows="rows" :columns="columns" row-key="employee_id" :filter="filter"
       :loading="loading" selection="single" v-model:selected="selected" separator="cell">
       <template v-slot:top>
@@ -104,6 +112,7 @@ const router = useRouter();
 const route = useRoute();
 
 const projectContractorId = ref(null);
+const contractor = ref(null);
 const loading = ref(false);
 const filter = ref('');
 const selected = ref([]);
@@ -140,7 +149,14 @@ const goTo = (routeName, params = {}) => {
 }
 
 onMounted(async () => {
-  projectContractorId.value = (await getProjectContractorByContractorIdAndProjectId(route.params.contractorId, route.params.projectId)).project_contractor_id;
+  // Cargar información del contratista y del project contractor en paralelo
+  const [projectContractor, contractorData] = await Promise.all([
+    getProjectContractorByContractorIdAndProjectId(route.params.contractorId, route.params.projectId),
+    getContractor(route.params.contractorId)
+  ]);
+  
+  projectContractorId.value = projectContractor.project_contractor_id;
+  contractor.value = contractorData;
   await updateRowsEmployees();
 });
 

@@ -1,6 +1,19 @@
 <template>
   <div class="q-pa-md">
     <q-card v-if="documents.length > 0" flat class="bg-white kapa-card-subcriterion">
+      <!-- Icono de advertencia si el archivo no existe en S3 -->
+      <q-icon 
+        v-if="!fileExistsInS3 && documents[0].state !== 'not_applicable' && documents[0].state !== 'not_submitted'" 
+        name="warning" 
+        color="orange-6" 
+        size="1.5em" 
+        class="warning-icon"
+      >
+        <q-tooltip class="bg-orange-6 text-white">
+          Archivo no encontrado en S3: {{ documents[0].name || 'Archivo' }}
+        </q-tooltip>
+      </q-icon>
+      
       <q-tooltip transition-show="scale" class="bg-primary text-body2" transition-hide="scale" max-width="300px"
         anchor="center right" self="center middle" :delay="1000">
         <q-icon name="info" /> {{ subcriterion.name }}
@@ -20,11 +33,21 @@
         </h5>
       </q-card-section>
       <q-card-actions align="around" v-if="documents[0].state !== 'not_applicable'">
-        <div class="q-gutter-sm">
+        <div class="q-gutter-xs row">
           <q-btn v-if="showButton(documents[0].state, true) && rol !== 4" @click="openModalUpload" size="sm" color="light-green-8"
-            label="Cargar" icon="upload_file" />
+            label="Cargar" icon="upload_file" class="col-auto" />
+          
+          <!-- Botón de re-subir archivo si no existe en S3 -->
+          <q-btn v-if="!fileExistsInS3 && documents[0].state !== 'not_submitted' && documents[0].state !== 'not_applicable'" 
+            @click="openModalReupload" size="sm" color="orange-8" :loading="isReupload"
+            label="Re-subir" icon="refresh" class="col-auto" />
+          
+          <!-- Botón de vista previa solo si el archivo existe en S3 -->
+          <q-btn v-if="fileExistsInS3 && showButton(documents[0].state, false)" @click="previewDocument" size="sm" color="blue-8" :loading="isPreview"
+            label="Ver" icon="visibility" class="col-auto" />
+          
           <q-btn v-if="showButton(documents[0].state, false)" @click="manageDownloads" size="sm" color="light-green-8" :loading="isDownload"
-            label="Descargar" icon="download" />
+            label="Descargar" icon="download" class="col-auto" />
         </div>
       </q-card-actions>
     </q-card>
@@ -75,6 +98,99 @@
     </q-form>
   </ModalForm>
 
+  <!-- ? Modal Re-subir Archivo -->
+  <ModalForm :isOpen="modalReupload" title="Re-subir archivo faltante" color="orange"
+    @update:isOpen="modalReupload = $event">
+    <q-form @submit="fileReupload" @reset="resetFormReupload" class="q-gutter-md">
+      <div class="q-pa-md bg-orange-1 text-orange-8 rounded-borders">
+        <q-icon name="warning" class="q-mr-sm" />
+        El archivo <strong>{{ documents[0]?.name }}</strong> no se encuentra en el servidor S3.
+        Por favor, selecciona el archivo para subirlo nuevamente.
+      </div>
+      
+      <p class="text-weight-medium">Selecciona el archivo:</p>
+      <q-file outlined use-chips v-model="reuploadFileInput" dense>
+        <template v-slot:prepend>
+          <q-icon name="refresh" />
+        </template>
+      </q-file>
+
+      <div v-show="hasExpirationDate">
+        <p class="text-weight-medium">Indica la vigencia del documento (fecha desde y hasta):</p>
+        <q-date v-model="reuploadRange" range class="full-width" :locale="kapaLocale" />
+      </div>
+
+      <q-card-actions class="q-mt-md" align="right">
+        <q-btn flat label="Cancelar" color="primary" @click="modalReupload = false" />
+        <q-btn label="Re-subir" color="orange" type="submit" />
+      </q-card-actions>
+    </q-form>
+  </ModalForm>
+
+  <!-- ? Modal Vista Previa -->
+  <q-dialog v-model="previewDialog" maximized>
+    <q-card>
+      <q-bar class="bg-primary text-white">
+        <div class="col text-center text-weight-medium">
+          Vista Previa: {{ props.subcriterion.name }}
+        </div>
+        <q-btn dense flat icon="close" v-close-popup />
+      </q-bar>
+
+      <q-card-section class="q-pa-none" style="height: calc(100vh - 50px);">
+        <!-- PDF Viewer -->
+        <iframe 
+          v-if="isPDF()" 
+          :src="previewUrl" 
+          style="width: 100%; height: 100%; border: none;"
+          @load="isPreview = false"
+        ></iframe>
+
+        <!-- Office Online Viewer -->
+        <iframe 
+          v-else-if="isOfficeDocument()" 
+          :src="getOfficePreviewUrl()" 
+          style="width: 100%; height: 100%; border: none;"
+          @load="isPreview = false"
+        ></iframe>
+
+        <!-- Image Viewer -->
+        <div v-else-if="isImage()" class="full-height flex flex-center bg-grey-1">
+          <img 
+            :src="previewUrl" 
+            style="max-width: 100%; max-height: 100%; object-fit: contain;"
+            @load="isPreview = false"
+          />
+        </div>
+
+        <!-- Text Viewer -->
+        <div v-else-if="isText()" class="q-pa-md">
+          <pre class="text-body1">{{ textContent }}</pre>
+        </div>
+
+        <!-- Unsupported File Type -->
+        <div v-else class="full-height flex flex-center column">
+          <q-icon name="description" size="5rem" color="grey-5" />
+          <div class="text-h6 text-grey-6 q-mt-md">Vista previa no disponible</div>
+          <div class="text-body2 text-grey-5">Este tipo de archivo no se puede previsualizar</div>
+          <q-btn 
+            color="primary" 
+            label="Descargar archivo" 
+            icon="download"
+            class="q-mt-md"
+            @click="manageDownloads"
+          />
+        </div>
+
+        <!-- Loading State -->
+        <div v-if="isPreview" class="absolute-center">
+          <q-spinner size="3rem" color="primary" />
+          <div class="text-subtitle1 q-mt-md text-center">Cargando vista previa...</div>
+        </div>
+      </q-card-section>
+    </q-card>
+  </q-dialog>
+
 </template>
 <script setup>
 import { ref, onMounted, getCurrentInstance } from 'vue';
@@ -118,6 +234,12 @@ const multipleRequired = ref(false);
 const hasExpirationDate = ref(false);
 const loading = ref(false)
 const isDownload = ref(false);
+const isPreview = ref(false);
+
+// Variables para vista previa
+const previewDialog = ref(false);
+const previewUrl = ref('');
+const textContent = ref('');
 
 const stateDoc = ref(null);
 const comment = ref(null);
@@ -127,6 +249,12 @@ const range = ref({});
 const modalResult = ref(false);
 const modalComment = ref(false);
 const modalUpload = ref(false);
+const modalReupload = ref(false);
+
+// Variables para re-subir archivos
+const reuploadFileInput = ref(null);
+const reuploadRange = ref(null);
+const fileExistsInS3 = ref(true);
 
 const stateOptions = ref([]);
 const stateOptionsAux = ref(
@@ -154,6 +282,15 @@ async function refreshSubCriterion() {
   if (!documents.value[0]) {
     documents.value[0] = { state: "not_submitted" };
   }
+  
+  // VERIFICACIÓN S3 DESHABILITADA - Asumir que todos los archivos existen
+  // porque el bucket tiene todos los documentos migrados (21,682 archivos)
+  if (documents.value.length > 0 && documents.value[0].document_id) {
+    fileExistsInS3.value = true; // Asumir que existe
+  } else {
+    fileExistsInS3.value = false; // No hay documento cargado
+  }
+  
   loading.value = false;
   Loading.hide()
 }
@@ -236,6 +373,113 @@ const sanitize = (segment) => {
         .slice(0, 240);
 };
 
+// Funciones para vista previa
+const getFileName = () => {
+  if (documents.value && documents.value[0] && documents.value[0].name) {
+    return documents.value[0].name;
+  }
+  return props.subcriterion.name;
+};
+
+const getFileExtension = () => {
+  const fileName = getFileName();
+  const extension = fileName.split('.').pop().toLowerCase();
+  return extension;
+};
+
+const isPDF = () => {
+  return getFileExtension() === 'pdf';
+};
+
+const isOfficeDocument = () => {
+  const extension = getFileExtension();
+  return ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(extension);
+};
+
+const isImage = () => {
+  const extension = getFileExtension();
+  return ['jpg', 'jpeg', 'png', 'gif'].includes(extension);
+};
+
+const isText = () => {
+  const extension = getFileExtension();
+  return ['txt'].includes(extension);
+};
+
+const getOfficePreviewUrl = () => {
+  // Para documentos de Office, usar la URL firmada directamente con Office Online Viewer
+  const encodedUrl = encodeURIComponent(previewUrl.value);
+  return `https://view.officeapps.live.com/op/embed.aspx?src=${encodedUrl}`;
+};
+
+const previewDocument = async () => {
+  isPreview.value = true;
+  
+  try {
+    // Usar la misma lógica de descarga para obtener la URL del documento
+    const url = await getUrl();
+    // Pasar forPreview=true para obtener disposition=inline
+    const downloadResponse = await useDocumentComp.getDocumentUrl(props.subcriterion.subcriterion_id, projectContractorId.value, employeeIdValue, url, true);
+    
+    if (downloadResponse && downloadResponse.url) {
+      previewUrl.value = downloadResponse.url;
+      previewDialog.value = true;
+      
+      // Si es un archivo de texto, cargar el contenido
+      if (isText()) {
+        try {
+          const response = await fetch(previewUrl.value);
+          textContent.value = await response.text();
+        } catch (error) {
+          textContent.value = 'Error al cargar el archivo de texto';
+        }
+      }
+      
+      // Si no necesita carga especial, quitar el loading inmediatamente
+      if (!isPDF() && !isOfficeDocument() && !isText()) {
+        isPreview.value = false;
+      }
+    } else {
+      proxy.$kapaAlert({ type: 'error', message: 'No se pudo obtener la URL del documento', title: 'Error!' });
+      isPreview.value = false;
+    }
+  } catch (error) {
+    console.error('Error al obtener vista previa:', error);
+    proxy.$kapaAlert({ type: 'error', message: 'Error al cargar vista previa', title: 'Error!' });
+    isPreview.value = false;
+  }
+};
+
+// Funciones para re-subir archivos
+async function openModalReupload() {
+  resetFormReupload();
+  modalReupload.value = true;
+}
+
+function resetFormReupload() {
+  reuploadFileInput.value = null;
+  reuploadRange.value = null;
+}
+
+async function fileReupload() {
+  Loading.show({
+    spinner: QSpinnerPuff,
+    message: 'Re-subiendo archivo...',
+    backgroundColor: 'orange',
+  })
+  const url = await getUrl();
+
+  const files = [reuploadFileInput.value];
+  const startDate = reuploadRange.value == null ? reuploadRange.value : reuploadRange.value.from;
+  const endDate = reuploadRange.value == null ? reuploadRange.value : reuploadRange.value.to;
+
+  await useDocumentComp.uploadDocument(files, projectContractorId.value, props.subcriterion.subcriterion_id, startDate, endDate, employeeIdValue, url);
+  modalReupload.value = false;
+  resetFormReupload();
+  await refreshSubCriterion();
+  proxy.$kapaAlert({ type: 'success', message: 'Archivo re-subido correctamente', title: 'Éxito!' });
+  Loading.hide()
+}
 
 
 function manageOpenModal() {

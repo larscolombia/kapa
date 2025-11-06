@@ -19,10 +19,28 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
-    const user = await this.usersRepository.findOneBy({ email });    
-    if (user && (await bcrypt.compare(pass, user.password))) {
-      const { password, ...result } = user;
-      return result;
+    console.log('=== VALIDATE USER ===');
+    console.log('Email:', email);
+    console.log('Password:', pass);
+    
+    const user = await this.usersRepository.findOne({ 
+      where: { email },
+      relations: ['role']
+    });    
+    
+    console.log('User found:', user ? 'YES' : 'NO');
+    if (user) {
+      console.log('User email:', user.email);
+      console.log('User state:', user.state);
+      console.log('User role:', user.role);
+      
+      const passwordMatch = await bcrypt.compare(pass, user.password);
+      console.log('Password match:', passwordMatch);
+      
+      if (passwordMatch) {
+        const { password, ...result } = user;
+        return result;
+      }
     }
     return null;
   }

@@ -568,6 +568,48 @@ ALTER SEQUENCE public.user_user_id_seq OWNED BY public."user".user_id;
 
 
 --
+-- Name: support_file; Type: TABLE; Schema: public; Owner: admin
+--
+
+CREATE TABLE public.support_file (
+    support_file_id integer NOT NULL,
+    name character varying NOT NULL,
+    display_name character varying NOT NULL,
+    category character varying NOT NULL,
+    file_path character varying NOT NULL,
+    file_size integer,
+    mime_type character varying,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    created_by_user_id integer
+);
+
+
+ALTER TABLE public.support_file OWNER TO admin;
+
+--
+-- Name: support_file_support_file_id_seq; Type: SEQUENCE; Schema: public; Owner: admin
+--
+
+CREATE SEQUENCE public.support_file_support_file_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.support_file_support_file_id_seq OWNER TO admin;
+
+--
+-- Name: support_file_support_file_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: admin
+--
+
+ALTER SEQUENCE public.support_file_support_file_id_seq OWNED BY public.support_file.support_file_id;
+
+
+--
 -- Name: access access_id; Type: DEFAULT; Schema: public; Owner: admin
 --
 
@@ -652,6 +694,13 @@ ALTER TABLE ONLY public.subcriterion ALTER COLUMN subcriterion_id SET DEFAULT ne
 
 
 --
+-- Name: support_file support_file_id; Type: DEFAULT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.support_file ALTER COLUMN support_file_id SET DEFAULT nextval('public.support_file_support_file_id_seq'::regclass);
+
+
+--
 -- Name: user user_id; Type: DEFAULT; Schema: public; Owner: admin
 --
 
@@ -688,6 +737,11 @@ COPY public.access (access_id, module_name, can_view, can_edit, role_id) FROM st
 23	contractor_management	f	f	5
 24	send_results	f	f	5
 25	send_notification	t	f	5
+26	supports_management	t	t	1
+27	supports_management	f	f	2
+28	supports_management	f	f	3
+29	supports_management	f	f	4
+30	supports_management	f	f	5
 \.
 
 
@@ -37490,6 +37544,31 @@ COPY public.subcriterion (subcriterion_id, name, multiple_required, employee_req
 
 
 --
+-- Data for Name: support_file; Type: TABLE DATA; Schema: public; Owner: admin
+--
+
+COPY public.support_file (support_file_id, name, display_name, category, file_path, file_size, mime_type, created_at, updated_at, created_by_user_id) FROM stdin;
+1	Apendice A Aplicacion y aprobacion de la empresa contratista.xlsx	Apéndice A: Aplicación y aprobación de la empresa contratista	appendices	soportes-de-interes/Apendice A Aplicacion y aprobacion de la empresa contratista.xlsx	\N	application/vnd.openxmlformats-officedocument.spreadsheetml.sheet	2025-10-22 12:00:00	2025-10-22 12:00:00	1
+2	Apendice B Preinicio del contrato.xlsx	Apéndice B: Preinicio del contrato	appendices	soportes-de-interes/Apendice B Preinicio del contrato.xlsx	\N	application/vnd.openxmlformats-officedocument.spreadsheetml.sheet	2025-10-22 12:00:00	2025-10-22 12:00:00	1
+3	Apendice C Declaracion de productos quimicos.xlsx	Apéndice C: Declaración de productos químicos	appendices	soportes-de-interes/Apendice C Declaracion de productos quimicos.xlsx	\N	application/vnd.openxmlformats-officedocument.spreadsheetml.sheet	2025-10-22 12:00:00	2025-10-22 12:00:00	1
+4	Apendice D Plan de trabajo en sitio.xlsx	Apéndice D: Plan de trabajo en sitio	appendices	soportes-de-interes/Apendice D Plan de trabajo en sitio.xlsx	\N	application/vnd.openxmlformats-officedocument.spreadsheetml.sheet	2025-10-22 12:00:00	2025-10-22 12:00:00	1
+5	Apendice E Lista de puntos de contacto.xlsx	Apéndice E: Lista de puntos de contacto	appendices	soportes-de-interes/Apendice E Lista de puntos de contacto.xlsx	\N	application/vnd.openxmlformats-officedocument.spreadsheetml.sheet	2025-10-22 12:00:00	2025-10-22 12:00:00	1
+6	Apéndice G Evaluación del Contratista.xlsx	Apéndice G: Evaluación del Contratista	appendices	soportes-de-interes/Apéndice G Evaluación del Contratista.xlsx	\N	application/vnd.openxmlformats-officedocument.spreadsheetml.sheet	2025-10-22 12:00:00	2025-10-22 12:00:00	1
+7	Aceptación de manual de contratistas.docx	Aceptación de manual de contratistas	contractors-manual	soportes-de-interes/Aceptación de manual de contratistas.docx	\N	application/vnd.openxmlformats-officedocument.wordprocessingml.document	2025-10-22 12:00:00	2025-10-22 12:00:00	1
+8	Manual de contratistas versión 8.pdf	Manual de contratistas versión 8	contractors-manual	soportes-de-interes/Manual de contratistas versión 8.pdf	\N	application/pdf	2025-10-22 12:00:00	2025-10-22 12:00:00	1
+9	Lista de chequeo de finalización de contratación (Dossier).DOCX	Lista de chequeo de finalización de contratación (Dossier)	dossier	soportes-de-interes/Lista de chequeo de finalización de contratación (Dossier).DOCX	\N	application/vnd.openxmlformats-officedocument.wordprocessingml.document	2025-10-22 12:00:00	2025-10-22 12:00:00	1
+10	Formato Reporte final EHS O-I proyecto (Dossier).xlsx	Formato Reporte final EHS O-I proyecto (Dossier)	dossier	soportes-de-interes/Formato Reporte final EHS O-I proyecto (Dossier).xlsx	\N	application/vnd.openxmlformats-officedocument.spreadsheetml.sheet	2025-10-22 12:00:00	2025-10-22 12:00:00	1
+11	Solicitud de Ingreso Personal Contratista.xlsx	Solicitud de Ingreso Personal Contratista	others	soportes-de-interes/Solicitud de Ingreso Personal Contratista.xlsx	\N	application/vnd.openxmlformats-officedocument.spreadsheetml.sheet	2025-10-22 12:00:00	2025-10-22 12:00:00	1
+12	Estandares de alto riesgo.pdf	Estándares de alto riesgo	ehs-procedures-standards	soportes-de-interes/Estandares de alto riesgo.pdf	\N	application/pdf	2025-10-22 12:00:00	2025-10-22 12:00:00	1
+13	Estándar Diseño Escaleras Barandas Pasamanos y Controles Acceso.pdf	Estándar Diseño Escaleras Barandas Pasamanos y Controles Acceso	ehs-procedures-standards	soportes-de-interes/Estándar Diseño Escaleras Barandas Pasamanos y Controles Acceso.pdf	\N	application/pdf	2025-10-22 12:00:00	2025-10-22 12:00:00	1
+14	Procedimiento para Izar Cargas.pdf	Procedimiento para Izar Cargas	ehs-procedures-standards	soportes-de-interes/Procedimiento para Izar Cargas.pdf	\N	application/pdf	2025-10-22 12:00:00	2025-10-22 12:00:00	1
+15	Procedimiento para Trabajo en alturas Actualización.pdf	Procedimiento para Trabajo en alturas Actualización	ehs-procedures-standards	soportes-de-interes/Procedimiento para Trabajo en alturas Actualización.pdf	\N	application/pdf	2025-10-22 12:00:00	2025-10-22 12:00:00	1
+16	Procedimiento para Trabajo en Espacio Confinado.pdf	Procedimiento para Trabajo en Espacio Confinado	ehs-procedures-standards	soportes-de-interes/Procedimiento para Trabajo en Espacio Confinado.pdf	\N	application/pdf	2025-10-22 12:00:00	2025-10-22 12:00:00	1
+17	Procedimiento para trabajos en caliente.pdf	Procedimiento para trabajos en caliente	ehs-procedures-standards	soportes-de-interes/Procedimiento para trabajos en caliente.pdf	\N	application/pdf	2025-10-22 12:00:00	2025-10-22 12:00:00	1
+\.
+
+
+--
 -- Data for Name: user; Type: TABLE DATA; Schema: public; Owner: admin
 --
 
@@ -37654,6 +37733,13 @@ SELECT pg_catalog.setval('public.subcriterion_subcriterion_id_seq', 7, true);
 
 
 --
+-- Name: support_file_support_file_id_seq; Type: SEQUENCE SET; Schema: public; Owner: admin
+--
+
+SELECT pg_catalog.setval('public.support_file_support_file_id_seq', 17, true);
+
+
+--
 -- Name: user_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: admin
 --
 
@@ -37754,6 +37840,14 @@ ALTER TABLE ONLY public.role
 
 ALTER TABLE ONLY public.subcriterion
     ADD CONSTRAINT "PK_f2b71b4afd91723bef2d0beaca1" PRIMARY KEY (subcriterion_id);
+
+
+--
+-- Name: support_file PK_support_file_id; Type: CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.support_file
+    ADD CONSTRAINT "PK_support_file_id" PRIMARY KEY (support_file_id);
 
 
 --
@@ -37882,6 +37976,14 @@ ALTER TABLE ONLY public.project_contractor_criterion
 
 ALTER TABLE ONLY public.document
     ADD CONSTRAINT "FK_eb6ace5b8ffadc5dca2a05ddfb6" FOREIGN KEY (subcriterion_id) REFERENCES public.subcriterion(subcriterion_id);
+
+
+--
+-- Name: support_file FK_support_file_created_by_user; Type: FK CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.support_file
+    ADD CONSTRAINT "FK_support_file_created_by_user" FOREIGN KEY (created_by_user_id) REFERENCES public."user"(user_id);
 
 
 --

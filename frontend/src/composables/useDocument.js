@@ -64,6 +64,74 @@ export const useDocument = () => {
     }
   }
 
+  async function getDocumentUrl(subcriterionId, projectContractorId, employeeId, urlDoc, forPreview = false) {
+    try {
+      let documents = await getDocumentsBySubcriterionId(subcriterionId, projectContractorId);
+
+      if (employeeId) {
+        documents = documents.filter(document => document.employee.employee_id == employeeId);
+      }
+
+      if (documents.length > 0) {
+        const document = documents[0]; // Tomar el primer documento
+        const fileKey = urlDoc + document.name;
+
+        // Encode el fileKey para manejar caracteres especiales y barras
+        const encodedFileKey = encodeURIComponent(fileKey);
+
+        // Para vista previa usar disposition=inline, para descarga usar disposition=attachment
+        const disposition = forPreview ? 'inline' : 'attachment';
+
+        // Obtener URL firmada del backend
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/document/presigned-url/${encodedFileKey}?disposition=${disposition}`);
+        const data = await response.json();
+
+        return { url: data.url, name: document.name };
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error al obtener URL del documento:', error);
+      return null;
+    }
+  }
+
+  async function checkDocumentExists(subcriterionId, projectContractorId, employeeId, urlDoc) {
+    try {
+      let documents = await getDocumentsBySubcriterionId(subcriterionId, projectContractorId);
+
+      if (employeeId) {
+        documents = documents.filter(document => document.employee.employee_id == employeeId);
+      }
+
+      if (documents.length > 0) {
+        const document = documents[0];
+        const fileExists = await awsS3.checkFileExists(urlDoc + document.name);
+        return {
+          hasDocument: true,
+          fileExists,
+          fileName: document.name,
+          documentInfo: document
+        };
+      }
+
+      return {
+        hasDocument: false,
+        fileExists: false,
+        fileName: null,
+        documentInfo: null
+      };
+    } catch (error) {
+      console.error('Error al verificar documento:', error);
+      return {
+        hasDocument: false,
+        fileExists: false,
+        fileName: null,
+        documentInfo: null
+      };
+    }
+  }
+
   async function downloadDocument(subcriterionId, projectContractorId, employeeId, urlDoc) {
     try {
       let documents = await getDocumentsBySubcriterionId(subcriterionId, projectContractorId);
@@ -84,8 +152,14 @@ export const useDocument = () => {
   async function getDownloadUrls(documents, urlDoc) {
     const downloadPromises = documents.map(async (document) => {
       try {
-        const url = await awsS3.readFile(urlDoc + document.name);
-        return { url, name: document.name };
+        const fileKey = urlDoc + document.name;
+        // Encode el fileKey para manejar caracteres especiales y barras
+        const encodedFileKey = encodeURIComponent(fileKey);
+
+        // Para descarga usar disposition=attachment
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/document/presigned-url/${encodedFileKey}?disposition=attachment`);
+        const data = await response.json();
+        return { url: data.url, name: document.name };
       } catch (error) {
         console.error(`Error al obtener la URL de ${document.name}:`, error);
         return null;
@@ -174,12 +248,51 @@ export const useDocument = () => {
     return `${newFileName}.${extension}`;
   }
 
+  async function uploadSupportFile(file, displayName, category, createdBy) {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('displayName', displayName);
+      // Ensure category is sent as a string (value) not as an object
+      let categoryValue = '';
+      if (category == null) {
+        categoryValue = '';
+      } else if (typeof category === 'string') {
+        categoryValue = category;
+      } else if (typeof category === 'object') {
+        categoryValue = category.value || category.label || JSON.stringify(category);
+      } else {
+        categoryValue = String(category);
+      }
+      formData.append('category', categoryValue);
+      formData.append('createdBy', createdBy);
+
+      const response = await fetch('/upload-support-file', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Error uploading support file:', error);
+      throw error;
+    }
+  }
+
   return {
     processDocument,
     uploadStateDocument,
     downloadDocument,
+    getDocumentUrl,
+    checkDocumentExists,
     deleteCurrentDocuments,
     deleteDocumentsSend,
+    uploadSupportFile,
     error,
   };
 };
