@@ -1,16 +1,16 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Request, Req, ParseIntPipe } from '@nestjs/common';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
-import { IlbReportsService } from '../services/ilv-reports.service';
-import { CreateIlbReportDto, UpdateIlbReportDto, FilterIlbReportDto } from '../dto';
-import { IlbOwnershipGuard } from '../guards';
+import { IlvReportsService } from '../services/ilv-reports.service';
+import { CreateIlvReportDto, UpdateIlvReportDto, FilterIlvReportDto } from '../dto';
+import { IlvOwnershipGuard } from '../guards';
 
 @Controller('ilv/reports')
 @UseGuards(JwtAuthGuard)
-export class IlbReportsController {
-  constructor(private reportsService: IlbReportsService) {}
+export class IlvReportsController {
+  constructor(private reportsService: IlvReportsService) {}
 
   @Post()
-  async create(@Body() dto: CreateIlbReportDto, @Req() req) {
+  async create(@Body() dto: CreateIlvReportDto, @Req() req) {
     const userId = req.user.user_id;
     const ip = req.ip;
     const userAgent = req.headers['user-agent'];
@@ -19,7 +19,7 @@ export class IlbReportsController {
   }
 
   @Get()
-  async findAll(@Query() filters: FilterIlbReportDto, @Req() req) {
+  async findAll(@Query() filters: FilterIlvReportDto, @Req() req) {
     const userId = req.user.user_id;
     return this.reportsService.findAll(filters, userId);
   }
@@ -30,10 +30,10 @@ export class IlbReportsController {
   }
 
   @Put(':id')
-  @UseGuards(IlbOwnershipGuard)
+  @UseGuards(IlvOwnershipGuard)
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateIlbReportDto,
+    @Body() dto: UpdateIlvReportDto,
     @Req() req,
   ) {
     const userId = req.user.user_id;

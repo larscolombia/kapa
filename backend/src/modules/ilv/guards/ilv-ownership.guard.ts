@@ -1,9 +1,9 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { IlbReportsService } from '../services';
+import { IlvReportsService } from '../services';
 
 @Injectable()
-export class IlbOwnershipGuard implements CanActivate {
-  constructor(private reportsService: IlbReportsService) {}
+export class IlvOwnershipGuard implements CanActivate {
+  constructor(private reportsService: IlvReportsService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();

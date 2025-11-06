@@ -131,7 +131,7 @@ export class SupportsService {
 
       // URL válida por 15 minutos para subida
       const uploadUrl = await getSignedUrl(this.s3Client, command, { expiresIn: 900 });
-      
+
       return { uploadUrl, fileKey: s3Key };
     } catch (error) {
       console.error('Error generating upload URL:', error);
@@ -177,7 +177,7 @@ export class SupportsService {
       'zip': 'application/zip',
       'rar': 'application/x-rar-compressed',
     };
-    
+
     return mimeTypes[extension?.toLowerCase()] || 'application/octet-stream';
   }
 

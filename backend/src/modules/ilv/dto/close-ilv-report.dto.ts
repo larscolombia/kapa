@@ -1,6 +1,6 @@
 import { IsString, IsOptional, IsArray } from 'class-validator';
 
-export class CloseIlbReportDto {
+export class CloseIlvReportDto {
   @IsString()
   plan_accion: string;
 

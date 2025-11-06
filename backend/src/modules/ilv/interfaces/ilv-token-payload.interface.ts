@@ -1,4 +1,4 @@
-export interface IlbTokenPayload {
+export interface IlvTokenPayload {
   jti: string;         // JWT ID (UUID)
   rid: number;         // Report ID
   eid: number;         // Empresa ID

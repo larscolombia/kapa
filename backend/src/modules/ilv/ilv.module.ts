@@ -1,60 +1,60 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { IlbReport } from '../../database/entities/ilv-report.entity';
-import { IlbReportField } from '../../database/entities/ilv-report-field.entity';
-import { IlbAttachment } from '../../database/entities/ilv-attachment.entity';
-import { IlbCloseToken } from '../../database/entities/ilv-close-token.entity';
-import { IlbMaestro } from '../../database/entities/ilv-maestro.entity';
-import { IlbAudit } from '../../database/entities/ilv-audit.entity';
-import { IlbEmailLog } from '../../database/entities/ilv-email-log.entity';
+import { IlvReport } from '../../database/entities/ilv-report.entity';
+import { IlvReportField } from '../../database/entities/ilv-report-field.entity';
+import { IlvAttachment } from '../../database/entities/ilv-attachment.entity';
+import { IlvCloseToken } from '../../database/entities/ilv-close-token.entity';
+import { IlvMaestro } from '../../database/entities/ilv-maestro.entity';
+import { IlvAudit } from '../../database/entities/ilv-audit.entity';
+import { IlvEmailLog } from '../../database/entities/ilv-email-log.entity';
 
 import {
-  IlbAuthService,
-  IlbNotificationsService,
-  IlbReportsService,
-  IlbMaestrosService,
+  IlvAuthService,
+  IlvNotificationsService,
+  IlvReportsService,
+  IlvMaestrosService,
 } from './services';
 
 import {
-  IlbReportsController,
-  IlbCloseController,
-  IlbMaestrosController,
+  IlvReportsController,
+  IlvCloseController,
+  IlvMaestrosController,
 } from './controllers';
 
 import {
-  IlbTokenGuard,
-  IlbOwnershipGuard,
+  IlvTokenGuard,
+  IlvOwnershipGuard,
 } from './guards';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      IlbReport,
-      IlbReportField,
-      IlbAttachment,
-      IlbCloseToken,
-      IlbMaestro,
-      IlbAudit,
-      IlbEmailLog,
+      IlvReport,
+      IlvReportField,
+      IlvAttachment,
+      IlvCloseToken,
+      IlvMaestro,
+      IlvAudit,
+      IlvEmailLog,
     ]),
   ],
   providers: [
-    IlbAuthService,
-    IlbNotificationsService,
-    IlbReportsService,
-    IlbMaestrosService,
-    IlbTokenGuard,
-    IlbOwnershipGuard,
+    IlvAuthService,
+    IlvNotificationsService,
+    IlvReportsService,
+    IlvMaestrosService,
+    IlvTokenGuard,
+    IlvOwnershipGuard,
   ],
   controllers: [
-    IlbReportsController,
-    IlbCloseController,
-    IlbMaestrosController,
+    IlvReportsController,
+    IlvCloseController,
+    IlvMaestrosController,
   ],
   exports: [
-    IlbAuthService,
-    IlbReportsService,
-    IlbMaestrosService,
+    IlvAuthService,
+    IlvReportsService,
+    IlvMaestrosService,
   ],
 })
-export class IlbModule {}
+export class IlvModule {}

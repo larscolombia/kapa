@@ -1,4 +1,4 @@
-import { IlbReportType } from '../dto';
+import { IlvReportType } from '../dto';
 
 export interface FieldConfig {
   required: string[];
@@ -8,8 +8,8 @@ export interface FieldConfig {
   close_required?: string[];
 }
 
-export const FIELD_MAPPINGS: Record<IlbReportType, FieldConfig> = {
-  [IlbReportType.HAZARD_ID]: {
+export const FIELD_MAPPINGS: Record<IlvReportType, FieldConfig> = {
+  [IlvReportType.HAZARD_ID]: {
     required: ['ubicacion', 'descripcion_condicion', 'severidad', 'area', 'fecha_evento'],
     optional: ['foto', 'causa_probable', 'accion_inmediata'],
     maestros: {
@@ -21,14 +21,14 @@ export const FIELD_MAPPINGS: Record<IlbReportType, FieldConfig> = {
       fecha_evento: 'date_lte_today',
     },
   },
-  [IlbReportType.WIT]: {
+  [IlvReportType.WIT]: {
     required: ['conducta_observada', 'riesgo_asociado', 'recomendacion', 'responsable'],
     optional: ['testigo', 'adjuntos'],
     maestros: {
       riesgo_asociado: 'riesgo',
     },
   },
-  [IlbReportType.SWA]: {
+  [IlvReportType.SWA]: {
     required: ['hora_inicio_parada', 'hora_reinicio', 'motivo', 'area', 'responsable'],
     optional: [],
     maestros: {
@@ -39,7 +39,7 @@ export const FIELD_MAPPINGS: Record<IlbReportType, FieldConfig> = {
       hora_reinicio: 'time_gte_hora_inicio_parada',
     },
   },
-  [IlbReportType.FDKAR]: {
+  [IlvReportType.FDKAR]: {
     required: ['quien_reporta', 'clasificacion', 'descripcion', 'plan_accion_propuesto'],
     optional: [],
     maestros: {
@@ -50,27 +50,27 @@ export const FIELD_MAPPINGS: Record<IlbReportType, FieldConfig> = {
 };
 
 export class FieldMapper {
-  static getRequiredFields(tipo: IlbReportType): string[] {
+  static getRequiredFields(tipo: IlvReportType): string[] {
     return FIELD_MAPPINGS[tipo]?.required || [];
   }
 
-  static getOptionalFields(tipo: IlbReportType): string[] {
+  static getOptionalFields(tipo: IlvReportType): string[] {
     return FIELD_MAPPINGS[tipo]?.optional || [];
   }
 
-  static getMaestros(tipo: IlbReportType): Record<string, string> {
+  static getMaestros(tipo: IlvReportType): Record<string, string> {
     return FIELD_MAPPINGS[tipo]?.maestros || {};
   }
 
-  static getValidations(tipo: IlbReportType): Record<string, string> {
+  static getValidations(tipo: IlvReportType): Record<string, string> {
     return FIELD_MAPPINGS[tipo]?.validations || {};
   }
 
-  static getCloseRequiredFields(tipo: IlbReportType): string[] {
+  static getCloseRequiredFields(tipo: IlvReportType): string[] {
     return FIELD_MAPPINGS[tipo]?.close_required || [];
   }
 
-  static getAllFields(tipo: IlbReportType): string[] {
+  static getAllFields(tipo: IlvReportType): string[] {
     const config = FIELD_MAPPINGS[tipo];
     if (!config) return [];
     return [...config.required, ...config.optional];

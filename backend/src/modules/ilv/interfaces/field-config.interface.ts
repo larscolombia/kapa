@@ -1,5 +1,5 @@
-export type IlbReportType = 'hazard_id' | 'wit' | 'swa' | 'fdkar';
-export type IlbReportStatus = 'abierto' | 'cerrado';
+export type IlvReportType = 'hazard_id' | 'wit' | 'swa' | 'fdkar';
+export type IlvReportStatus = 'abierto' | 'cerrado';
 
 export interface FieldConfig {
   required: string[];
@@ -16,7 +16,7 @@ export interface IlbFieldConfigs {
   fdkar: FieldConfig;
 }
 
-export interface IlbReportWithFields {
+export interface IlvReportWithFields {
   report_id: number;
   tipo: string;
   estado: string;

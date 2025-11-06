@@ -4,7 +4,7 @@ export default {
   // Reportes
   async createReport(data) {
     try {
-      const response = await api.post('/ilv/reports', data);
+      const response = await api.post('/api/ilv/reports', data);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -13,7 +13,7 @@ export default {
 
   async getReports(filters = {}) {
     try {
-      const response = await api.get('/ilv/reports', { params: filters });
+      const response = await api.get('/api/ilv/reports', { params: filters });
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -22,7 +22,7 @@ export default {
 
   async getReportById(id) {
     try {
-      const response = await api.get(`/ilv/reports/${id}`);
+      const response = await api.get(`/api/ilv/reports/${id}`);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -31,7 +31,7 @@ export default {
 
   async updateReport(id, data) {
     try {
-      const response = await api.put(`/ilv/reports/${id}`, data);
+      const response = await api.put(`/api/ilv/reports/${id}`, data);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -51,7 +51,7 @@ export default {
   // Maestros
   async getMaestros(tipo) {
     try {
-      const response = await api.get(`/ilv/maestros/${tipo}`);
+      const response = await api.get(`/api/ilv/maestros/${tipo}`);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -60,7 +60,7 @@ export default {
 
   async createMaestro(data) {
     try {
-      const response = await api.post('/ilv/maestros', data);
+      const response = await api.post('/api/ilv/maestros', data);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -69,7 +69,7 @@ export default {
 
   async updateMaestro(id, data) {
     try {
-      const response = await api.put(`/ilv/maestros/${id}`, data);
+      const response = await api.put(`/api/ilv/maestros/${id}`, data);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -78,7 +78,7 @@ export default {
 
   async deleteMaestro(id) {
     try {
-      const response = await api.delete(`/ilv/maestros/${id}`);
+      const response = await api.delete(`/api/ilv/maestros/${id}`);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;

@@ -1,37 +1,37 @@
 import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { IlbReport } from '../../../database/entities/ilv-report.entity';
-import { IlbReportField } from '../../../database/entities/ilv-report-field.entity';
-import { IlbAttachment } from '../../../database/entities/ilv-attachment.entity';
-import { IlbAudit } from '../../../database/entities/ilv-audit.entity';
-import { CreateIlbReportDto, IlbReportType } from '../dto/create-ilv-report.dto';
-import { UpdateIlbReportDto } from '../dto/update-ilv-report.dto';
-import { CloseIlbReportDto } from '../dto/close-ilv-report.dto';
-import { FilterIlbReportDto } from '../dto/filter-ilv-report.dto';
+import { IlvReport } from '../../../database/entities/ilv-report.entity';
+import { IlvReportField } from '../../../database/entities/ilv-report-field.entity';
+import { IlvAttachment } from '../../../database/entities/ilv-attachment.entity';
+import { IlvAudit } from '../../../database/entities/ilv-audit.entity';
+import { CreateIlvReportDto, IlvReportType } from '../dto/create-ilv-report.dto';
+import { UpdateIlvReportDto } from '../dto/update-ilv-report.dto';
+import { CloseIlvReportDto } from '../dto/close-ilv-report.dto';
+import { FilterIlvReportDto } from '../dto/filter-ilv-report.dto';
 import { FieldMapper } from '../utils/field-mapper.util';
-import { IlbValidators } from '../utils/validators.util';
-import { IlbAuthService } from './ilv-auth.service';
-import { IlbNotificationsService } from './ilv-notifications.service';
+import { IlvValidators } from '../utils/validators.util';
+import { IlvAuthService } from './ilv-auth.service';
+import { IlvNotificationsService } from './ilv-notifications.service';
 
 @Injectable()
-export class IlbReportsService {
+export class IlvReportsService {
   constructor(
-    @InjectRepository(IlbReport)
-    private reportRepo: Repository<IlbReport>,
-    @InjectRepository(IlbReportField)
-    private fieldRepo: Repository<IlbReportField>,
-    @InjectRepository(IlbAudit)
-    private auditRepo: Repository<IlbAudit>,
-    private authService: IlbAuthService,
-    private notificationService: IlbNotificationsService,
+    @InjectRepository(IlvReport)
+    private reportRepo: Repository<IlvReport>,
+    @InjectRepository(IlvReportField)
+    private fieldRepo: Repository<IlvReportField>,
+    @InjectRepository(IlvAudit)
+    private auditRepo: Repository<IlvAudit>,
+    private authService: IlvAuthService,
+    private notificationService: IlvNotificationsService,
   ) {}
 
-  async create(dto: CreateIlbReportDto, userId: number, ip: string, ua: string): Promise<IlbReport> {
+  async create(dto: CreateIlvReportDto, userId: number, ip: string, ua: string): Promise<IlvReport> {
     const fieldsMap = dto.fields.reduce((acc, f) => ({ ...acc, [f.key]: f.value }), {});
     
-    IlbValidators.validateRequiredFields(dto.tipo, fieldsMap);
-    IlbValidators.validateBusinessRules(dto.tipo, fieldsMap);
+    IlvValidators.validateRequiredFields(dto.tipo, fieldsMap);
+    IlvValidators.validateBusinessRules(dto.tipo, fieldsMap);
 
     const report = this.reportRepo.create({
       tipo: dto.tipo,
@@ -67,7 +67,7 @@ export class IlbReportsService {
     return this.findOne(savedReport.report_id);
   }
 
-  async findAll(filters: FilterIlbReportDto, userId: number): Promise<{ data: IlbReport[]; total: number }> {
+  async findAll(filters: FilterIlvReportDto, userId: number): Promise<{ data: IlvReport[]; total: number }> {
     const qb = this.reportRepo.createQueryBuilder('r')
       .leftJoinAndSelect('r.fields', 'fields')
       .leftJoinAndSelect('r.project', 'project')
@@ -98,7 +98,7 @@ export class IlbReportsService {
     return { data, total };
   }
 
-  async findOne(id: number): Promise<IlbReport> {
+  async findOne(id: number): Promise<IlvReport> {
     const report = await this.reportRepo.findOne({
       where: { report_id: id },
       relations: ['fields', 'project', 'client', 'contractor', 'creator', 'owner'],
@@ -111,7 +111,7 @@ export class IlbReportsService {
     return report;
   }
 
-  async update(id: number, dto: UpdateIlbReportDto, userId: number, ip: string, ua: string): Promise<IlbReport> {
+  async update(id: number, dto: UpdateIlvReportDto, userId: number, ip: string, ua: string): Promise<IlvReport> {
     const report = await this.findOne(id);
 
     if (report.propietario_user_id !== userId) {
@@ -143,7 +143,7 @@ export class IlbReportsService {
     return this.findOne(id);
   }
 
-  async close(id: number, dto: CloseIlbReportDto, userId: number | null, jti: string, ip: string, ua: string): Promise<IlbReport> {
+  async close(id: number, dto: CloseIlvReportDto, userId: number | null, jti: string, ip: string, ua: string): Promise<IlvReport> {
     const report = await this.findOne(id);
 
     if (report.estado === 'cerrado') {
@@ -151,7 +151,7 @@ export class IlbReportsService {
     }
 
     const fieldsMap = { plan_accion: dto.plan_accion, ...dto };
-    IlbValidators.validateCloseFields(report.tipo as IlbReportType, fieldsMap);
+    IlvValidators.validateCloseFields(report.tipo as IlvReportType, fieldsMap);
 
     await this.fieldRepo.save([
       this.fieldRepo.create({ report_id: id, key: 'plan_accion', value: dto.plan_accion }),

@@ -1,11 +1,11 @@
 import { IsOptional, IsString, IsInt, IsEnum, IsDateString } from 'class-validator';
 import { Type } from 'class-transformer';
-import { IlbReportType } from './create-ilv-report.dto';
+import { IlvReportType } from './create-ilv-report.dto';
 
-export class FilterIlbReportDto {
+export class FilterIlvReportDto {
   @IsOptional()
-  @IsEnum(IlbReportType)
-  tipo?: IlbReportType;
+  @IsEnum(IlvReportType)
+  tipo?: IlvReportType;
 
   @IsOptional()
   @IsString()

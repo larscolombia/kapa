@@ -1,17 +1,17 @@
 import { Controller, Post, Body, Query, Req, UseGuards } from '@nestjs/common';
-import { IlbReportsService } from '../services';
-import { CloseIlbReportDto } from '../dto';
-import { IlbTokenGuard } from '../guards';
+import { IlvReportsService } from '../services';
+import { CloseIlvReportDto } from '../dto';
+import { IlvTokenGuard } from '../guards';
 
 @Controller('ilv/close')
-export class IlbCloseController {
-  constructor(private reportsService: IlbReportsService) {}
+export class IlvCloseController {
+  constructor(private reportsService: IlvReportsService) {}
 
   @Post()
-  @UseGuards(IlbTokenGuard)
+  @UseGuards(IlvTokenGuard)
   async closeReport(
     @Query('rid') reportId: string,
-    @Body() dto: CloseIlbReportDto,
+    @Body() dto: CloseIlvReportDto,
     @Req() req,
   ) {
     const id = parseInt(reportId);

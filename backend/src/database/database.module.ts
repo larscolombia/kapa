@@ -70,4 +70,4 @@ import { SupportFile } from './entities/support-file.entity';
     }),
   ],
 })
-export class DatabaseModule {}
+export class DatabaseModule { }

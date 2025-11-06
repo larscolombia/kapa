@@ -6,7 +6,7 @@ import {
   JoinColumn,
   CreateDateColumn,
 } from 'typeorm';
-import { IlvReport } from './ilb-report.entity';
+import { IlvReport } from './ilv-report.entity';
 
 @Entity('ilv_email_log')
 export class IlvEmailLog {

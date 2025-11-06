@@ -1,9 +1,9 @@
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
-import { IlbAuthService } from '../services';
+import { IlvAuthService } from '../services';
 
 @Injectable()
-export class IlbTokenGuard implements CanActivate {
-  constructor(private authService: IlbAuthService) {}
+export class IlvTokenGuard implements CanActivate {
+  constructor(private authService: IlvAuthService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();

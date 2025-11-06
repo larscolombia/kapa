@@ -1,12 +1,12 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
-import { IlbMaestrosService } from '../services/ilv-maestros.service';
+import { IlvMaestrosService } from '../services/ilv-maestros.service';
 import { CreateMaestroDto } from '../dto';
 
 @Controller('ilv/maestros')
 @UseGuards(JwtAuthGuard)
-export class IlbMaestrosController {
-  constructor(private maestrosService: IlbMaestrosService) {}
+export class IlvMaestrosController {
+  constructor(private maestrosService: IlvMaestrosService) {}
 
   @Get(':tipo')
   async findByTipo(@Param('tipo') tipo: string) {

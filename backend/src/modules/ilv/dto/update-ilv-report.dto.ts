@@ -1,11 +1,11 @@
 import { IsOptional, IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { IlbReportFieldDto } from './create-ilv-report.dto';
+import { IlvReportFieldDto } from './create-ilv-report.dto';
 
-export class UpdateIlbReportDto {
+export class UpdateIlvReportDto {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => IlbReportFieldDto)
-  fields?: IlbReportFieldDto[];
+  @Type(() => IlvReportFieldDto)
+  fields?: IlvReportFieldDto[];
 }

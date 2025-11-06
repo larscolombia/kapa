@@ -36,7 +36,7 @@ const pool = new Pool({
 
 // Configurar multer para manejar archivos en memoria
 const storage = multer.memoryStorage();
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   limits: { fileSize: 50 * 1024 * 1024 } // 50MB
 });
@@ -52,7 +52,7 @@ app.post('/upload-support-file', upload.single('file'), async (req, res) => {
     }
 
     const { displayName, category, createdBy } = req.body;
-    
+
     // Generar nombre único
     const timestamp = Date.now();
     const fileExtension = req.file.originalname.split('.').pop();
@@ -82,7 +82,7 @@ app.post('/upload-support-file', upload.single('file'), async (req, res) => {
     `;
 
     const fileSizeInBytes = req.file.size; // Mantener en bytes como entero
-    
+
     try {
       const dbResult = await pool.query(insertQuery, [
         req.file.originalname,
@@ -111,7 +111,7 @@ app.post('/upload-support-file', upload.single('file'), async (req, res) => {
       });
     } catch (dbError) {
       console.error('Error al crear registro en base de datos:', dbError);
-      
+
       // En caso de error en DB, el archivo ya está en S3 pero podríamos considerar eliminarlo
       // Por ahora, devolvemos error pero el archivo permanece en S3
       throw new Error('Error al registrar el archivo en la base de datos: ' + dbError.message);

@@ -1,14 +1,14 @@
 import { IsString, IsInt, IsOptional, IsArray, ValidateNested, IsDateString, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export enum IlbReportType {
+export enum IlvReportType {
   HAZARD_ID = 'hazard_id',
   WIT = 'wit',
   SWA = 'swa',
   FDKAR = 'fdkar',
 }
 
-export class IlbReportFieldDto {
+export class IlvReportFieldDto {
   @IsString()
   key: string;
 
@@ -20,9 +20,9 @@ export class IlbReportFieldDto {
   value_type?: string;
 }
 
-export class CreateIlbReportDto {
-  @IsEnum(IlbReportType)
-  tipo: IlbReportType;
+export class CreateIlvReportDto {
+  @IsEnum(IlvReportType)
+  tipo: IlvReportType;
 
   @IsOptional()
   @IsInt()
@@ -40,6 +40,6 @@ export class CreateIlbReportDto {
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => IlbReportFieldDto)
-  fields: IlbReportFieldDto[];
+  @Type(() => IlvReportFieldDto)
+  fields: IlvReportFieldDto[];
 }

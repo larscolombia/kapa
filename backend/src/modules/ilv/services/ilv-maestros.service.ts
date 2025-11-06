@@ -1,24 +1,24 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { IlbMaestro } from '../../../database/entities/ilv-maestro.entity';
+import { IlvMaestro } from '../../../database/entities/ilv-maestro.entity';
 import { CreateMaestroDto } from '../dto';
 
 @Injectable()
-export class IlbMaestrosService {
+export class IlvMaestrosService {
   constructor(
-    @InjectRepository(IlbMaestro)
-    private maestroRepo: Repository<IlbMaestro>,
+    @InjectRepository(IlvMaestro)
+    private maestroRepo: Repository<IlvMaestro>,
   ) {}
 
-  async findByTipo(tipo: string): Promise<IlbMaestro[]> {
+  async findByTipo(tipo: string): Promise<IlvMaestro[]> {
     return this.maestroRepo.find({
       where: { tipo, activo: true },
       order: { orden: 'ASC', valor: 'ASC' },
     });
   }
 
-  async create(dto: CreateMaestroDto): Promise<IlbMaestro> {
+  async create(dto: CreateMaestroDto): Promise<IlvMaestro> {
     const exists = await this.maestroRepo.findOne({
       where: { tipo: dto.tipo, clave: dto.clave },
     });
@@ -31,7 +31,7 @@ export class IlbMaestrosService {
     return this.maestroRepo.save(maestro);
   }
 
-  async update(id: number, dto: Partial<CreateMaestroDto>): Promise<IlbMaestro> {
+  async update(id: number, dto: Partial<CreateMaestroDto>): Promise<IlvMaestro> {
     const maestro = await this.maestroRepo.findOne({ where: { maestro_id: id } });
     
     if (!maestro) {

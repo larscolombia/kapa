@@ -3,14 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-import { IlbCloseToken } from '../../../database/entities/ilv-close-token.entity';
-import { IlbTokenPayload } from '../interfaces';
+import { IlvCloseToken } from '../../../database/entities/ilv-close-token.entity';
+import { IlvTokenPayload } from '../interfaces';
 
 @Injectable()
-export class IlbAuthService {
+export class IlvAuthService {
   constructor(
-    @InjectRepository(IlbCloseToken)
-    private ilvCloseTokenRepo: Repository<IlbCloseToken>,
+    @InjectRepository(IlvCloseToken)
+    private ilvCloseTokenRepo: Repository<IlvCloseToken>,
   ) {}
 
   async generateCloseToken(reportId: number, empresaId: number): Promise<string> {
@@ -18,7 +18,7 @@ export class IlbAuthService {
     const expiresIn = 72 * 3600;
     const now = Math.floor(Date.now() / 1000);
 
-    const payload: IlbTokenPayload = {
+    const payload: IlvTokenPayload = {
       jti: jwtId,
       rid: reportId,
       eid: empresaId,
@@ -40,10 +40,10 @@ export class IlbAuthService {
     return token;
   }
 
-  async verifyCloseToken(token: string): Promise<IlbTokenPayload> {
+  async verifyCloseToken(token: string): Promise<IlvTokenPayload> {
     try {
       const secret = process.env.ILV_TOKEN_SECRET || process.env.JWT_SECRET;
-      const decoded = jwt.verify(token, secret) as IlbTokenPayload;
+      const decoded = jwt.verify(token, secret) as IlvTokenPayload;
 
       const tokenRecord = await this.ilvCloseTokenRepo.findOne({
         where: { jwt_id: decoded.jti },

@@ -1,12 +1,12 @@
 import { BadRequestException } from '@nestjs/common';
-import { IlbReportType } from '../dto';
+import { IlvReportType } from '../dto';
 import { FieldMapper } from './field-mapper.util';
 
-export class IlbValidators {
+export class IlvValidators {
   /**
    * Valida que todos los campos requeridos estén presentes
    */
-  static validateRequiredFields(tipo: IlbReportType, fields: Record<string, any>): void {
+  static validateRequiredFields(tipo: IlvReportType, fields: Record<string, any>): void {
     const required = FieldMapper.getRequiredFields(tipo);
     const fieldKeys = Object.keys(fields);
     
@@ -49,7 +49,7 @@ export class IlbValidators {
   /**
    * Valida reglas de negocio según el tipo de reporte
    */
-  static validateBusinessRules(tipo: IlbReportType, fields: Record<string, any>): void {
+  static validateBusinessRules(tipo: IlvReportType, fields: Record<string, any>): void {
     const validations = FieldMapper.getValidations(tipo);
 
     for (const [field, rule] of Object.entries(validations)) {
@@ -69,7 +69,7 @@ export class IlbValidators {
   /**
    * Valida campos requeridos para el cierre
    */
-  static validateCloseFields(tipo: IlbReportType, fields: Record<string, any>): void {
+  static validateCloseFields(tipo: IlvReportType, fields: Record<string, any>): void {
     const closeRequired = FieldMapper.getCloseRequiredFields(tipo);
     
     if (closeRequired.length === 0) return;

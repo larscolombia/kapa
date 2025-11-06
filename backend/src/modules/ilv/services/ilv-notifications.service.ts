@@ -1,18 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { IlbEmailLog } from '../../../database/entities/ilv-email-log.entity';
-import { IlbReport } from '../../../database/entities/ilv-report.entity';
+import { IlvEmailLog } from '../../../database/entities/ilv-email-log.entity';
+import { IlvReport } from '../../../database/entities/ilv-report.entity';
 
 @Injectable()
-export class IlbNotificationsService {
+export class IlvNotificationsService {
   constructor(
-    @InjectRepository(IlbEmailLog)
-    private emailLogRepo: Repository<IlbEmailLog>,
+    @InjectRepository(IlvEmailLog)
+    private emailLogRepo: Repository<IlvEmailLog>,
   ) {}
 
   async sendReportCreatedEmail(
-    report: IlbReport,
+    report: IlvReport,
     closeToken: string,
   ): Promise<void> {
     const frontendUrl = process.env.FRONTEND_URL || 'https://kapa.healtheworld.com.co';
@@ -32,7 +32,7 @@ export class IlbNotificationsService {
     console.log(`Email queued for report #${report.report_id}`);
   }
 
-  async sendReportClosedEmail(report: IlbReport): Promise<void> {
+  async sendReportClosedEmail(report: IlvReport): Promise<void> {
     const emailLog = this.emailLogRepo.create({
       report_id: report.report_id,
       to_addr: 'creator@email.com', // TODO: Get from creator

@@ -115,7 +115,7 @@ export class SupportsController {
       };
 
       const savedFile = await this.supportsService.createSupportFile(supportFileData);
-      
+
       return {
         success: true,
         message: 'Archivo subido exitosamente',
@@ -155,7 +155,7 @@ export class SupportsController {
         );
         return { uploadUrl, fileKey };
       }
-      
+
       // Crear archivo de soporte normal
       return await this.supportsService.createSupportFile(supportFileData);
     } catch (error) {
