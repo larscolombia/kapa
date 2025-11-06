@@ -3,7 +3,7 @@ import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { IlvMaestrosService } from '../services/ilv-maestros.service';
 import { CreateMaestroDto } from '../dto';
 
-@Controller('ilv/maestros')
+@Controller('api/ilv/maestros')
 @UseGuards(JwtAuthGuard)
 export class IlvMaestrosController {
   constructor(private maestrosService: IlvMaestrosService) {}

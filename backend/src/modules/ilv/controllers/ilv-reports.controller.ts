@@ -4,7 +4,7 @@ import { IlvReportsService } from '../services/ilv-reports.service';
 import { CreateIlvReportDto, UpdateIlvReportDto, FilterIlvReportDto } from '../dto';
 import { IlvOwnershipGuard } from '../guards';
 
-@Controller('ilv/reports')
+@Controller('api/ilv/reports')
 @UseGuards(JwtAuthGuard)
 export class IlvReportsController {
   constructor(private reportsService: IlvReportsService) {}
