@@ -127,23 +127,6 @@ export class SupportsController {
     }
   }
 
-  @Public()
-  @Get(':id')
-  async getSupportFileById(@Param('id') id: string) {
-    try {
-      const supportFileId = parseInt(id, 10);
-      if (isNaN(supportFileId)) {
-        throw new BadRequestException('ID inválido');
-      }
-      return await this.supportsService.getSupportFileById(supportFileId);
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new BadRequestException('Error al obtener el archivo de soporte');
-    }
-  }
-
   @Post()
   async createSupportFile(@Body() supportFileData: any) {
     try {
@@ -177,6 +160,26 @@ export class SupportsController {
       return { uploadUrl, fileKey };
     } catch (error) {
       throw new BadRequestException('Error al generar URL de subida');
+    }
+  }
+
+  // NOTA: Los endpoints con :id deben ir AL FINAL para no interferir con rutas específicas
+  // como presigned-url, categories, upload-url, etc.
+
+  @Public()
+  @Get(':id')
+  async getSupportFileById(@Param('id') id: string) {
+    try {
+      const supportFileId = parseInt(id, 10);
+      if (isNaN(supportFileId)) {
+        throw new BadRequestException('ID inválido');
+      }
+      return await this.supportsService.getSupportFileById(supportFileId);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new BadRequestException('Error al obtener el archivo de soporte');
     }
   }
 

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -17,6 +18,7 @@ import { SupportsModule } from './modules/supports/supports.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { IlvModule } from './modules/ilv/ilv.module';
 import { TestUploadController } from './test-upload.controller';
+import { DebugInterceptor } from './common/interceptors/debug.interceptor';
 
 @Module({
   imports: [
@@ -38,5 +40,11 @@ import { TestUploadController } from './test-upload.controller';
     IlvModule,
   ],
   controllers: [AppController, TestUploadController],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: DebugInterceptor,
+    },
+  ],
 })
 export class AppModule { }
