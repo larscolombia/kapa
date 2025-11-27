@@ -6,11 +6,12 @@ import { Client } from '@entities/client.entity';
 import { AuthModule } from '../auth/auth.module';
 import { ProjectsModule } from '../projects/projects.module';
 import { ContractorsModule } from '../contractors/contractors.module';
+import { IlvModule } from '../ilv/ilv.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Client]), AuthModule, ProjectsModule, ContractorsModule],
+  imports: [TypeOrmModule.forFeature([Client]), AuthModule, ProjectsModule, ContractorsModule, IlvModule],
   providers: [ClientsService],
   exports: [ClientsService],
   controllers: [ClientsController],
 })
-export class ClientsModule {}
+export class ClientsModule { }

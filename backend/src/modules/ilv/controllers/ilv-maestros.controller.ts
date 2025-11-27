@@ -3,14 +3,29 @@ import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { IlvMaestrosService } from '../services/ilv-maestros.service';
 import { CreateMaestroDto } from '../dto';
 
-@Controller('api/ilv/maestros')
+@Controller('ilv/maestros')
 @UseGuards(JwtAuthGuard)
 export class IlvMaestrosController {
-  constructor(private maestrosService: IlvMaestrosService) {}
+  constructor(private maestrosService: IlvMaestrosService) { }
 
   @Get(':tipo')
   async findByTipo(@Param('tipo') tipo: string) {
     return this.maestrosService.findByTipo(tipo);
+  }
+
+  @Get(':tipo/tree')
+  async getMaestrosTree(@Param('tipo') tipo: string) {
+    return this.maestrosService.getMaestrosTree(tipo);
+  }
+
+  @Get('subcategorias/:categoriaId')
+  async getSubcategorias(@Param('categoriaId', ParseIntPipe) categoriaId: number) {
+    return this.maestrosService.getSubcategorias(categoriaId);
+  }
+
+  @Get('subcategorias-by-clave/:clave')
+  async getSubcategoriasByClave(@Param('clave') clave: string) {
+    return this.maestrosService.getSubcategoriasByClave(clave);
   }
 
   @Post()

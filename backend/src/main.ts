@@ -51,6 +51,9 @@ async function bootstrap() {
 
   app.enableCors();
 
+  // Prefijo global para todas las rutas API
+  app.setGlobalPrefix('api');
+
   const port = process.env.PORT || 3001;
   // Configurar para escuchar en todas las interfaces
   await app.listen(port, '0.0.0.0');

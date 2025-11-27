@@ -62,6 +62,16 @@
             </q-item-section>
           </q-item>
 
+          <q-item clickable v-ripple @click="refreshPermissions">
+            <q-item-section avatar>
+              <q-icon name="refresh" />
+            </q-item-section>
+
+            <q-item-section>
+              Actualizar permisos
+            </q-item-section>
+          </q-item>
+
           <q-item clickable v-ripple @click="dialogOpen = true">
             <q-item-section avatar>
               <q-icon name="lock" />
@@ -100,6 +110,8 @@ import { useAuth } from 'src/composables/useAuth'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from 'src/stores/auth'
 import ChangePassword from 'components/ChangePassword.vue';
+import { getPermissions } from 'src/services/authService';
+import { Notify } from 'quasar';
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -107,6 +119,24 @@ const user = ref(authStore.user);
 
 
 const dialogOpen = ref(false)
+
+const refreshPermissions = async () => {
+  try {
+    const newPermissions = await getPermissions();
+    authStore.setPermissions(newPermissions);
+    Notify.create({
+      type: 'positive',
+      message: 'Permisos actualizados correctamente',
+      position: 'top'
+    });
+  } catch (error) {
+    Notify.create({
+      type: 'negative',
+      message: 'Error al actualizar permisos',
+      position: 'top'
+    });
+  }
+}
 
 const pages = [
   {

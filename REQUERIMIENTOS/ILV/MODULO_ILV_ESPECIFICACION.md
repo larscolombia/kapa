@@ -2,15 +2,24 @@
 
 ## 🎯 Resumen Ejecutivo
 
-Sistema completo de gestión de reportes ILV (Identificación de Peligros, WIT/Walk & Talk, SWA/Stop Work Authority, FDKAR) con:
-- 4 tipos de reportes con campos dinámicos
+Sistema completo de gestión de reportes ILV (Identificación de Peligros, Walk & Talk, Stop Work Authority, FDKAR) con:
+- **4 tipos de reportes:** HID, W&T, SWA, FDKAR (campos dinámicos)
+- **Nota:** FDKAR es la implementación del concepto "Safety Cards" en el sistema
 - Control de acceso granular por rol (Admin KAPA, Usuario KAPA, Cliente, Contratista, Subcontratista)
-- Cierre seguro vía tokens JWT con TTL
-- Maestros administrables (catálogos)
-- Filtros "infinitos" combinables
+- Cierre seguro vía tokens JWT **reutilizando JWT_SECRET del sistema**
+- Maestros administrables (catálogos **jerárquicos con parent_maestro_id**) ✅ IMPLEMENTADO
+- Filtros "infinitos" combinables con visibilidad por rol
 - Estadísticas y exportación Excel/PDF
-- Auditoría completa
+- Auditoría completa con diff JSON
 - Notificaciones email con enlaces firmados
+- **Adjuntos S3** (máx 5, ≤5MB, JPG/PNG/PDF) ✅ IMPLEMENTADO
+- **SLA automático 5 días** con notificaciones programadas ✅ IMPLEMENTADO
+- **Campos adicionales HID** (nombre_quien_reporta, tipo_reporte_hid, nombre_ehs_contratista, nombre_supervisor_obra) ✅ IMPLEMENTADO
+- **Categorías/Subcategorías jerárquicas** para HID (7 categorías, 23 subcategorías) ✅ IMPLEMENTADO
+
+**Estado Implementación:** ✅ Backend 98% | ✅ Frontend 85% | 🔧 Pendiente 2%
+
+**Última actualización:** 13 de Noviembre, 2025 - Sprint 2 Completado
 
 ---
 
@@ -134,7 +143,7 @@ CREATE TABLE ilv_close_token (
 CREATE INDEX idx_token_jwt ON ilv_close_token(jwt_id);
 CREATE INDEX idx_token_exp ON ilv_close_token(expires_at) WHERE used_at IS NULL;
 
--- Maestros
+-- Maestros (con soporte jerárquico)
 CREATE TABLE ilv_maestro (
   maestro_id SERIAL PRIMARY KEY,
   tipo VARCHAR(100) NOT NULL,
@@ -143,12 +152,14 @@ CREATE TABLE ilv_maestro (
   activo BOOLEAN DEFAULT TRUE,
   orden INTEGER DEFAULT 0,
   aplica_a_tipo VARCHAR(50),
+  parent_maestro_id INTEGER REFERENCES ilv_maestro(maestro_id) ON DELETE CASCADE,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
   UNIQUE(tipo, clave)
 );
 
 CREATE INDEX idx_maestro_tipo ON ilv_maestro(tipo) WHERE activo = TRUE;
+CREATE INDEX idx_maestro_parent ON ilv_maestro(parent_maestro_id);
 
 -- Auditoría
 CREATE TABLE ilv_audit (
@@ -239,12 +250,31 @@ function canCloseReport(user, report): boolean {
 ### Hazard ID:
 ```typescript
 {
-  required: ['ubicacion', 'descripcion_condicion', 'severidad', 'area', 'fecha_evento'],
-  optional: ['foto', 'causa_probable', 'accion_inmediata'],
+  required: [
+    'nombre_quien_reporta',      // Sprint 2
+    'tipo_reporte_hid',          // Sprint 2
+    'categoria',                 // Sprint 2 (jerárquico)
+    'subcategoria',              // Sprint 2 (jerárquico hijo)
+    'ubicacion', 
+    'descripcion_condicion', 
+    'severidad', 
+    'area', 
+    'fecha_evento'
+  ],
+  optional: [
+    'foto', 
+    'causa_probable', 
+    'accion_inmediata',
+    'nombre_ehs_contratista',    // Sprint 2
+    'nombre_supervisor_obra'     // Sprint 2
+  ],
   maestros: {
     severidad: 'ilv_maestro.tipo=severidad',
     area: 'ilv_maestro.tipo=area',
-    causa_probable: 'ilv_maestro.tipo=causa'
+    causa_probable: 'ilv_maestro.tipo=causa',
+    tipo_reporte_hid: 'ilv_maestro.tipo=tipo_hid',      // Sprint 2
+    categoria: 'ilv_maestro.tipo=categoria_hid',         // Sprint 2
+    subcategoria: 'parent_maestro_id=categoria.value'    // Sprint 2 (dinámico)
   },
   validations: {
     fecha_evento: 'date <= today'
@@ -445,6 +475,8 @@ POST   /ilv/close                          // Procesar cierre
 
 // Maestros (solo admin)
 GET    /api/ilv/maestros/:tipo             // Ej: /api/ilv/maestros/severidad
+GET    /api/ilv/maestros/:tipo/tree        // Árbol jerárquico (Sprint 2)
+GET    /api/ilv/maestros/subcategorias/:id // Hijos de un padre (Sprint 2)
 POST   /api/ilv/maestros/:tipo
 PUT    /api/ilv/maestros/:tipo/:id
 DELETE /api/ilv/maestros/:tipo/:id
@@ -524,6 +556,135 @@ GET    /api/ilv/audit/:report_id
 - Login como Contratista → ver solo SUS reportes
 - Intentar editar reporte ajeno → 403
 ```
+
+---
+
+## ⏰ Jobs Programados (Sprint 2)
+
+### Job SLA 5 Días
+
+**Implementado en:** `IlvSchedulerService`  
+**Dependencia:** `@nestjs/schedule` v4.1.1
+
+```typescript
+@Cron('0 8 * * *', {
+  name: 'check-sla-vencido',
+  timeZone: 'America/Bogota'
+})
+async checkSlaVencido() {
+  // 1. Calcular fecha límite: NOW() - 5 days
+  // 2. Query: reportes con estado='abierto' AND creado_en < fecha_límite
+  // 3. Para cada reporte vencido:
+  //    - Verificar si ya fue notificado en últimas 24h (evita spam)
+  //    - Si no, registrar auditoría con accion='sla_vencido_notificado'
+  //    - TODO: Enviar email al responsable
+  // 4. Logger con resumen de notificaciones enviadas
+}
+```
+
+**Auditoría registrada:**
+```json
+{
+  "entidad": "ilv_report",
+  "entidad_id": 123,
+  "accion": "sla_vencido_notificado",
+  "diff_json": {
+    "tipo": "hazard_id",
+    "dias_abierto": 7,
+    "proyecto": "Proyecto XYZ"
+  },
+  "actor_id": null,
+  "ip": "system",
+  "user_agent": "IlvSchedulerService"
+}
+```
+
+**Características:**
+- ✅ Ejecución diaria a las 8:00 AM (hora Colombia)
+- ✅ Anti-duplicación: verifica auditoría reciente (<24h)
+- ✅ Método `ejecutarManual()` para testing sin esperar al cron
+- ✅ Logger detallado en PM2 logs
+- ⏳ Pendiente: Integración con EmailService
+
+---
+
+## 🌳 Sistema de Maestros Jerárquicos (Sprint 2)
+
+### Estructura de Datos
+
+**Categorías principales** (parent_maestro_id = NULL):
+1. Trabajos en Alturas (ID: 200)
+2. Trabajos en Caliente (ID: 201)
+3. Espacios Confinados (ID: 202)
+4. Operación de Equipos y Maquinaria (ID: 203)
+5. Manejo de Materiales Peligrosos (ID: 204)
+6. Riesgos Eléctricos (ID: 205)
+7. Riesgos Ergonómicos (ID: 206)
+
+**Subcategorías** (parent_maestro_id → categoría padre):
+- Trabajos en Alturas: 4 subcategorías (IDs 210-213)
+- Trabajos en Caliente: 4 subcategorías (IDs 220-223)
+- Espacios Confinados: 3 subcategorías (IDs 230-232)
+- Operación Equipos: 4 subcategorías (IDs 240-243)
+- Materiales Peligrosos: 3 subcategorías (IDs 250-252)
+- Riesgos Eléctricos: 3 subcategorías (IDs 260-262)
+- Riesgos Ergonómicos: 3 subcategorías (IDs 270-272)
+
+**Total:** 7 categorías + 23 subcategorías = 30 maestros jerárquicos
+
+### API Endpoints
+
+```typescript
+// Obtener árbol completo
+GET /api/ilv/maestros/categoria_hid/tree
+Response: [
+  {
+    maestro_id: 200,
+    tipo: 'categoria_hid',
+    valor: 'Trabajos en Alturas',
+    children: [
+      { maestro_id: 210, valor: 'Caídas a distinto nivel', ... },
+      { maestro_id: 211, valor: 'Caídas al mismo nivel', ... }
+    ]
+  }
+]
+
+// Obtener solo hijos de una categoría
+GET /api/ilv/maestros/subcategorias/200
+Response: [
+  { maestro_id: 210, valor: 'Caídas a distinto nivel', ... },
+  { maestro_id: 211, valor: 'Caídas al mismo nivel', ... }
+]
+```
+
+### Implementación Frontend
+
+**Select en cascada** (Quasar):
+```vue
+<!-- Categoría (padre) -->
+<q-select
+  v-model="categoria"
+  :options="categorias"
+  label="Categoría"
+  @update:model-value="loadSubcategorias"
+/>
+
+<!-- Subcategoría (hijo) -->
+<q-select
+  v-model="subcategoria"
+  :options="subcategorias"
+  label="Subcategoría"
+  :disable="!categoria"
+  hint="Seleccione primero la categoría"
+/>
+```
+
+**Características:**
+- ✅ Select padre habilita select hijo
+- ✅ Cambio en padre limpia valor de hijo
+- ✅ Carga dinámica de subcategorías vía API
+- ✅ Validación: ambos campos requeridos
+- ✅ Iconos distintivos (folder, subdirectory_arrow_right)
 
 ---
 

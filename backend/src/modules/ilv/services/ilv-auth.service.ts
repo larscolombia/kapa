@@ -11,7 +11,7 @@ export class IlvAuthService {
   constructor(
     @InjectRepository(IlvCloseToken)
     private ilvCloseTokenRepo: Repository<IlvCloseToken>,
-  ) {}
+  ) { }
 
   async generateCloseToken(reportId: number, empresaId: number): Promise<string> {
     const jwtId = uuidv4();
@@ -28,7 +28,7 @@ export class IlvAuthService {
     };
 
     const secret = process.env.ILV_TOKEN_SECRET || process.env.JWT_SECRET;
-    const token = jwt.sign(payload, secret, { expiresIn });
+    const token = jwt.sign(payload, secret);
 
     await this.ilvCloseTokenRepo.save({
       report_id: reportId,

@@ -97,7 +97,7 @@ export class ProjectsService {
         const projects = await this.projectsRepository.find({
             where: { client: { client_id: clientId }, projectContractors: { contractor: { emails: { email } } }, state: 'active' }
         });
-        if (projects.length === 0) throw new NotFoundException('No existen proyectos registrados para este cliente que tengan contratistas asociados a este usuario');
+        // Retornar array vacío en lugar de 404 para evitar errores en frontend
         return projects;
     }
 
@@ -109,9 +109,7 @@ export class ProjectsService {
             query.andWhere('project.state = :state', { state: 'active' });
         }
         const projects = await query.getMany();
-        if (projects.length === 0) {
-            throw new NotFoundException('No existen proyectos registrados para este cliente');
-        }
+        // Retornar array vacío en lugar de 404 para evitar errores en frontend
         return projects;
     }
 

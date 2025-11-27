@@ -25,7 +25,28 @@ export const getProjectContractors = async (projectId) => {
     return response.data;
 }
 
+export const getContractorsByProject = async (projectId) => {
+    const response = await api.get(`/project-contractors/project/${projectId}`);
+    return response.data;
+}
+
 export const getProjectsByContractor = async (contractorId) => {
     const response = await api.get(`/contractors/${contractorId}/projects`);
     return response.data;
+}
+
+export const getProjectsByClient = async (clientId) => {
+    const response = await api.get(`/clients/${clientId}/projects`);
+    return response.data;
+}
+
+export default {
+    getProjects,
+    createProject,
+    updateProject,
+    getProject,
+    getProjectContractors,
+    getContractorsByProject,
+    getProjectsByContractor,
+    getProjectsByClient
 }

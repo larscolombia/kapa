@@ -41,7 +41,7 @@ export class IlvAttachment {
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'created_by' })
-  uploader: User;
+  creator: User;
 
   @CreateDateColumn()
   created_at: Date;

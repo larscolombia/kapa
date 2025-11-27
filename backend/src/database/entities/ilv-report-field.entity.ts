@@ -34,4 +34,7 @@ export class IlvReportField {
 
   @CreateDateColumn()
   created_at: Date;
+
+  // Propiedad virtual para almacenar el nombre legible del maestro
+  value_display?: string;
 }

@@ -1,186 +1,199 @@
 <template>
   <q-page padding>
-    <div class="row q-gutter-md">
-      <!-- Header -->
-      <div class="col-12">
-        <div class="row items-center justify-between">
-          <div class="col">
-            <h4 class="q-ma-none text-weight-bold">Reportes ILV</h4>
-            <p class="text-grey-6 q-ma-none">Gestión de reportes ILV</p>
+    <div class="row q-mb-lg">
+      <div class="col">
+        <h4 class="q-ma-none">📋 Reportes ILV</h4>
+        <p class="text-grey-6">Listado completo de reportes con filtros avanzados</p>
+      </div>
+      <div class="col-auto q-gutter-sm">
+        <q-btn 
+          v-if="isAdmin && selected.length > 0"
+          color="negative" 
+          icon="delete" 
+          :label="`Borrar (${selected.length})`"
+          @click="confirmDelete"
+        />
+        <q-btn 
+          color="primary" 
+          icon="add" 
+          label="Nuevo Reporte" 
+          @click="$router.push({ name: 'ilvNuevoReporte' })"
+        />
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <q-card class="q-mb-lg">
+      <q-card-section>
+        <div class="row q-gutter-md">
+          <div class="col-md-2 col-sm-4 col-xs-12">
+            <q-select
+              v-model="filters.tipo"
+              :options="reportTypes"
+              option-value="value"
+              option-label="label"
+              label="Tipo"
+              clearable
+              filled
+              emit-value
+              map-options
+              @update:model-value="applyFilters"
+            />
           </div>
+          
+          <div class="col-md-2 col-sm-4 col-xs-12">
+            <q-select
+              v-model="filters.estado"
+              :options="estados"
+              option-value="value"
+              option-label="label"
+              label="Estado"
+              clearable
+              filled
+              emit-value
+              map-options
+              @update:model-value="applyFilters"
+            />
+          </div>
+
+          <div class="col-md-3 col-sm-4 col-xs-12">
+            <q-input
+              v-model="filters.fecha_desde"
+              label="Fecha Desde"
+              type="date"
+              filled
+              @update:model-value="applyFilters"
+            />
+          </div>
+
+          <div class="col-md-3 col-sm-4 col-xs-12">
+            <q-input
+              v-model="filters.fecha_hasta"
+              label="Fecha Hasta"
+              type="date"
+              filled
+              @update:model-value="applyFilters"
+            />
+          </div>
+
           <div class="col-auto">
             <q-btn 
-              color="primary" 
-              icon="add" 
-              label="Nuevo Reporte" 
-              @click="$router.push({ name: 'ilvNuevoReporte' })"
+              flat 
+              icon="clear" 
+              label="Limpiar" 
+              @click="clearFilters"
             />
           </div>
         </div>
-      </div>
+      </q-card-section>
+    </q-card>
 
-      <!-- Filtros -->
-      <div class="col-12">
-        <q-card>
-          <q-card-section>
-            <div class="row q-gutter-md">
-              <div class="col-md-2 col-sm-6 col-xs-12">
-                <q-select
-                  v-model="filters.tipo"
-                  :options="tipoOptions"
-                  label="Tipo"
-                  clearable
-                  @update:model-value="loadReports"
-                />
-              </div>
-              <div class="col-md-2 col-sm-6 col-xs-12">
-                <q-select
-                  v-model="filters.estado"
-                  :options="estadoOptions"
-                  label="Estado"
-                  clearable
-                  @update:model-value="loadReports"
-                />
-              </div>
-              <div class="col-md-3 col-sm-6 col-xs-12">
-                <q-input
-                  v-model="filters.fecha_desde"
-                  type="date"
-                  label="Fecha desde"
-                  @update:model-value="loadReports"
-                />
-              </div>
-              <div class="col-md-3 col-sm-6 col-xs-12">
-                <q-input
-                  v-model="filters.fecha_hasta"
-                  type="date"
-                  label="Fecha hasta"
-                  @update:model-value="loadReports"
-                />
-              </div>
-              <div class="col-md-2 col-sm-6 col-xs-12">
-                <q-btn 
-                  color="primary" 
-                  icon="refresh" 
-                  label="Actualizar"
-                  @click="loadReports"
-                  :loading="loading"
-                />
-              </div>
-            </div>
-          </q-card-section>
-        </q-card>
-      </div>
+    <!-- Tabla -->
+    <q-card>
+      <q-table
+        :rows="reports"
+        :columns="columns"
+        row-key="report_id"
+        :loading="loading"
+        :pagination="pagination"
+        v-model:selected="selected"
+        @request="onRequest"
+        :selection="isAdmin ? 'multiple' : 'none'"
+        binary-state-sort
+      >
+        <template v-slot:body-cell-tipo="props">
+          <q-td :props="props">
+            <q-chip 
+              :color="getTipoColor(props.value)" 
+              text-color="white" 
+              :icon="getTipoIcon(props.value)"
+              dense
+            >
+              {{ getTipoLabel(props.value) }}
+            </q-chip>
+          </q-td>
+        </template>
 
-      <!-- Tabla de reportes -->
-      <div class="col-12">
-        <q-table
-          :rows="reports"
-          :columns="columns"
-          :loading="loading"
-          :pagination="pagination"
-          @request="onRequest"
-          row-key="report_id"
-          binary-state-sort
-        >
-          <template v-slot:body-cell-tipo="props">
-            <q-td :props="props">
-              <q-chip 
-                :color="getTypeColor(props.value)" 
-                text-color="white" 
-                size="sm"
-              >
-                <q-icon :name="getTypeIcon(props.value)" class="q-mr-xs" />
-                {{ getTypeLabel(props.value) }}
-              </q-chip>
-            </q-td>
-          </template>
+        <template v-slot:body-cell-estado="props">
+          <q-td :props="props">
+            <q-chip 
+              :color="props.value === 'abierto' ? 'orange' : 'green'" 
+              text-color="white" 
+              dense
+            >
+              {{ props.value }}
+            </q-chip>
+          </q-td>
+        </template>
 
-          <template v-slot:body-cell-estado="props">
-            <q-td :props="props">
-              <q-chip 
-                :color="props.value === 'abierto' ? 'orange' : 'green'" 
-                text-color="white" 
-                size="sm"
-              >
-                {{ props.value }}
-              </q-chip>
-            </q-td>
-          </template>
+        <template v-slot:body-cell-titulo="props">
+          <q-td :props="props">
+            {{ getFieldValue(props.row, 'titulo') || `Reporte #${props.row.report_id}` }}
+          </q-td>
+        </template>
 
-          <template v-slot:body-cell-creado_en="props">
-            <q-td :props="props">
-              {{ formatDate(props.value) }}
-            </q-td>
-          </template>
-
-          <template v-slot:body-cell-actions="props">
-            <q-td :props="props">
-              <q-btn 
-                flat 
-                round 
-                color="blue" 
-                icon="visibility" 
-                @click="viewReport(props.row.report_id)"
-              >
-                <q-tooltip>Ver detalle</q-tooltip>
-              </q-btn>
-              <q-btn 
-                v-if="canEdit(props.row)"
-                flat 
-                round 
-                color="orange" 
-                icon="edit" 
-                @click="editReport(props.row.report_id)"
-              >
-                <q-tooltip>Editar</q-tooltip>
-              </q-btn>
-            </q-td>
-          </template>
-
-          <template v-slot:no-data>
-            <div class="full-width row flex-center text-grey-6 q-gutter-sm">
-              <q-icon size="2em" name="sentiment_dissatisfied" />
-              <span>No hay reportes que mostrar</span>
-            </div>
-          </template>
-        </q-table>
-      </div>
-    </div>
+        <template v-slot:body-cell-actions="props">
+          <q-td :props="props">
+            <q-btn 
+              flat 
+              round 
+              icon="visibility" 
+              color="primary" 
+              @click="viewReport(props.row.report_id)"
+            />
+            <q-btn 
+              v-if="canEdit(props.row)"
+              flat 
+              round 
+              icon="edit" 
+              color="orange" 
+              @click="editReport(props.row.report_id)"
+            />
+          </q-td>
+        </template>
+      </q-table>
+    </q-card>
   </q-page>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { date } from 'quasar';
-import { useAuthStore } from 'src/stores/auth';
-import ilvService from 'src/services/ilvService';
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useQuasar } from 'quasar'
+import { useAuthStore } from 'src/stores/auth'
+import ilvService from 'src/services/ilvService'
 
-const router = useRouter();
-const authStore = useAuthStore();
+const router = useRouter()
+const $q = useQuasar()
+const authStore = useAuthStore()
 
-const loading = ref(false);
-const reports = ref([]);
+const loading = ref(false)
+const reports = ref([])
+const selected = ref([])
+
+const isAdmin = computed(() => {
+  const roleId = authStore.user?.role_id ?? authStore.user?.role?.role_id
+  return roleId === 1
+})
+
 const filters = ref({
   tipo: null,
   estado: null,
   fecha_desde: null,
   fecha_hasta: null
-});
+})
 
 const pagination = ref({
   sortBy: 'creado_en',
   descending: true,
   page: 1,
-  rowsPerPage: 10,
+  rowsPerPage: 25,
   rowsNumber: 0
-});
+})
 
 const columns = [
   {
     name: 'report_id',
-    required: true,
     label: 'ID',
     align: 'left',
     field: 'report_id',
@@ -194,6 +207,12 @@ const columns = [
     sortable: true
   },
   {
+    name: 'titulo',
+    label: 'Título',
+    align: 'left',
+    field: 'titulo'
+  },
+  {
     name: 'estado',
     label: 'Estado',
     align: 'center',
@@ -201,106 +220,180 @@ const columns = [
     sortable: true
   },
   {
+    name: 'proyecto',
+    label: 'Proyecto',
+    align: 'left',
+    field: row => row.project?.name || 'N/A'
+  },
+  {
     name: 'creado_en',
     label: 'Fecha',
     align: 'left',
     field: 'creado_en',
-    sortable: true
+    sortable: true,
+    format: val => new Date(val).toLocaleDateString('es-ES')
   },
   {
     name: 'actions',
     label: 'Acciones',
     align: 'center'
   }
-];
+]
 
-const tipoOptions = ilvService.getReportTypes().map(t => ({
-  label: t.label,
-  value: t.value
-}));
+const reportTypes = [
+  { value: 'hazard_id', label: 'Identificación de Peligros' },
+  { value: 'wit', label: 'Walk & Talk' },
+  { value: 'swa', label: 'Stop Work Authority' },
+  { value: 'fdkar', label: 'Safety Cards' }
+]
 
-const estadoOptions = ilvService.getEstados().map(e => ({
-  label: e.label,
-  value: e.value
-}));
+const estados = [
+  { value: 'abierto', label: 'Abierto' },
+  { value: 'cerrado', label: 'Cerrado' }
+]
 
-onMounted(() => {
-  loadReports();
-});
+const onRequest = async (props) => {
+  const { page, rowsPerPage, sortBy, descending } = props.pagination
 
-const loadReports = async () => {
-  loading.value = true;
+  loading.value = true
+  
   try {
-    const queryFilters = {
+    const params = {
       ...filters.value,
-      page: pagination.value.page,
-      limit: pagination.value.rowsPerPage,
-      sort: `${pagination.value.sortBy}:${pagination.value.descending ? 'desc' : 'asc'}`
-    };
-
-    // Limpiar filtros vacíos
-    Object.keys(queryFilters).forEach(key => {
-      if (queryFilters[key] === null || queryFilters[key] === '') {
-        delete queryFilters[key];
-      }
-    });
-
-    const response = await ilvService.getReports(queryFilters);
-    reports.value = response.data || [];
-    pagination.value.rowsNumber = response.total || 0;
-
+      page,
+      limit: rowsPerPage,
+      sortBy,
+      order: descending ? 'DESC' : 'ASC'
+    }
+    
+    const response = await ilvService.getReports(params)
+    
+    reports.value = response.data || response
+    pagination.value.page = page
+    pagination.value.rowsPerPage = rowsPerPage
+    pagination.value.sortBy = sortBy
+    pagination.value.descending = descending
+    pagination.value.rowsNumber = response.total || reports.value.length
+    
   } catch (error) {
-    console.error('Error cargando reportes:', error);
-    reports.value = [];
+    console.error('Error loading reports:', error)
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
-const onRequest = (props) => {
-  const { page, rowsPerPage, sortBy, descending } = props.pagination;
-  pagination.value.page = page;
-  pagination.value.rowsPerPage = rowsPerPage;
-  pagination.value.sortBy = sortBy;
-  pagination.value.descending = descending;
-  loadReports();
-};
+const applyFilters = () => {
+  pagination.value.page = 1
+  onRequest({ pagination: pagination.value })
+}
 
-const formatDate = (dateString) => {
-  return date.formatDate(dateString, 'DD/MM/YYYY HH:mm');
-};
+const clearFilters = () => {
+  filters.value = {
+    tipo: null,
+    estado: null,
+    fecha_desde: null,
+    fecha_hasta: null
+  }
+  applyFilters()
+}
 
-const getTypeColor = (tipo) => {
+const getTipoColor = (tipo) => {
   const colors = {
     hazard_id: 'red',
-    wit: 'blue',
+    wit: 'blue', 
     swa: 'orange',
     fdkar: 'purple'
-  };
-  return colors[tipo] || 'grey';
-};
+  }
+  return colors[tipo] || 'grey'
+}
 
-const getTypeIcon = (tipo) => {
-  const reportType = ilvService.getReportTypes().find(t => t.value === tipo);
-  return reportType?.icon || 'help';
-};
+const getTipoIcon = (tipo) => {
+  const icons = {
+    hazard_id: 'warning',
+    wit: 'directions_walk',
+    swa: 'stop',
+    fdkar: 'credit_card'
+  }
+  return icons[tipo] || 'assignment'
+}
 
-const getTypeLabel = (tipo) => {
-  const reportType = ilvService.getReportTypes().find(t => t.value === tipo);
-  return reportType?.label || tipo;
-};
+const getTipoLabel = (tipo) => {
+  const labels = {
+    hazard_id: 'Hazard ID',
+    wit: 'WIT',
+    swa: 'SWA',
+    fdkar: 'Safety Cards'
+  }
+  return labels[tipo] || tipo
+}
+
+const getFieldValue = (report, key) => {
+  const field = report.fields?.find(f => f.key === key)
+  // Priorizar value_display si existe (nombre legible), sino value (ID)
+  return field?.value_display || field?.value || ''
+}
 
 const canEdit = (report) => {
-  // Solo el propietario puede editar reportes abiertos
-  return report.estado === 'abierto' && 
-         report.propietario_user_id === authStore.user.user_id;
-};
+  // TODO: Implementar lógica de ownership
+  return report.estado === 'abierto'
+}
 
 const viewReport = (reportId) => {
-  router.push({ name: 'ilvReporteDetalle', params: { id: reportId } });
-};
+  router.push({ name: 'ilvReporteDetalle', params: { id: reportId } })
+}
 
 const editReport = (reportId) => {
-  router.push({ name: 'ilvReporteDetalle', params: { id: reportId }, query: { edit: 'true' } });
-};
+  router.push({ name: 'ilvReporteEditar', params: { id: reportId } })
+}
+
+const confirmDelete = () => {
+  $q.dialog({
+    title: 'Confirmar borrado',
+    message: `¿Está seguro de borrar ${selected.value.length} reporte(s)? Esta acción no se puede deshacer.`,
+    cancel: true,
+    persistent: true,
+    color: 'negative'
+  }).onOk(async () => {
+    await deleteBulk()
+  })
+}
+
+const deleteBulk = async () => {
+  loading.value = true
+  try {
+    const ids = selected.value.map(r => r.report_id)
+    await ilvService.deleteBulk(ids)
+    
+    $q.notify({
+      type: 'positive',
+      message: `${ids.length} reporte(s) borrado(s) exitosamente`,
+      position: 'top'
+    })
+    
+    selected.value = []
+    // Resetear a primera página para ver los reportes actualizados
+    pagination.value.page = 1
+    await onRequest({ pagination: pagination.value })
+  } catch (error) {
+    console.error('Error deleting reports:', error)
+    $q.notify({
+      type: 'negative',
+      message: error.response?.data?.message || 'Error al borrar reportes',
+      position: 'top'
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(async () => {
+  // Asegurar que el authStore esté cargado
+  if (!authStore.user) {
+    await authStore.validateUser()
+  }
+  console.log('ILV Reports - User:', authStore.user)
+  console.log('ILV Reports - Is Admin:', isAdmin.value)
+  
+  onRequest({ pagination: pagination.value })
+})
 </script>

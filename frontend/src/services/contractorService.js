@@ -29,3 +29,19 @@ export const getSubContractorsByContractor = async (contractorId) => {
     const response = await api.get(`/contractors/${contractorId}/subContractors`);
     return response.data;
 }
+
+export const getContractorsByClient = async (clientId) => {
+    // Obtener todos los contratistas asociados a proyectos del cliente
+    const response = await api.get(`/clients/${clientId}/contractors`);
+    return response.data;
+}
+
+export default {
+    getContractors,
+    createContractor,
+    updateContractor,
+    getContractor,
+    sendResults,
+    getSubContractorsByContractor,
+    getContractorsByClient
+}

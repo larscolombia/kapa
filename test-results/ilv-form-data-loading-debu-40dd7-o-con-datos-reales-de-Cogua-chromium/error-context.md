@@ -1,0 +1,171 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [active] [ref=e3]:
+    - banner [ref=e4]:
+      - toolbar [ref=e5]:
+        - img "Logo KAPA" [ref=e7]
+        - generic [ref=e8]:
+          - generic [ref=e9]: Usuario administrador
+          - generic [ref=e10]: admin@kapa.com
+          - generic [ref=e11]: Administrador
+          - generic [ref=e12]: v1.0.1
+    - complementary [ref=e13]:
+      - generic [ref=e14]:
+        - img [ref=e15]
+        - list [ref=e20]:
+          - listitem [ref=e21] [cursor=pointer]:
+            - generic [ref=e23]: menu
+          - listitem [ref=e25] [cursor=pointer]:
+            - generic [ref=e27]: home
+          - listitem [ref=e29] [cursor=pointer]:
+            - generic [ref=e31]: people_alt
+          - listitem [ref=e33] [cursor=pointer]:
+            - generic [ref=e35]: design_services
+          - listitem [ref=e37] [cursor=pointer]:
+            - generic [ref=e39]: engineering
+          - listitem [ref=e41] [cursor=pointer]:
+            - generic [ref=e43]: folder_special
+          - listitem [ref=e45] [cursor=pointer]:
+            - generic [ref=e47]: assessment
+          - listitem [ref=e49] [cursor=pointer]:
+            - generic [ref=e51]: dashboard
+          - listitem [ref=e53] [cursor=pointer]:
+            - generic [ref=e55]: report_problem
+          - separator [ref=e56]
+          - listitem [ref=e57] [cursor=pointer]:
+            - generic [ref=e59]: description
+          - listitem [ref=e60] [cursor=pointer]:
+            - generic [ref=e62]: refresh
+          - listitem [ref=e63] [cursor=pointer]:
+            - generic [ref=e65]: lock
+          - listitem [ref=e66] [cursor=pointer]:
+            - generic [ref=e68]: logout
+    - main [ref=e70]:
+      - generic [ref=e73]:
+        - generic [ref=e74]:
+          - generic [ref=e75]: Crear Nuevo Reporte ILV
+          - paragraph [ref=e76]: Selecciona el tipo de reporte que deseas crear
+        - generic [ref=e78]:
+          - generic [ref=e81] [cursor=pointer]:
+            - generic [ref=e82]:
+              - generic: Tipo de Reporte *
+              - generic [ref=e83]:
+                - generic [ref=e84]: Identificación de Peligros (HID)
+                - combobox "Tipo de Reporte *" [ref=e85]: Identificación de Peligros (HID)
+            - generic [ref=e87]: arrow_drop_down
+          - generic [ref=e89]:
+            - generic [ref=e94]:
+              - generic: Fecha *
+              - textbox "Fecha *" [ref=e95]
+            - generic [ref=e100] [cursor=pointer]:
+              - generic [ref=e101]:
+                - generic: Cliente (Centro de Trabajo) *
+                - generic [ref=e102]:
+                  - generic [ref=e103]: Owens Illinois (Planta Peldar Cogua)
+                  - combobox "Cliente (Centro de Trabajo) *" [ref=e104]: Owens Illinois (Planta Peldar Cogua)
+              - generic [ref=e106]: arrow_drop_down
+            - generic [ref=e110]:
+              - generic [ref=e111] [cursor=pointer]:
+                - generic [ref=e112]:
+                  - generic: Proyecto *
+                  - combobox "Proyecto *" [ref=e114]
+                - generic [ref=e116]: error
+                - generic [ref=e118]: arrow_drop_down
+              - alert [ref=e121]: Proyecto es requerido
+            - generic [ref=e124]:
+              - generic [ref=e125] [cursor=pointer]:
+                - generic [ref=e126]:
+                  - generic: Seleccione la empresa a la que pertenece *
+                  - combobox "Seleccione la empresa a la que pertenece *" [ref=e128]
+                - generic [ref=e130]: error
+                - generic [ref=e132]: arrow_drop_down
+              - alert [ref=e135]: Seleccione la empresa a la que pertenece es requerido
+            - generic [ref=e140]:
+              - generic: Nombre de quien reporta *
+              - textbox "Nombre de quien reporta *" [ref=e141]: Test E2E Automatizado - Cogua
+            - generic [ref=e146] [cursor=pointer]:
+              - generic [ref=e147]:
+                - generic: Tipo de reporte *
+                - combobox "Tipo de reporte *" [ref=e149]
+              - generic [ref=e151]: arrow_drop_down
+            - generic [ref=e155]:
+              - generic [ref=e156] [cursor=pointer]:
+                - generic [ref=e157]:
+                  - generic: Empresa a quien se le genera el reporte *
+                  - combobox "Empresa a quien se le genera el reporte *" [ref=e159]
+                - generic [ref=e161]: error
+                - generic [ref=e163]: arrow_drop_down
+              - alert [ref=e166]: Empresa a quien se le genera el reporte es requerido
+            - generic [ref=e171]:
+              - generic: Nombre EHS del contratista *
+              - textbox "Nombre EHS del contratista *" [ref=e172]: Ingeniero EHS Test
+            - generic [ref=e178]:
+              - generic: Nombre Supervisor obra del contratista *
+              - textbox "Nombre Supervisor obra del contratista *" [ref=e179]: Supervisor Test
+            - generic [ref=e184] [cursor=pointer]:
+              - generic [ref=e185]:
+                - generic: Tipo *
+                - combobox "Tipo *" [ref=e187]
+              - generic [ref=e189]: arrow_drop_down
+            - generic [ref=e194] [cursor=pointer]:
+              - generic [ref=e196]: folder
+              - generic [ref=e197]:
+                - generic: Categoría *
+                - combobox "Categoría *" [ref=e199]
+              - generic [ref=e201]: arrow_drop_down
+            - generic [ref=e205]:
+              - generic:
+                - generic:
+                  - generic: subdirectory_arrow_right
+                - generic:
+                  - generic: Subcategorías *
+                - generic:
+                  - generic: arrow_drop_down
+              - generic [ref=e208]: Seleccione primero la categoría
+            - generic [ref=e213]:
+              - generic: Descripción de hallazgo (¿Qué pasó? ¿Dónde pasó? ¿Qué procedimiento se incumplió?) *
+              - textbox "Descripción de hallazgo (¿Qué pasó? ¿Dónde pasó? ¿Qué procedimiento se incumplió?) *" [ref=e214]
+            - generic [ref=e220]:
+              - generic: Descripción de cierre (¿Qué acciones se tomaron? ¿Qué acuerdos se generaron?)
+              - textbox "Descripción de cierre (¿Qué acciones se tomaron? ¿Qué acuerdos se generaron?)" [ref=e221]
+            - generic [ref=e225]:
+              - generic [ref=e226]:
+                - generic [ref=e228]: attach_file
+                - generic [ref=e229]:
+                  - generic: Registro Fotográfico del hallazgo
+                  - button "Registro Fotográfico del hallazgo Máximo 5 archivos de 5 MB 0 / 5 (0.0B)" [ref=e231] [cursor=pointer]
+                - generic [ref=e233] [cursor=pointer]: add_a_photo
+              - generic [ref=e234]:
+                - generic [ref=e236]: Máximo 5 archivos de 5 MB
+                - generic [ref=e237]: 0 / 5 (0.0B)
+            - generic [ref=e241] [cursor=pointer]:
+              - generic [ref=e242]:
+                - generic: Estado *
+                - combobox "Estado *" [ref=e244]
+              - generic [ref=e246]: arrow_drop_down
+            - generic [ref=e252]:
+              - generic: Observación
+              - textbox "Observación" [ref=e253]
+          - generic [ref=e255]:
+            - button "Cancelar" [ref=e257] [cursor=pointer]:
+              - generic [ref=e259]: Cancelar
+            - button "Crear Reporte" [ref=e260] [cursor=pointer]:
+              - generic [ref=e262]: Crear Reporte
+  - iframe [ref=e265]:
+    - generic [active] [ref=f1e1]:
+      - generic [ref=f1e2]: This reCAPTCHA is for testing purposes only. Please report to the site admin if you are seeing this.
+      - generic [ref=f1e3]:
+        - generic [ref=f1e6]:
+          - link "Privacy" [ref=f1e7] [cursor=pointer]:
+            - /url: https://www.google.com/intl/en/policies/privacy/
+          - text: "-"
+          - link "Terms" [ref=f1e8] [cursor=pointer]:
+            - /url: https://www.google.com/intl/en/policies/terms/
+        - generic [ref=f1e9]:
+          - generic [ref=f1e10]:
+            - text: protected by
+            - strong [ref=f1e11]: reCAPTCHA
+          - generic [ref=f1e12]: "-"
+```

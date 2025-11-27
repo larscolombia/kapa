@@ -10,42 +10,65 @@ export interface FieldConfig {
 
 export const FIELD_MAPPINGS: Record<IlvReportType, FieldConfig> = {
   [IlvReportType.HAZARD_ID]: {
-    required: ['ubicacion', 'descripcion_condicion', 'severidad', 'area', 'fecha_evento'],
-    optional: ['foto', 'causa_probable', 'accion_inmediata'],
+    required: [
+      'ubicacion',
+      'descripcion_condicion',
+      'severidad',
+      'area',
+      'fecha_evento',
+      'nombre_quien_reporta',
+      'tipo_reporte_hid',
+      'categoria',
+      'subcategoria'
+    ],
+    optional: [
+      'foto',
+      'causa_probable',
+      'accion_inmediata',
+      'nombre_ehs_contratista',
+      'nombre_supervisor_obra',
+      'observacion'
+    ],
     maestros: {
       severidad: 'severidad',
       area: 'area',
       causa_probable: 'causa',
+      tipo_reporte_hid: 'tipo_hid',
+      categoria: 'categoria_hid',
+      subcategoria: 'subcategoria_hid'
     },
     validations: {
       fecha_evento: 'date_lte_today',
     },
+    close_required: ['descripcion_cierre'],
   },
   [IlvReportType.WIT]: {
-    required: ['conducta_observada', 'riesgo_asociado', 'recomendacion', 'responsable'],
-    optional: ['testigo', 'adjuntos'],
+    required: [], // Validación flexible - frontend valida
+    optional: ['nombre_quien_reporta', 'conducta_observada', 'recomendacion', 'tipo', 'testigo', 'adjuntos', 'observacion', 'fecha', 'cliente', 'proyecto', 'empresa_pertenece', 'empresa_genera_reporte', 'estado'],
     maestros: {
-      riesgo_asociado: 'riesgo',
+      tipo: 'tipo_wit_hallazgo',
     },
+    close_required: ['descripcion_cierre'],
   },
   [IlvReportType.SWA]: {
-    required: ['hora_inicio_parada', 'hora_reinicio', 'motivo', 'area', 'responsable'],
-    optional: [],
+    required: [], // Validación flexible - frontend valida
+    optional: ['nombre_quien_reporta', 'nombre_ehs_contratista', 'nombre_supervisor_obra', 'descripcion_hallazgo', 'hora_inicio_parada', 'hora_reinicio', 'tipo', 'tipo_swa', 'observacion', 'descripcion_cierre', 'fecha', 'cliente', 'proyecto', 'empresa_pertenece', 'empresa_genera_reporte', 'estado'],
     maestros: {
-      motivo: 'motivo_swa',
-      area: 'area',
+      tipo: 'tipo_swa_hallazgo',
+      tipo_swa: 'tipo_swa',
     },
     validations: {
       hora_reinicio: 'time_gte_hora_inicio_parada',
     },
+    close_required: ['descripcion_cierre'],
   },
   [IlvReportType.FDKAR]: {
-    required: ['quien_reporta', 'clasificacion', 'descripcion', 'plan_accion_propuesto'],
-    optional: [],
+    required: [], // Validación flexible - frontend valida
+    optional: ['nombre_quien_reporta', 'tipo_tarjeta', 'descripcion_hallazgo', 'observacion', 'descripcion_cierre', 'fecha', 'cliente', 'proyecto', 'empresa_genera_reporte', 'estado'],
     maestros: {
-      clasificacion: 'clasificacion_fdkar',
+      tipo_tarjeta: 'tipo_tarjeta',
     },
-    close_required: ['evidencia_cierre', 'fecha_implantacion'],
+    close_required: ['descripcion_cierre', 'evidencia_cierre', 'fecha_implantacion'],
   },
 };
 
