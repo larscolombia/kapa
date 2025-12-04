@@ -17,6 +17,7 @@ import { ProjectContractorCriterionsModule } from './modules/project-contractor-
 import { SupportsModule } from './modules/supports/supports.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { IlvModule } from './modules/ilv/ilv.module';
+import { InspeccionesModule } from './modules/inspecciones/inspecciones.module';
 import { TestUploadController } from './test-upload.controller';
 import { DebugInterceptor } from './common/interceptors/debug.interceptor';
 
@@ -38,6 +39,7 @@ import { DebugInterceptor } from './common/interceptors/debug.interceptor';
     SupportsModule,
     ReportsModule,
     IlvModule,
+    InspeccionesModule,
   ],
   controllers: [AppController, TestUploadController],
   providers: [

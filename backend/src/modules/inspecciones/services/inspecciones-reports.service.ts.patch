@@ -1,0 +1,19 @@
+--- a/inspecciones-reports.service.ts
++++ b/inspecciones-reports.service.ts
+@@ after getEstados() method add:
+
+  /**
+   * Obtener áreas de inspección técnica
+   */
+  async getAreasInspeccion(): Promise<InspeccionMaestro[]> {
+    return this.getMaestros('area_inspeccion');
+  }
+
+  /**
+   * Obtener usuarios (Kapa y clientes) para "Quien reporta"
+   */
+  async getUsuarios(): Promise<any[]> {
+    return this.maestroRepo.query(
+      'SELECT user_id, name, email FROM "user" WHERE active = true ORDER BY name'
+    );
+  }

@@ -23,7 +23,7 @@ test.describe('ILV - Lista de Reportes', () => {
         await page.goto('/ilv/reportes');
 
         // Verificar que carga correctamente
-        await expect(page.locator('h4')).toContainText('Reportes ILV');
+        await expect(page.locator('.text-h5')).toContainText('Reportes ILV');
         await expect(page.locator('text=Listado completo de reportes')).toBeVisible();
     });
 

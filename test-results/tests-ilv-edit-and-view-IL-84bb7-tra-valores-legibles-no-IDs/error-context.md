@@ -1,0 +1,257 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - toolbar [ref=e5]:
+        - img "Logo KAPA" [ref=e7]
+        - generic [ref=e8]:
+          - generic [ref=e9]: Usuario administrador
+          - generic [ref=e10]: admin@kapa.com
+          - generic [ref=e11]: Administrador
+          - generic [ref=e12]: v1.0.1
+    - complementary [ref=e13]:
+      - generic [ref=e14]:
+        - img [ref=e15]
+        - list [ref=e20]:
+          - listitem [ref=e21] [cursor=pointer]:
+            - generic [ref=e23]: menu
+          - listitem [ref=e25] [cursor=pointer]:
+            - generic [ref=e27]: home
+          - listitem [ref=e29] [cursor=pointer]:
+            - generic [ref=e31]: people_alt
+          - listitem [ref=e33] [cursor=pointer]:
+            - generic [ref=e35]: design_services
+          - listitem [ref=e37] [cursor=pointer]:
+            - generic [ref=e39]: engineering
+          - listitem [ref=e41] [cursor=pointer]:
+            - generic [ref=e43]: folder_special
+          - listitem [ref=e45] [cursor=pointer]:
+            - generic [ref=e47]: assessment
+          - listitem [ref=e49] [cursor=pointer]:
+            - generic [ref=e51]: dashboard
+          - listitem [ref=e53] [cursor=pointer]:
+            - generic [ref=e55]: report_problem
+          - listitem [ref=e57] [cursor=pointer]:
+            - generic [ref=e59]: checklist
+          - separator [ref=e60]
+          - listitem [ref=e61] [cursor=pointer]:
+            - generic [ref=e63]: description
+          - listitem [ref=e64] [cursor=pointer]:
+            - generic [ref=e66]: refresh
+          - listitem [ref=e67] [cursor=pointer]:
+            - generic [ref=e69]: lock
+          - listitem [ref=e70] [cursor=pointer]:
+            - generic [ref=e72]: logout
+    - main [ref=e76]:
+      - generic [ref=e77]:
+        - generic [ref=e78]:
+          - heading "📋 Reportes ILV" [level=4] [ref=e79]
+          - paragraph [ref=e80]: Listado completo de reportes con filtros avanzados
+        - button "Nuevo Reporte" [ref=e82] [cursor=pointer]:
+          - generic [ref=e83]:
+            - img [ref=e84]: add
+            - generic [ref=e85]: Nuevo Reporte
+      - generic [ref=e88]:
+        - generic [ref=e92] [cursor=pointer]:
+          - generic [ref=e93]:
+            - generic: Tipo
+            - combobox "Tipo" [ref=e95]
+          - generic [ref=e97]: arrow_drop_down
+        - generic [ref=e101] [cursor=pointer]:
+          - generic [ref=e102]:
+            - generic: Estado
+            - combobox "Estado" [ref=e104]
+          - generic [ref=e106]: arrow_drop_down
+        - generic [ref=e111]:
+          - generic: Fecha Desde
+          - textbox "Fecha Desde" [ref=e112]
+        - generic [ref=e117]:
+          - generic: Fecha Hasta
+          - textbox "Fecha Hasta" [ref=e118]
+        - button "Limpiar" [ref=e120] [cursor=pointer]:
+          - generic [ref=e121]:
+            - img [ref=e122]: clear
+            - generic [ref=e123]: Limpiar
+      - generic [ref=e125]:
+        - table [ref=e127]:
+          - rowgroup [ref=e128]:
+            - row "ID Tipo Título Estado Proyecto Fecha Acciones" [ref=e129]:
+              - cell [ref=e130]:
+                - checkbox [ref=e131] [cursor=pointer]:
+                  - img [ref=e134]
+              - cell "ID" [ref=e136] [cursor=pointer]:
+                - text: ID
+                - generic [ref=e137]: arrow_upward
+              - cell "Tipo" [ref=e138] [cursor=pointer]:
+                - text: Tipo
+                - generic [ref=e139]: arrow_upward
+              - cell "Título" [ref=e140]
+              - cell "Estado" [ref=e141] [cursor=pointer]:
+                - text: Estado
+                - generic [ref=e142]: arrow_upward
+              - cell "Proyecto" [ref=e143]
+              - cell "Fecha" [ref=e144] [cursor=pointer]:
+                - text: Fecha
+                - generic [ref=e145]: arrow_upward
+              - cell "Acciones" [ref=e146]
+          - rowgroup [ref=e147]:
+            - 'row "63 WIT Reporte #63 abierto Reparación de máquina A1 4/12/2025" [ref=e148]':
+              - cell [ref=e149]:
+                - checkbox [ref=e150] [cursor=pointer]:
+                  - img [ref=e153]
+              - cell "63" [ref=e155]
+              - cell "WIT" [ref=e156]:
+                - generic [ref=e157]:
+                  - generic [ref=e158]: directions_walk
+                  - generic [ref=e159]: WIT
+              - 'cell "Reporte #63" [ref=e160]'
+              - cell "abierto" [ref=e161]:
+                - generic [ref=e163]: abierto
+              - cell "Reparación de máquina A1" [ref=e164]
+              - cell "4/12/2025" [ref=e165]
+              - cell [ref=e166]:
+                - button [ref=e167] [cursor=pointer]:
+                  - img [ref=e169]: visibility
+                - button [ref=e170] [cursor=pointer]:
+                  - img [ref=e172]: edit
+            - 'row "62 Hazard ID Reporte #62 cerrado Portafolio Soacha 4/12/2025" [ref=e173]':
+              - cell [ref=e174]:
+                - checkbox [ref=e175] [cursor=pointer]:
+                  - img [ref=e178]
+              - cell "62" [ref=e180]
+              - cell "Hazard ID" [ref=e181]:
+                - generic [ref=e182]:
+                  - generic [ref=e183]: warning
+                  - generic [ref=e184]: Hazard ID
+              - 'cell "Reporte #62" [ref=e185]'
+              - cell "cerrado" [ref=e186]:
+                - generic [ref=e188]: cerrado
+              - cell "Portafolio Soacha" [ref=e189]
+              - cell "4/12/2025" [ref=e190]
+              - cell [ref=e191]:
+                - button [ref=e192] [cursor=pointer]:
+                  - img [ref=e194]: visibility
+                - button [ref=e195] [cursor=pointer]:
+                  - img [ref=e197]: edit
+            - 'row "61 SWA Reporte #61 abierto Portafolio Soacha 4/12/2025" [ref=e198]':
+              - cell [ref=e199]:
+                - checkbox [ref=e200] [cursor=pointer]:
+                  - img [ref=e203]
+              - cell "61" [ref=e205]
+              - cell "SWA" [ref=e206]:
+                - generic [ref=e207]:
+                  - generic [ref=e208]: stop
+                  - generic [ref=e209]: SWA
+              - 'cell "Reporte #61" [ref=e210]'
+              - cell "abierto" [ref=e211]:
+                - generic [ref=e213]: abierto
+              - cell "Portafolio Soacha" [ref=e214]
+              - cell "4/12/2025" [ref=e215]
+              - cell [ref=e216]:
+                - button [ref=e217] [cursor=pointer]:
+                  - img [ref=e219]: visibility
+                - button [ref=e220] [cursor=pointer]:
+                  - img [ref=e222]: edit
+            - 'row "60 WIT Reporte #60 abierto Fuel Conversion Plan Soacha 4/12/2025" [ref=e223]':
+              - cell [ref=e224]:
+                - checkbox [ref=e225] [cursor=pointer]:
+                  - img [ref=e228]
+              - cell "60" [ref=e230]
+              - cell "WIT" [ref=e231]:
+                - generic [ref=e232]:
+                  - generic [ref=e233]: directions_walk
+                  - generic [ref=e234]: WIT
+              - 'cell "Reporte #60" [ref=e235]'
+              - cell "abierto" [ref=e236]:
+                - generic [ref=e238]: abierto
+              - cell "Fuel Conversion Plan Soacha" [ref=e239]
+              - cell "4/12/2025" [ref=e240]
+              - cell [ref=e241]:
+                - button [ref=e242] [cursor=pointer]:
+                  - img [ref=e244]: visibility
+                - button [ref=e245] [cursor=pointer]:
+                  - img [ref=e247]: edit
+            - 'row "59 Hazard ID Reporte #59 cerrado Portafolio Soacha 4/12/2025" [ref=e248]':
+              - cell [ref=e249]:
+                - checkbox [ref=e250] [cursor=pointer]:
+                  - img [ref=e253]
+              - cell "59" [ref=e255]
+              - cell "Hazard ID" [ref=e256]:
+                - generic [ref=e257]:
+                  - generic [ref=e258]: warning
+                  - generic [ref=e259]: Hazard ID
+              - 'cell "Reporte #59" [ref=e260]'
+              - cell "cerrado" [ref=e261]:
+                - generic [ref=e263]: cerrado
+              - cell "Portafolio Soacha" [ref=e264]
+              - cell "4/12/2025" [ref=e265]
+              - cell [ref=e266]:
+                - button [ref=e267] [cursor=pointer]:
+                  - img [ref=e269]: visibility
+                - button [ref=e270] [cursor=pointer]:
+                  - img [ref=e272]: edit
+            - 'row "58 Hazard ID Reporte #58 cerrado Fuel Conversion Plan Soacha 4/12/2025" [ref=e273]':
+              - cell [ref=e274]:
+                - checkbox [ref=e275] [cursor=pointer]:
+                  - img [ref=e278]
+              - cell "58" [ref=e280]
+              - cell "Hazard ID" [ref=e281]:
+                - generic [ref=e282]:
+                  - generic [ref=e283]: warning
+                  - generic [ref=e284]: Hazard ID
+              - 'cell "Reporte #58" [ref=e285]'
+              - cell "cerrado" [ref=e286]:
+                - generic [ref=e288]: cerrado
+              - cell "Fuel Conversion Plan Soacha" [ref=e289]
+              - cell "4/12/2025" [ref=e290]
+              - cell [ref=e291]:
+                - button [ref=e292] [cursor=pointer]:
+                  - img [ref=e294]: visibility
+                - button [ref=e295] [cursor=pointer]:
+                  - img [ref=e297]: edit
+            - 'row "34 Hazard ID Reporte #34 abierto Soacha Major Repair 23/11/2025" [ref=e298]':
+              - cell [ref=e299]:
+                - checkbox [ref=e300] [cursor=pointer]:
+                  - img [ref=e303]
+              - cell "34" [ref=e305]
+              - cell "Hazard ID" [ref=e306]:
+                - generic [ref=e307]:
+                  - generic [ref=e308]: warning
+                  - generic [ref=e309]: Hazard ID
+              - 'cell "Reporte #34" [ref=e310]'
+              - cell "abierto" [ref=e311]:
+                - generic [ref=e313]: abierto
+              - cell "Soacha Major Repair" [ref=e314]
+              - cell "23/11/2025" [ref=e315]
+              - cell [ref=e316]:
+                - button [ref=e317] [cursor=pointer]:
+                  - img [ref=e319]: visibility
+                - button [ref=e320] [cursor=pointer]:
+                  - img [ref=e322]: edit
+        - generic [ref=e323]:
+          - generic [ref=e324]:
+            - generic [ref=e325]: "Records per page:"
+            - generic [ref=e328] [cursor=pointer]:
+              - generic [ref=e330]:
+                - generic [ref=e331]: "25"
+                - combobox "25" [ref=e332]
+              - generic [ref=e334]: arrow_drop_down
+          - generic [ref=e336]: 1-0 of 0
+  - iframe [ref=e339]:
+    - generic [active] [ref=f1e1]:
+      - generic [ref=f1e2]: This reCAPTCHA is for testing purposes only. Please report to the site admin if you are seeing this.
+      - generic [ref=f1e3]:
+        - generic [ref=f1e6]:
+          - link "Privacy" [ref=f1e7] [cursor=pointer]:
+            - /url: https://www.google.com/intl/en/policies/privacy/
+          - text: "-"
+          - link "Terms" [ref=f1e8] [cursor=pointer]:
+            - /url: https://www.google.com/intl/en/policies/terms/
+        - generic [ref=f1e9]:
+          - generic [ref=f1e10]:
+            - text: protected by
+            - strong [ref=f1e11]: reCAPTCHA
+          - generic [ref=f1e12]: "-"
+```

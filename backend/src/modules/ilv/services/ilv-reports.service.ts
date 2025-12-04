@@ -103,6 +103,19 @@ export class IlvReportsService {
     IlvValidators.validateRequiredFields(dto.tipo, fieldsMap);
     IlvValidators.validateBusinessRules(dto.tipo, fieldsMap);
 
+    // Determinar estado inicial basado en el campo 'estado' si existe
+    let estadoInicial = 'abierto';
+    const estadoField = dto.fields.find(f => f.key === 'estado');
+    if (estadoField && estadoField.value) {
+      const maestroResult = await this.fieldRepo.query(
+        `SELECT LOWER(valor) as valor FROM ilv_maestro WHERE maestro_id = $1 AND activo = true LIMIT 1`,
+        [parseInt(estadoField.value)]
+      );
+      if (maestroResult && maestroResult[0] && maestroResult[0].valor === 'cerrado') {
+        estadoInicial = 'cerrado';
+      }
+    }
+
     const report = this.reportRepo.create({
       tipo: dto.tipo,
       centro_id: dto.centro_id,
@@ -111,7 +124,8 @@ export class IlvReportsService {
       empresa_id: dto.empresa_id,
       creado_por: userId,
       propietario_user_id: userId,
-      estado: 'abierto',
+      estado: estadoInicial,
+      fecha_cierre: estadoInicial === 'cerrado' ? new Date() : null,
     });
 
     const savedReport = await this.reportRepo.save(report);
@@ -153,10 +167,12 @@ export class IlvReportsService {
     if (filters.empresa_id) qb.andWhere('r.empresa_id = :eid', { eid: filters.empresa_id });
 
     if (filters.fecha_desde) {
-      qb.andWhere('r.creado_en >= :desde', { desde: filters.fecha_desde });
+      // Agregar hora 00:00:00 para incluir todo el día desde el inicio
+      qb.andWhere('r.creado_en >= :desde', { desde: `${filters.fecha_desde} 00:00:00` });
     }
     if (filters.fecha_hasta) {
-      qb.andWhere('r.creado_en <= :hasta', { hasta: filters.fecha_hasta });
+      // Agregar hora 23:59:59 para incluir todo el día hasta el final
+      qb.andWhere('r.creado_en <= :hasta', { hasta: `${filters.fecha_hasta} 23:59:59` });
     }
 
     const page = filters.page || 1;
@@ -331,27 +347,65 @@ export class IlvReportsService {
   }
 
   async update(id: number, dto: UpdateIlvReportDto, userId: number, ip: string, ua: string): Promise<IlvReport> {
-    const report = await this.findOne(id);
+    // Buscar el reporte SIN enriquecer para evitar problemas de cascada
+    const report = await this.reportRepo.findOne({
+      where: { report_id: id },
+    });
 
-    if (report.propietario_user_id !== userId) {
-      throw new ForbiddenException('Solo el propietario puede editar el reporte');
+    if (!report) {
+      throw new NotFoundException(`Reporte ILV #${id} no encontrado`);
     }
 
-    if (report.estado !== 'abierto') {
+    // Verificar si es admin
+    const user = await this.reportRepo.query(
+      `SELECT role_id FROM "user" WHERE user_id = $1`,
+      [userId]
+    );
+    const isAdmin = user && user[0] && user[0].role_id === 1;
+
+    // Verificar permisos de edición
+    if (report.propietario_user_id !== userId && !isAdmin) {
+      throw new ForbiddenException('Solo el propietario o un administrador puede editar el reporte');
+    }
+
+    // Solo admins pueden editar reportes cerrados
+    if (report.estado !== 'abierto' && !isAdmin) {
       throw new BadRequestException('Solo se pueden editar reportes abiertos');
     }
 
-    if (dto.fields) {
+    if (dto.fields && dto.fields.length > 0) {
+      // Eliminar campos anteriores
       await this.fieldRepo.delete({ report_id: id });
 
-      const newFields = dto.fields.map(f => this.fieldRepo.create({
-        report_id: id,
-        key: f.key,
-        value: f.value,
-        value_type: f.value_type || 'string',
-      }));
+      // Crear nuevos campos uno por uno para asegurar el report_id
+      for (const f of dto.fields) {
+        const field = new IlvReportField();
+        field.report_id = id;
+        field.key = f.key;
+        field.value = f.value;
+        field.value_type = f.value_type || 'string';
+        await this.fieldRepo.save(field);
+      }
 
-      await this.fieldRepo.save(newFields);
+      // Sincronizar el estado si viene en los fields
+      const estadoField = dto.fields.find(f => f.key === 'estado');
+      if (estadoField && estadoField.value) {
+        // Buscar el valor del maestro para determinar si es "cerrado"
+        const maestroResult = await this.fieldRepo.query(
+          `SELECT LOWER(valor) as valor FROM ilv_maestro WHERE maestro_id = $1 AND activo = true LIMIT 1`,
+          [parseInt(estadoField.value)]
+        );
+        if (maestroResult && maestroResult[0]) {
+          const estadoValor = maestroResult[0].valor;
+          if (estadoValor === 'cerrado') {
+            report.estado = 'cerrado';
+            report.fecha_cierre = new Date();
+          } else if (estadoValor === 'abierto') {
+            report.estado = 'abierto';
+            report.fecha_cierre = null;
+          }
+        }
+      }
     }
 
     report.actualizado_en = new Date();

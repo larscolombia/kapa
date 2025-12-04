@@ -185,6 +185,12 @@ const pages = [
     icon: 'report_problem',
     routeName: 'ilvReportes',
     moduleName: 'ilv_management',
+  },
+  {
+    name: 'Inspecciones',
+    icon: 'checklist',
+    routeName: 'inspeccionesLista',
+    moduleName: 'inspecciones_management',
   }
 ]
 

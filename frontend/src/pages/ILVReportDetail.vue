@@ -21,7 +21,7 @@
               color="orange" 
               icon="edit" 
               label="Editar" 
-              @click="$router.push({ name: 'ilvReportEdit', params: { id: report.report_id } })"
+              @click="$router.push({ name: 'ilvReporteEditar', params: { id: report.report_id } })"
             />
             <q-btn 
               flat 
@@ -205,30 +205,15 @@
         </div>
       </div>
 
-      <!-- Adjuntos / Evidencias Fotográficas -->
-      <div class="row q-mb-lg">
+      <!-- Adjuntos / Evidencias Fotográficas - Solo para HID -->
+      <div class="row q-mb-lg" v-if="report.tipo === 'hazard_id'">
         <div class="col">
           <q-card>
             <q-card-section>
               <div class="row items-center q-mb-md">
                 <div class="col">
                   <div class="text-h6">Evidencias Fotográficas</div>
-                  <div class="text-caption text-grey-7">Máximo 5 archivos (JPG, PNG, PDF) de hasta 5MB cada uno</div>
-                </div>
-                <div class="col-auto" v-if="canEdit && report.estado === 'abierto' && attachments.length < 5">
-                  <q-btn 
-                    color="primary" 
-                    icon="add" 
-                    label="Subir Archivo" 
-                    @click="triggerFileInput"
-                  />
-                  <input 
-                    ref="fileInputRef" 
-                    type="file" 
-                    accept="image/jpeg,image/png,application/pdf" 
-                    @change="handleFileSelect"
-                    style="display: none"
-                  />
+                  <div class="text-caption text-grey-7">Archivos adjuntos al reporte</div>
                 </div>
               </div>
 
@@ -281,17 +266,6 @@
                         :loading="attachment.downloading"
                       >
                         <q-tooltip>Descargar</q-tooltip>
-                      </q-btn>
-                      <q-btn 
-                        v-if="canEdit && report.estado === 'abierto'"
-                        flat 
-                        dense 
-                        icon="delete" 
-                        color="negative" 
-                        @click="confirmDeleteAttachment(attachment)"
-                        :loading="attachment.deleting"
-                      >
-                        <q-tooltip>Eliminar</q-tooltip>
                       </q-btn>
                     </q-card-actions>
                   </q-card>

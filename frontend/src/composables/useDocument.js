@@ -267,7 +267,7 @@ export const useDocument = () => {
       formData.append('category', categoryValue);
       formData.append('createdBy', createdBy);
 
-      const response = await fetch('/upload-support-file', {
+      const response = await fetch('/api/upload/support-file', {
         method: 'POST',
         body: formData
       });

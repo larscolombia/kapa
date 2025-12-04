@@ -163,7 +163,7 @@ const uploadSupportFile = async (file, supportFileData) => {
   formData.append('category', categoryValue);
   formData.append('createdBy', '1'); // TODO: usar ID del usuario actual
 
-  const response = await fetch('/upload-support-file', {
+  const response = await fetch('/api/upload/support-file', {
     method: 'POST',
     body: formData
   });
@@ -180,9 +180,9 @@ const supportFile = ref({ ...originalSupportFile.value });
 const categoryOptions = [
   { label: 'Apéndices', value: 'apendices' },
   { label: 'Manual de contratistas', value: 'manual_contratistas' },
+  { label: 'Finalización de proyecto (dossier)', value: 'dossier' },
   { label: 'Otros', value: 'otros' },
-  { label: 'Procedimientos EHS', value: 'procedimientos' },
-  { label: 'Estándares EHS', value: 'estandares' },
+  { label: 'Procedimientos y/o estándares EHS', value: 'ehs_procedures' },
 ];
 
 const fileTypeOptions = [

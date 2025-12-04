@@ -32,9 +32,9 @@ const div = route.params.div;
 const categoryMapping = {
   'appendices': 'apendices',
   'contractors-manual': 'manual_contratistas',
-  'dossier': 'otros',
+  'dossier': 'dossier',
   'others': 'otros',
-  'ehs-procedures-standards': ['procedimientos', 'estandares']
+  'ehs-procedures-standards': 'ehs_procedures'
 };
 
 const division = [

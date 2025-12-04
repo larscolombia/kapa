@@ -28,6 +28,12 @@ const routes = [
       { path: 'ilv/maestros', name: 'ilvMaestros', component: () => import('pages/ILVMaestrosAdmin.vue'), meta: { requiresAuth: true, module: 'ilv_management' } },
       // ⚠️ TEMPORAL PARA TESTING
       { path: 'ilv/test-data-load', name: 'ilvTestDataLoad', component: () => import('pages/TestILVDataLoad.vue'), meta: { requiresAuth: true } },
+
+      // Rutas INSPECCIONES
+      { path: 'inspecciones', name: 'inspeccionesLista', component: () => import('pages/InspeccionesReportsList.vue'), meta: { requiresAuth: true, module: 'inspecciones_management' } },
+      { path: 'inspecciones/nuevo', name: 'inspeccionesNuevo', component: () => import('pages/InspeccionesReportForm.vue'), meta: { requiresAuth: true, module: 'inspecciones_management' } },
+      { path: 'inspecciones/:id', name: 'inspeccionesDetalle', component: () => import('pages/InspeccionesReportDetail.vue'), meta: { requiresAuth: true, module: 'inspecciones_management' } },
+      { path: 'inspecciones/:id/editar', name: 'inspeccionesEditar', component: () => import('pages/InspeccionesReportForm.vue'), meta: { requiresAuth: true, module: 'inspecciones_management' } },
     ]
   },
   {

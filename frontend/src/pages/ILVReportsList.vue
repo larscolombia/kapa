@@ -139,7 +139,7 @@
               round 
               icon="visibility" 
               color="primary" 
-              @click="viewReport(props.row.report_id)"
+              @click.stop="viewReport(props.row.report_id)"
             />
             <q-btn 
               v-if="canEdit(props.row)"
@@ -147,7 +147,7 @@
               round 
               icon="edit" 
               color="orange" 
-              @click="editReport(props.row.report_id)"
+              @click.stop="editReport(props.row.report_id)"
             />
           </q-td>
         </template>
@@ -334,7 +334,11 @@ const getFieldValue = (report, key) => {
 }
 
 const canEdit = (report) => {
-  // TODO: Implementar lógica de ownership
+  // Admins pueden editar cualquier reporte (incluso cerrados)
+  if (isAdmin.value) {
+    return true
+  }
+  // Otros usuarios solo pueden editar reportes abiertos
   return report.estado === 'abierto'
 }
 

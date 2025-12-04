@@ -24,6 +24,10 @@ import { Access } from './entities/access.entity';
 import { Document } from './entities/document.entity';
 import { DocumentStateAudit } from './entities/document-state-audit.entity';
 import { SupportFile } from './entities/support-file.entity';
+import { InspeccionReport } from './entities/inspeccion-report.entity';
+import { InspeccionReportField } from './entities/inspeccion-report-field.entity';
+import { InspeccionMaestro } from './entities/inspeccion-maestro.entity';
+import { InspeccionAttachment } from './entities/inspeccion-attachment.entity';
 
 @Module({
   imports: [
@@ -64,6 +68,10 @@ import { SupportFile } from './entities/support-file.entity';
           Document,
           DocumentStateAudit,
           SupportFile,
+          InspeccionReport,
+          InspeccionReportField,
+          InspeccionMaestro,
+          InspeccionAttachment,
         ],
         synchronize: true, // Solo para desarrollo; no se recomienda en producción
       }),

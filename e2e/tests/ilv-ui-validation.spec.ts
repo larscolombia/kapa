@@ -79,7 +79,7 @@ test.describe('ILV - Validación de UI y Duplicaciones', () => {
         // Verificar orden esperado
         const expectedOrder = [
             'fecha',                      // Primero
-            'centro_trabajo',             // Segundo
+            'cliente',                    // Segundo (antes centro_trabajo)
             'proyecto',
             'empresa_pertenece',
             'nombre_quien_reporta',

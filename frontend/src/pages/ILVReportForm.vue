@@ -4,8 +4,8 @@
       <div class="col-md-8 col-xs-12">
         <q-card>
           <q-card-section>
-            <div class="text-h6">Crear Nuevo Reporte ILV</div>
-            <p class="text-grey-6">Selecciona el tipo de reporte que deseas crear</p>
+            <div class="text-h6">{{ isEditMode ? 'Editar Reporte ILV' : 'Crear Nuevo Reporte ILV' }}</div>
+            <p class="text-grey-6">{{ isEditMode ? 'Modifica los campos del reporte' : 'Selecciona el tipo de reporte que deseas crear' }}</p>
           </q-card-section>
           
           <q-card-section>
@@ -18,6 +18,7 @@
                 option-label="label"
                 label="Tipo de Reporte *"
                 filled
+                :disable="isEditMode"
                 emit-value
                 map-options
                 @update:model-value="onTipoChange"
@@ -80,11 +81,10 @@
                     emit-value
                     map-options
                     :disable="field.disabled"
-                    @update:model-value="field.key === 'cliente' ? onClienteChange($event) : null"
                     :rules="field.required ? [val => !!val || `${field.label} es requerido`] : []"
                   />
 
-                  <!-- Campo de selección dependiente (proyecto, empresa por cliente) -->
+                  <!-- Campo de selección dependiente (proyecto por cliente, empresa por proyecto) -->
                   <q-select
                     v-else-if="field.type === 'select-dependent'"
                     v-model="reportForm.campos[field.key]"
@@ -94,7 +94,7 @@
                     emit-value
                     map-options
                     :disable="!reportForm.campos[field.dependsOn]"
-                    :hint="!reportForm.campos[field.dependsOn] ? 'Seleccione primero el cliente' : ''"
+                    :hint="getHintForDependentField(field)"
                     :rules="field.required ? [val => !!val || `${field.label} es requerido`] : []"
                   />
 
@@ -180,10 +180,10 @@
                       </div>
                     </div>
                     
-                    <!-- Lista de archivos seleccionados -->
+                    <!-- Lista de archivos seleccionados (nuevos) -->
                     <div v-if="reportForm.campos[field.key]?.length > 0" class="q-mt-md">
                       <div class="text-subtitle2 q-mb-sm">
-                        Archivos seleccionados ({{ reportForm.campos[field.key].length }})
+                        Nuevos archivos a subir ({{ reportForm.campos[field.key].length }})
                       </div>
                       <q-list bordered separator class="rounded-borders">
                         <q-item 
@@ -213,6 +213,63 @@
                         </q-item>
                       </q-list>
                     </div>
+                    
+                    <!-- Lista de archivos existentes (modo edición) -->
+                    <div v-if="isEditMode && existingAttachments.length > 0" class="q-mt-md">
+                      <div class="text-subtitle2 q-mb-sm">
+                        Archivos existentes ({{ existingAttachments.length }})
+                      </div>
+                      <div class="row q-gutter-md">
+                        <div 
+                          v-for="att in existingAttachments" 
+                          :key="att.attachment_id"
+                          class="col-md-3 col-sm-6 col-xs-12"
+                        >
+                          <q-card bordered>
+                            <q-card-section class="text-center q-pa-md">
+                              <!-- Preview para imágenes -->
+                              <div v-if="att.mime_type === 'image/jpeg' || att.mime_type === 'image/png'" class="q-mb-sm">
+                                <q-img
+                                  :src="att.preview_url"
+                                  :ratio="1"
+                                  style="max-height: 100px; border-radius: 8px;"
+                                  loading="lazy"
+                                >
+                                  <template v-slot:loading>
+                                    <q-spinner color="primary" size="sm" />
+                                  </template>
+                                </q-img>
+                              </div>
+                              
+                              <!-- Icono para PDFs -->
+                              <div v-else class="q-mb-sm">
+                                <q-icon name="picture_as_pdf" color="red" size="3rem" />
+                              </div>
+
+                              <div class="text-caption text-weight-medium ellipsis">
+                                {{ att.filename }}
+                              </div>
+                              <div class="text-caption text-grey-7">
+                                {{ formatBytes(att.size_bytes) }}
+                              </div>
+                            </q-card-section>
+
+                            <q-card-actions align="center">
+                              <q-btn 
+                                flat 
+                                dense 
+                                icon="delete" 
+                                color="negative" 
+                                @click="deleteExistingAttachment(att)"
+                                :loading="deletingAttachment[att.attachment_id]"
+                              >
+                                <q-tooltip>Eliminar</q-tooltip>
+                              </q-btn>
+                            </q-card-actions>
+                          </q-card>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -224,12 +281,12 @@
                   flat 
                   label="Cancelar" 
                   color="grey" 
-                  @click="$router.push({ name: 'ilvDashboard' })"
+                  @click="$router.back()"
                   class="q-mr-sm"
                 />
                 <q-btn 
                   type="submit" 
-                  label="Crear Reporte" 
+                  :label="isEditMode ? 'Guardar Cambios' : 'Crear Reporte'" 
                   color="primary"
                   :loading="loading"
                   :disable="!reportForm.tipo"
@@ -244,23 +301,28 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
 import ilvService from 'src/services/ilvService'
 
 const router = useRouter()
+const route = useRoute()
 const $q = useQuasar()
 
+// Detectar modo edición
+const isEditMode = computed(() => !!route.params.id)
+const reportId = computed(() => route.params.id)
+
 const loading = ref(false)
+const loadingReport = ref(false)
 const loadingProyectos = ref(false)
-const loadingContratistas = ref(false)
+const isLoadingEdit = ref(false) // Bandera para evitar que watchers limpien durante carga de edición
 const maestros = ref({})
 const subcategorias = ref({})
-const proyectos = ref([])
-const contratistas = ref([])
-const proyectosPorCliente = ref({})
-const contratistasPorCliente = ref({})
+const proyectos = ref([]) // Todos los proyectos con projectContractors incluidos
+const existingAttachments = ref([]) // Archivos adjuntos existentes en modo edición
+const deletingAttachment = ref({}) // Estado de eliminación por attachment_id
 
 const reportForm = ref({
   tipo: '',
@@ -280,12 +342,12 @@ const reportTypes = [
 const fieldConfigs = {
   hazard_id: [
     { key: 'fecha', label: 'Fecha', type: 'date', required: true },
-    { key: 'cliente', label: 'Cliente (Centro de Trabajo)', type: 'select', required: true, masterType: 'centro_trabajo' },
+    { key: 'cliente', label: 'Cliente (Centro de Trabajo)', type: 'select', required: true, masterType: 'client' },
     { key: 'proyecto', label: 'Proyecto', type: 'select-dependent', required: true, dependsOn: 'cliente' },
-    { key: 'empresa_pertenece', label: 'Seleccione la empresa a la que pertenece', type: 'select-dependent', required: true, dependsOn: 'cliente' },
+    { key: 'empresa_pertenece', label: 'Seleccione la empresa a la que pertenece', type: 'select-dependent', required: true, dependsOn: 'proyecto' },
     { key: 'nombre_quien_reporta', label: 'Nombre de quien reporta', type: 'text', required: true },
     { key: 'tipo_reporte', label: 'Tipo de reporte', type: 'select', required: true, masterType: 'tipo_reporte_hid' },
-    { key: 'empresa_genera_reporte', label: 'Empresa a quien se le genera el reporte', type: 'select-dependent', required: true, dependsOn: 'cliente' },
+    { key: 'empresa_genera_reporte', label: 'Empresa a quien se le genera el reporte', type: 'select-dependent', required: true, dependsOn: 'proyecto' },
     { key: 'nombre_ehs_contratista', label: 'Nombre EHS del contratista', type: 'text', required: true },
     { key: 'nombre_supervisor_obra', label: 'Nombre Supervisor obra del contratista', type: 'text', required: true },
     { key: 'tipo', label: 'Tipo', type: 'select', required: true, masterType: 'tipo_hallazgo' },
@@ -299,11 +361,11 @@ const fieldConfigs = {
   ],
   wit: [
     { key: 'fecha', label: 'Fecha', type: 'date', required: true },
-    { key: 'cliente', label: 'Cliente (Centro de Trabajo)', type: 'select', required: true, masterType: 'centro_trabajo' },
+    { key: 'cliente', label: 'Cliente (Centro de Trabajo)', type: 'select', required: true, masterType: 'client' },
     { key: 'proyecto', label: 'Proyecto', type: 'select-dependent', required: true, dependsOn: 'cliente' },
-    { key: 'empresa_pertenece', label: 'Seleccione la empresa a la que pertenece', type: 'select-dependent', required: true, dependsOn: 'cliente' },
+    { key: 'empresa_pertenece', label: 'Seleccione la empresa a la que pertenece', type: 'select-dependent', required: true, dependsOn: 'proyecto' },
     { key: 'nombre_quien_reporta', label: 'Nombre de quien reporta', type: 'text', required: true },
-    { key: 'empresa_genera_reporte', label: 'Empresa a quien se le genera el reporte', type: 'select-dependent', required: true, dependsOn: 'cliente' },
+    { key: 'empresa_genera_reporte', label: 'Empresa a quien se le genera el reporte', type: 'select-dependent', required: true, dependsOn: 'proyecto' },
     { key: 'tipo', label: 'Tipo', type: 'select', required: true, masterType: 'tipo_wit_hallazgo' },
     { key: 'conducta_observada', label: 'Descripción de la conversación sostenida', type: 'textarea', required: true },
     { key: 'recomendacion', label: 'Describa el plan de acción generado o compromisos', type: 'textarea', required: true },
@@ -312,11 +374,11 @@ const fieldConfigs = {
   ],
   swa: [
     { key: 'fecha', label: 'Fecha', type: 'date', required: true },
-    { key: 'cliente', label: 'Cliente (Centro de Trabajo)', type: 'select', required: true, masterType: 'centro_trabajo' },
+    { key: 'cliente', label: 'Cliente (Centro de Trabajo)', type: 'select', required: true, masterType: 'client' },
     { key: 'proyecto', label: 'Proyecto', type: 'select-dependent', required: true, dependsOn: 'cliente' },
-    { key: 'empresa_pertenece', label: 'Seleccione la empresa a la que pertenece', type: 'select-dependent', required: true, dependsOn: 'cliente' },
+    { key: 'empresa_pertenece', label: 'Seleccione la empresa a la que pertenece', type: 'select-dependent', required: true, dependsOn: 'proyecto' },
     { key: 'nombre_quien_reporta', label: 'Nombre de quien reporta', type: 'text', required: true },
-    { key: 'empresa_genera_reporte', label: 'Empresa a quien se le genera el reporte', type: 'select-dependent', required: true, dependsOn: 'cliente' },
+    { key: 'empresa_genera_reporte', label: 'Empresa a quien se le genera el reporte', type: 'select-dependent', required: true, dependsOn: 'proyecto' },
     { key: 'nombre_ehs_contratista', label: 'Nombre EHS del contratista', type: 'text', required: true },
     { key: 'nombre_supervisor_obra', label: 'Nombre Supervisor obra del contratista', type: 'text', required: true },
     { key: 'tipo', label: 'Tipo', type: 'select', required: true, masterType: 'tipo_swa_hallazgo' },
@@ -330,10 +392,10 @@ const fieldConfigs = {
   ],
   fdkar: [
     { key: 'fecha', label: 'Fecha', type: 'date', required: true },
-    { key: 'cliente', label: 'Cliente (Centro de Trabajo)', type: 'select', required: true, masterType: 'centro_trabajo' },
+    { key: 'cliente', label: 'Cliente (Centro de Trabajo)', type: 'select', required: true, masterType: 'client' },
     { key: 'proyecto', label: 'Proyecto', type: 'select-dependent', required: true, dependsOn: 'cliente' },
     { key: 'nombre_quien_reporta', label: 'Nombre de quien reporta', type: 'text', required: true },
-    { key: 'empresa_genera_reporte', label: 'Empresa a quien se le genera el reporte', type: 'select-dependent', required: true, dependsOn: 'cliente' },
+    { key: 'empresa_genera_reporte', label: 'Empresa a quien se le genera el reporte', type: 'select-dependent', required: true, dependsOn: 'proyecto' },
     { key: 'tipo_tarjeta', label: 'Tipo de tarjeta', type: 'select', required: true, masterType: 'tipo_tarjeta' },
     { key: 'descripcion_hallazgo', label: 'Descripción de hallazgo (¿Qué pasó? ¿Dónde pasó? ¿Qué procedimiento se incumplió?)', type: 'textarea', required: true },
     { key: 'descripcion_cierre', label: 'Descripción de cierre (¿Qué acciones se tomaron? ¿Qué acuerdos se generaron?)', type: 'textarea', required: true },
@@ -399,21 +461,24 @@ const dynamicFields = computed(() => {
         }
       }
       
-      // Campos dependientes (proyecto y empresas según cliente)
+      // Campos dependientes: proyecto depende de cliente
       if (field.type === 'select-dependent' && field.dependsOn === 'cliente') {
-        const clienteId = reportForm.value.campos['cliente']
-        if (clienteId && field.key === 'proyecto') {
+        if (field.key === 'proyecto') {
           return {
             ...field,
             disabled: shouldDisable,
-            options: proyectosPorCliente.value[clienteId] || []
+            options: proyectosFiltrados.value
           }
         }
-        if (clienteId && (field.key === 'empresa_genera_reporte' || field.key === 'empresa_pertenece')) {
+      }
+      
+      // Campos dependientes: empresas dependen de proyecto
+      if (field.type === 'select-dependent' && field.dependsOn === 'proyecto') {
+        if (field.key === 'empresa_genera_reporte' || field.key === 'empresa_pertenece') {
           return {
             ...field,
             disabled: shouldDisable,
-            options: contratistasPorCliente.value[clienteId] || []
+            options: empresasFiltradas.value
           }
         }
       }
@@ -423,6 +488,55 @@ const dynamicFields = computed(() => {
         disabled: shouldDisable
       }
     })
+})
+
+// Proyectos filtrados por cliente seleccionado (igual que Inspecciones)
+const proyectosFiltrados = computed(() => {
+  const clienteId = reportForm.value.campos['cliente']
+  if (!clienteId) return []
+  
+  // Filtrar proyectos que pertenecen al cliente seleccionado
+  return proyectos.value
+    .filter(p => p.client?.client_id === clienteId || p.client_id === clienteId)
+    .map(p => ({
+      label: p.name,
+      value: p.project_id
+    }))
+})
+
+// Empresas/Contratistas filtrados por proyecto seleccionado (igual que Inspecciones)
+const empresasFiltradas = computed(() => {
+  const proyectoId = reportForm.value.campos['proyecto']
+  if (!proyectoId) return []
+  
+  // Buscar el proyecto seleccionado
+  const proyecto = proyectos.value.find(p => p.project_id === proyectoId)
+  if (!proyecto || !proyecto.projectContractors) return []
+  
+  // Retornar los contratistas del proyecto
+  return proyecto.projectContractors.map(c => ({
+    label: c.name || c.contractor_name,
+    value: c.contractor_id
+  }))
+})
+
+// Watch para limpiar proyecto cuando cambia cliente
+watch(() => reportForm.value.campos['cliente'], (newVal, oldVal) => {
+  if (isLoadingEdit.value) return // No limpiar durante carga de edición
+  if (newVal !== oldVal && oldVal !== null && oldVal !== undefined) {
+    reportForm.value.campos['proyecto'] = null
+    reportForm.value.campos['empresa_genera_reporte'] = null
+    reportForm.value.campos['empresa_pertenece'] = null
+  }
+})
+
+// Watch para limpiar empresas cuando cambia proyecto
+watch(() => reportForm.value.campos['proyecto'], (newVal, oldVal) => {
+  if (isLoadingEdit.value) return // No limpiar durante carga de edición
+  if (newVal !== oldVal && oldVal !== null && oldVal !== undefined) {
+    reportForm.value.campos['empresa_genera_reporte'] = null
+    reportForm.value.campos['empresa_pertenece'] = null
+  }
 })
 
 const onTipoChange = () => {
@@ -439,8 +553,18 @@ const loadMaestrosForType = async () => {
   
   for (const type of masterTypes) {
     try {
-      // Si es jerárquico, usar el endpoint tree
-      if (config.find(f => f.masterType === type && f.hierarchical)) {
+      // Tipo especial 'client' - cargar desde tabla client en lugar de ilv_maestro
+      if (type === 'client') {
+        const { getClients } = await import('src/services/clientService')
+        const clientsData = await getClients()
+        // Transformar al formato esperado (similar a maestros)
+        maestros.value[type] = clientsData.map(c => ({
+          maestro_id: c.client_id, // Usar client_id como identificador
+          valor: c.name,
+          clave: `client_${c.client_id}`
+        }))
+      } else if (config.find(f => f.masterType === type && f.hierarchical)) {
+        // Si es jerárquico, usar el endpoint tree
         const data = await ilvService.getMaestrosTree(type)
         maestros.value[type] = data
       } else {
@@ -490,54 +614,21 @@ const onCategoriaChange = async (fieldKey) => {
   }
 }
 
-const onClienteChange = async (clienteId) => {
-  if (!clienteId) {
-    reportForm.value.campos['proyecto'] = null
-    reportForm.value.campos['empresa_genera_reporte'] = null
-    reportForm.value.campos['empresa_pertenece'] = null
-    proyectosPorCliente.value[clienteId] = []
-    contratistasPorCliente.value[clienteId] = []
-    return
+// Helper para obtener el hint de campos dependientes
+const getHintForDependentField = (field) => {
+  if (field.dependsOn === 'cliente' && !reportForm.value.campos['cliente']) {
+    return 'Seleccione primero el cliente'
   }
-  
-  try {
-    // Cargar proyectos del cliente
-    const { default: projectService } = await import('src/services/projectService')
-    const proyectosData = await projectService.getProjectsByClient(clienteId)
-    proyectosPorCliente.value[clienteId] = proyectosData.map(p => ({
-      label: p.name,
-      value: p.project_id
-    }))
-    
-    // Cargar contratistas del cliente
-    const { default: contractorService } = await import('src/services/contractorService')
-    const contratistasData = await contractorService.getContractorsByClient(clienteId)
-    contratistasPorCliente.value[clienteId] = contratistasData.map(c => ({
-      label: c.contractor_name || c.name,
-      value: c.contractor_id
-    }))
-    
-    // Limpiar selecciones dependientes
-    reportForm.value.campos['proyecto'] = null
-    reportForm.value.campos['empresa_genera_reporte'] = null
-    reportForm.value.campos['empresa_pertenece'] = null
-  } catch (error) {
-    console.error('Error loading data for cliente:', error)
-    // Solo mostrar error si realmente falló la carga
-    if (error.response || error.message !== 'Network Error') {
-      $q.notify({
-        type: 'warning',
-        message: 'No se pudieron cargar todos los datos del cliente',
-        position: 'top'
-      })
-    }
+  if (field.dependsOn === 'proyecto' && !reportForm.value.campos['proyecto']) {
+    return 'Seleccione primero el proyecto'
   }
+  return ''
 }
 
 const loadProyectos = async () => {
   loadingProyectos.value = true
   try {
-    // Importar el servicio de proyectos
+    // Importar el servicio de proyectos - carga TODOS los proyectos con sus contratistas
     const { default: projectService } = await import('src/services/projectService')
     const data = await projectService.getProjects()
     proyectos.value = data
@@ -553,38 +644,8 @@ const loadProyectos = async () => {
   }
 }
 
-const onProyectoChange = async () => {
-  reportForm.value.empresa_id = null
-  contratistas.value = []
-  
-  if (!reportForm.value.proyecto_id) return
-  
-  // Obtener cliente_id del proyecto seleccionado
-  const proyecto = proyectos.value.find(p => p.project_id === reportForm.value.proyecto_id)
-  if (proyecto) {
-    reportForm.value.cliente_id = proyecto.client_id
-  }
-  
-  // Cargar contratistas del proyecto
-  loadingContratistas.value = true
-  try {
-    const { default: projectService } = await import('src/services/projectService')
-    const data = await projectService.getContractorsByProject(reportForm.value.proyecto_id)
-    contratistas.value = data
-  } catch (error) {
-    console.error('Error loading contractors:', error)
-    $q.notify({
-      type: 'negative',
-      message: 'Error al cargar contratistas',
-      position: 'top'
-    })
-  } finally {
-    loadingContratistas.value = false
-  }
-}
-
 const onSubmit = async () => {
-  console.log('🚀 onSubmit iniciado')
+  console.log('🚀 onSubmit iniciado - Modo:', isEditMode.value ? 'EDICIÓN' : 'CREACIÓN')
   console.log('📊 reportForm:', JSON.stringify(reportForm.value, null, 2))
   
   loading.value = true
@@ -627,12 +688,21 @@ const onSubmit = async () => {
     
     console.log('📤 Enviando al backend:', reportData)
     
-    const createdReport = await ilvService.createReport(reportData)
-    const reportId = createdReport.report_id
+    let savedReportId
     
-    console.log('✅ Reporte creado exitosamente con ID:', reportId)
+    if (isEditMode.value) {
+      // MODO EDICIÓN: Actualizar reporte existente
+      await ilvService.updateReport(reportId.value, reportData)
+      savedReportId = reportId.value
+      console.log('✅ Reporte actualizado exitosamente con ID:', savedReportId)
+    } else {
+      // MODO CREACIÓN: Crear nuevo reporte
+      const createdReport = await ilvService.createReport(reportData)
+      savedReportId = createdReport.report_id
+      console.log('✅ Reporte creado exitosamente con ID:', savedReportId)
+    }
     
-    // Subir archivos si existen
+    // Subir archivos si existen (solo en modo creación o si hay nuevos archivos)
     if (Object.keys(fileFields).length > 0) {
       console.log('📤 Iniciando subida de archivos...')
       let uploadedCount = 0
@@ -643,7 +713,7 @@ const onSubmit = async () => {
         for (const file of fileArray) {
           try {
             console.log(`📤 Subiendo archivo: ${file.name}`)
-            await ilvService.uploadAttachment(reportId, file)
+            await ilvService.uploadAttachment(savedReportId, file)
             uploadedCount++
             console.log(`✅ Archivo subido: ${file.name}`)
           } catch (uploadError) {
@@ -657,7 +727,7 @@ const onSubmit = async () => {
     
     $q.notify({
       type: 'positive',
-      message: 'Reporte ILV creado exitosamente',
+      message: isEditMode.value ? 'Reporte ILV actualizado exitosamente' : 'Reporte ILV creado exitosamente',
       position: 'top'
     })
     
@@ -669,7 +739,7 @@ const onSubmit = async () => {
     console.error('❌ Error.message:', error.message)
     $q.notify({
       type: 'negative',
-      message: error.response?.data?.message || error.message || 'Error al crear el reporte',
+      message: error.response?.data?.message || error.message || (isEditMode.value ? 'Error al actualizar el reporte' : 'Error al crear el reporte'),
       position: 'top'
     })
   } finally {
@@ -769,11 +839,155 @@ const removeFile = (fieldKey, index) => {
   reportForm.value.campos[fieldKey] = files
 }
 
-onMounted(() => {
+// Eliminar archivo existente (en modo edición)
+const deleteExistingAttachment = async (attachment) => {
+  $q.dialog({
+    title: 'Confirmar eliminación',
+    message: `¿Estás seguro de eliminar "${attachment.filename}"?`,
+    cancel: true,
+    persistent: true
+  }).onOk(async () => {
+    deletingAttachment.value[attachment.attachment_id] = true
+    try {
+      await ilvService.deleteAttachment(reportId.value, attachment.attachment_id)
+      // Remover de la lista local
+      existingAttachments.value = existingAttachments.value.filter(
+        a => a.attachment_id !== attachment.attachment_id
+      )
+      $q.notify({
+        type: 'positive',
+        message: 'Archivo eliminado correctamente',
+        position: 'top'
+      })
+    } catch (error) {
+      console.error('Error eliminando attachment:', error)
+      $q.notify({
+        type: 'negative',
+        message: 'Error al eliminar el archivo',
+        position: 'top'
+      })
+    } finally {
+      deletingAttachment.value[attachment.attachment_id] = false
+    }
+  })
+}
+
+// Cargar reporte existente para edición
+const loadExistingReport = async () => {
+  if (!isEditMode.value) return
+  
+  loadingReport.value = true
+  isLoadingEdit.value = true // Evitar que los watchers limpien valores durante la carga
+  try {
+    const report = await ilvService.getReportById(reportId.value)
+    console.log('📋 Reporte cargado para edición:', report)
+    
+    // Establecer el tipo primero
+    reportForm.value.tipo = report.tipo
+    
+    // Establecer IDs principales
+    reportForm.value.proyecto_id = report.proyecto_id
+    reportForm.value.cliente_id = report.cliente_id
+    reportForm.value.empresa_id = report.empresa_id
+    
+    // Cargar maestros para este tipo
+    await loadMaestrosForType()
+    
+    // Mapear los campos guardados - primero los campos simples
+    if (report.fields && Array.isArray(report.fields)) {
+      // Establecer cliente y proyecto primero (las computed properties se actualizarán automáticamente)
+      const clienteField = report.fields.find(f => f.key === 'cliente')
+      if (clienteField) {
+        const clienteId = typeof clienteField.value === 'string' ? parseInt(clienteField.value) : clienteField.value
+        reportForm.value.campos['cliente'] = clienteId
+      }
+      
+      const proyectoField = report.fields.find(f => f.key === 'proyecto')
+      if (proyectoField) {
+        const proyectoId = typeof proyectoField.value === 'string' ? parseInt(proyectoField.value) : proyectoField.value
+        reportForm.value.campos['proyecto'] = proyectoId
+      }
+      
+      // Luego establecer las categorías jerárquicas para cargar subcategorías
+      for (const field of report.fields) {
+        // Obtener la configuración del campo
+        const config = fieldConfigs[report.tipo]
+        const fieldConfig = config?.find(f => f.key === field.key)
+        
+        if (fieldConfig?.type === 'select-hierarchical') {
+          // Es una categoría padre, cargar subcategorías
+          const catId = typeof field.value === 'string' ? parseInt(field.value) : field.value
+          reportForm.value.campos[field.key] = catId
+          await onCategoriaChange(field.key)
+        }
+      }
+      
+      // Finalmente mapear todos los campos
+      report.fields.forEach(field => {
+        // Para campos numéricos (selects), convertir a número
+        const config = fieldConfigs[report.tipo]
+        const fieldConfig = config?.find(f => f.key === field.key)
+        
+        if (fieldConfig && ['select', 'select-dependent', 'select-hierarchical', 'select-hierarchical-child'].includes(fieldConfig.type)) {
+          // Campos de selección: usar el ID numérico
+          reportForm.value.campos[field.key] = typeof field.value === 'string' && /^\d+$/.test(field.value) 
+            ? parseInt(field.value) 
+            : field.value
+        } else {
+          // Campos de texto: usar el valor directamente
+          reportForm.value.campos[field.key] = field.value
+        }
+      })
+    }
+    
+    // Cargar archivos adjuntos existentes (solo para HID)
+    if (report.tipo === 'hazard_id') {
+      try {
+        const attachments = await ilvService.getAttachments(reportId.value)
+        // Cargar URLs de preview para cada archivo
+        for (const att of attachments) {
+          if (att.mime_type === 'image/jpeg' || att.mime_type === 'image/png') {
+            try {
+              att.preview_url = await ilvService.getAttachmentDownloadUrl(reportId.value, att.attachment_id)
+            } catch (e) {
+              console.warn('No se pudo cargar preview para:', att.filename)
+            }
+          }
+        }
+        existingAttachments.value = attachments
+        console.log('📎 Attachments cargados:', attachments.length)
+      } catch (e) {
+        console.warn('Error cargando attachments:', e)
+      }
+    }
+    
+    console.log('✅ Formulario cargado:', reportForm.value)
+    
+  } catch (error) {
+    console.error('❌ Error cargando reporte:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Error al cargar el reporte para edición',
+      position: 'top'
+    })
+    router.push({ name: 'ilvReportes' })
+  } finally {
+    loadingReport.value = false
+    isLoadingEdit.value = false // Permitir que los watchers funcionen normalmente
+  }
+}
+
+onMounted(async () => {
   // Cargar proyectos al iniciar
-  loadProyectos()
-  // Cargar maestros básicos
-  loadMaestrosForType()
+  await loadProyectos()
+  
+  // Si es modo edición, cargar el reporte
+  if (isEditMode.value) {
+    await loadExistingReport()
+  } else {
+    // Cargar maestros básicos solo en modo creación
+    loadMaestrosForType()
+  }
 })
 </script>
 
