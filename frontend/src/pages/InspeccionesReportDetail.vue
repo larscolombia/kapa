@@ -65,7 +65,7 @@
               <div class="row q-col-gutter-md q-mb-lg">
                 <!-- 1. Fecha -->
                 <div class="col-md-6 col-xs-12">
-                  <div class="text-caption text-grey-7">Fecha</div>
+                  <div class="text-caption text-grey-7">Fecha de la Inspección</div>
                   <div>{{ report.fecha ? formatDateShort(report.fecha) : 'N/A' }}</div>
                 </div>
 
@@ -150,7 +150,7 @@
               <div class="row q-col-gutter-md q-mb-lg">
                 <!-- 1. Fecha -->
                 <div class="col-md-6 col-xs-12">
-                  <div class="text-caption text-grey-7">Fecha</div>
+                  <div class="text-caption text-grey-7">Fecha de la Auditoría</div>
                   <div>{{ report.fecha ? formatDateShort(report.fecha) : 'N/A' }}</div>
                 </div>
 

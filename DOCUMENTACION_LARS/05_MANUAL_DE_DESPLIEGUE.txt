@@ -1,0 +1,469 @@
+================================================================================
+                    KAPA - SISTEMA DE GESTIÓN DOCUMENTAL
+                       MANUAL DE DESPLIEGUE
+================================================================================
+
+1. INTRODUCCIÓN
+================================================================================
+
+Este manual describe los procedimientos para el despliegue del sistema KAPA
+en ambientes de producción, incluyendo actualizaciones, rollbacks y
+estrategias de cero tiempo de inactividad.
+
+
+2. AMBIENTES DE DESPLIEGUE
+================================================================================
+
+2.1 ESTRUCTURA DE AMBIENTES
+---------------------------
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        AMBIENTE DE DESARROLLO                          │
+│  - Local developer machines                                            │
+│  - Hot reload habilitado                                               │
+│  - Base de datos local                                                 │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        AMBIENTE DE STAGING                             │
+│  - Servidor de pruebas                                                 │
+│  - Réplica de producción                                               │
+│  - Testing de integración                                              │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        AMBIENTE DE PRODUCCIÓN                          │
+│  - Servidor(es) de producción                                          │
+│  - Alta disponibilidad                                                 │
+│  - Monitoreo activo                                                    │
+└─────────────────────────────────────────────────────────────────────────┘
+
+
+3. PROCESO DE DESPLIEGUE ESTÁNDAR
+================================================================================
+
+3.1 PRE-DESPLIEGUE
+------------------
+
+Paso 1: Verificar estado del sistema
+------------------------------------
+# Verificar que todos los servicios están corriendo
+pm2 status
+sudo systemctl status nginx
+sudo systemctl status postgresql
+
+# Verificar espacio en disco
+df -h
+
+# Verificar uso de memoria
+free -m
+
+Paso 2: Crear backup de base de datos
+-------------------------------------
+# Crear directorio de backups si no existe
+mkdir -p /var/backups/kapa
+
+# Generar backup con timestamp
+pg_dump -U kapa_user -d kapa_db > /var/backups/kapa/backup_$(date +%Y%m%d_%H%M%S).sql
+
+# Verificar backup
+ls -la /var/backups/kapa/
+
+Paso 3: Notificar a usuarios (si aplica)
+----------------------------------------
+# En caso de mantenimiento programado, notificar con anticipación
+
+3.2 DESPLIEGUE
+--------------
+
+Paso 1: Obtener última versión del código
+-----------------------------------------
+cd /var/www/kapa.dominio.com
+
+# Guardar versión actual
+git rev-parse HEAD > /tmp/previous_version.txt
+
+# Obtener cambios
+git fetch origin
+git pull origin main
+
+Paso 2: Instalar dependencias nuevas (Backend)
+----------------------------------------------
+cd backend
+
+# Instalar dependencias
+npm install
+
+# Compilar TypeScript
+npm run build
+
+Paso 3: Ejecutar migraciones de base de datos
+---------------------------------------------
+# Ejecutar scripts de migración nuevos (si existen)
+# Ejemplo:
+# psql -U kapa_user -d kapa_db -f migrations/nueva_migracion.sql
+
+Paso 4: Reiniciar Backend
+-------------------------
+pm2 restart kapa-backend
+
+# Verificar que inició correctamente
+pm2 logs kapa-backend --lines 50
+
+# Verificar estado
+pm2 status
+
+Paso 5: Compilar Frontend
+-------------------------
+cd ../frontend
+
+# Instalar dependencias
+npm install
+
+# Compilar para producción
+npm run build
+
+# Los archivos se generan en dist/spa/
+
+Paso 6: Verificar despliegue
+----------------------------
+# Probar endpoint de health
+curl -X GET https://dominio.com/api/health
+
+# Probar acceso al frontend
+curl -I https://dominio.com
+
+3.3 POST-DESPLIEGUE
+-------------------
+
+Paso 1: Verificar logs
+----------------------
+# Backend
+pm2 logs kapa-backend --lines 100
+
+# Nginx
+sudo tail -50 /var/log/nginx/access.log
+sudo tail -50 /var/log/nginx/error.log
+
+Paso 2: Pruebas de humo
+-----------------------
+- Verificar login funciona
+- Verificar carga de dashboard
+- Verificar creación de un registro de prueba
+- Verificar subida de archivo
+
+Paso 3: Monitorear métricas
+---------------------------
+pm2 monit
+
+
+4. DESPLIEGUE CON CERO DOWNTIME
+================================================================================
+
+4.1 ESTRATEGIA BLUE-GREEN (OPCIONAL)
+------------------------------------
+
+Si se cuenta con recursos para dos instancias:
+
+┌──────────────┐     ┌──────────────┐
+│    BLUE      │     │    GREEN     │
+│  (Activo)    │     │  (Standby)   │
+│  Puerto 3001 │     │  Puerto 3002 │
+└──────────────┘     └──────────────┘
+        │                   │
+        └───────┬───────────┘
+                │
+        ┌───────▼───────┐
+        │     NGINX     │
+        │  Load Balancer│
+        └───────────────┘
+
+Proceso:
+1. Desplegar nueva versión en GREEN
+2. Verificar que GREEN funciona correctamente
+3. Cambiar tráfico de BLUE a GREEN en Nginx
+4. Mantener BLUE como fallback
+
+4.2 ESTRATEGIA ROLLING UPDATE
+-----------------------------
+
+Con PM2 en modo cluster:
+
+# Configurar PM2 con múltiples instancias
+pm2 start ecosystem.config.js --instances 2
+
+# Actualizar sin downtime
+pm2 reload kapa-backend
+
+
+5. PROCEDIMIENTO DE ROLLBACK
+================================================================================
+
+5.1 ROLLBACK DE CÓDIGO
+----------------------
+
+Paso 1: Obtener versión anterior
+--------------------------------
+# Leer versión guardada
+PREVIOUS_VERSION=$(cat /tmp/previous_version.txt)
+
+Paso 2: Revertir a versión anterior
+-----------------------------------
+cd /var/www/kapa.dominio.com
+git checkout $PREVIOUS_VERSION
+
+Paso 3: Reconstruir
+-------------------
+# Backend
+cd backend
+npm install
+npm run build
+pm2 restart kapa-backend
+
+# Frontend
+cd ../frontend
+npm install
+npm run build
+
+5.2 ROLLBACK DE BASE DE DATOS
+-----------------------------
+
+# Restaurar último backup
+psql -U kapa_user -d kapa_db < /var/backups/kapa/backup_YYYYMMDD_HHMMSS.sql
+
+5.3 ROLLBACK DE EMERGENCIA
+--------------------------
+
+En caso de fallo crítico:
+
+# 1. Detener backend
+pm2 stop kapa-backend
+
+# 2. Restaurar backup de BD
+psql -U kapa_user -d kapa_db < /var/backups/kapa/ultimo_backup_estable.sql
+
+# 3. Revertir código
+git checkout [VERSION_ESTABLE]
+
+# 4. Reconstruir y reiniciar
+cd backend && npm install && npm run build
+pm2 restart kapa-backend
+
+# 5. Verificar
+curl -X GET https://dominio.com/api/health
+
+
+6. SCRIPTS DE DESPLIEGUE AUTOMATIZADO
+================================================================================
+
+6.1 SCRIPT DE DESPLIEGUE COMPLETO
+---------------------------------
+
+Crear archivo: /var/www/kapa.dominio.com/deploy.sh
+
+#!/bin/bash
+set -e
+
+echo "=========================================="
+echo "  KAPA - Script de Despliegue"
+echo "=========================================="
+
+# Variables
+PROJECT_DIR="/var/www/kapa.dominio.com"
+BACKUP_DIR="/var/backups/kapa"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+# Colores para output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+echo -e "${GREEN}[1/8] Creando backup de base de datos...${NC}"
+pg_dump -U kapa_user -d kapa_db > $BACKUP_DIR/backup_$TIMESTAMP.sql
+echo "Backup creado: backup_$TIMESTAMP.sql"
+
+echo -e "${GREEN}[2/8] Guardando versión actual...${NC}"
+cd $PROJECT_DIR
+git rev-parse HEAD > /tmp/previous_version.txt
+
+echo -e "${GREEN}[3/8] Obteniendo última versión...${NC}"
+git fetch origin
+git pull origin main
+
+echo -e "${GREEN}[4/8] Instalando dependencias backend...${NC}"
+cd $PROJECT_DIR/backend
+npm install --production
+
+echo -e "${GREEN}[5/8] Compilando backend...${NC}"
+npm run build
+
+echo -e "${GREEN}[6/8] Reiniciando backend...${NC}"
+pm2 restart kapa-backend
+
+echo -e "${GREEN}[7/8] Compilando frontend...${NC}"
+cd $PROJECT_DIR/frontend
+npm install
+npm run build
+
+echo -e "${GREEN}[8/8] Verificando despliegue...${NC}"
+sleep 5
+HEALTH_CHECK=$(curl -s -o /dev/null -w "%{http_code}" https://dominio.com/api/health)
+
+if [ "$HEALTH_CHECK" == "200" ]; then
+    echo -e "${GREEN}=========================================="
+    echo "  Despliegue completado exitosamente!"
+    echo "==========================================${NC}"
+else
+    echo -e "${RED}=========================================="
+    echo "  ERROR: Health check falló"
+    echo "  Iniciando rollback..."
+    echo "==========================================${NC}"
+    # Aquí iría el rollback automático
+fi
+
+6.2 SCRIPT DE ROLLBACK
+----------------------
+
+Crear archivo: /var/www/kapa.dominio.com/rollback.sh
+
+#!/bin/bash
+set -e
+
+echo "=========================================="
+echo "  KAPA - Script de Rollback"
+echo "=========================================="
+
+PROJECT_DIR="/var/www/kapa.dominio.com"
+PREVIOUS_VERSION=$(cat /tmp/previous_version.txt)
+
+echo "[1/4] Revirtiendo a versión: $PREVIOUS_VERSION"
+cd $PROJECT_DIR
+git checkout $PREVIOUS_VERSION
+
+echo "[2/4] Reconstruyendo backend..."
+cd $PROJECT_DIR/backend
+npm install --production
+npm run build
+pm2 restart kapa-backend
+
+echo "[3/4] Reconstruyendo frontend..."
+cd $PROJECT_DIR/frontend
+npm install
+npm run build
+
+echo "[4/4] Verificando rollback..."
+sleep 5
+curl -X GET https://dominio.com/api/health
+
+echo "=========================================="
+echo "  Rollback completado"
+echo "=========================================="
+
+
+7. CONFIGURACIÓN DE CI/CD (OPCIONAL)
+================================================================================
+
+7.1 GITHUB ACTIONS
+------------------
+
+Crear archivo: .github/workflows/deploy.yml
+
+name: Deploy KAPA
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /var/www/kapa.dominio.com
+            ./deploy.sh
+
+
+8. MONITOREO POST-DESPLIEGUE
+================================================================================
+
+8.1 MÉTRICAS A MONITOREAR
+-------------------------
+
+- Tiempo de respuesta de la API (< 500ms promedio)
+- Uso de CPU (< 80%)
+- Uso de memoria (< 80%)
+- Errores 5xx en logs (debería ser 0)
+- Conexiones activas a base de datos
+
+8.2 COMANDOS DE MONITOREO
+-------------------------
+
+# Monitor en tiempo real PM2
+pm2 monit
+
+# Estadísticas de PM2
+pm2 show kapa-backend
+
+# Logs en tiempo real
+pm2 logs kapa-backend
+
+# Uso de recursos del servidor
+htop
+
+# Conexiones PostgreSQL
+psql -U kapa_user -d kapa_db -c "SELECT count(*) FROM pg_stat_activity;"
+
+
+9. LISTA DE VERIFICACIÓN DE DESPLIEGUE
+================================================================================
+
+PRE-DESPLIEGUE:
+[ ] Backup de base de datos creado
+[ ] Versión actual guardada
+[ ] Espacio en disco verificado (> 20% libre)
+[ ] Servicios corriendo correctamente
+[ ] Usuarios notificados (si aplica)
+
+DESPLIEGUE:
+[ ] Código actualizado desde repositorio
+[ ] Dependencias backend instaladas
+[ ] Backend compilado sin errores
+[ ] Migraciones ejecutadas (si hay)
+[ ] Backend reiniciado con PM2
+[ ] Dependencias frontend instaladas
+[ ] Frontend compilado sin errores
+
+POST-DESPLIEGUE:
+[ ] Health check respondiendo 200
+[ ] Login funciona correctamente
+[ ] Funcionalidades principales verificadas
+[ ] Logs sin errores críticos
+[ ] Métricas de rendimiento normales
+
+
+10. CONTACTOS DE EMERGENCIA
+================================================================================
+
+En caso de problemas durante el despliegue:
+
+- Equipo de Desarrollo: [contacto]
+- Administrador de Sistemas: [contacto]
+- DBA: [contacto]
+
+Escalamiento:
+1. Intentar rollback automático
+2. Contactar equipo de desarrollo
+3. Si persiste, restaurar backup y código estable
+
+
+================================================================================
+                         FIN DEL DOCUMENTO
+================================================================================

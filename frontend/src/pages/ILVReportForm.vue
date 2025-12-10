@@ -341,7 +341,7 @@ const reportTypes = [
 
 const fieldConfigs = {
   hazard_id: [
-    { key: 'fecha', label: 'Fecha', type: 'date', required: true },
+    { key: 'fecha', label: 'Fecha del Evento', type: 'date', required: true },
     { key: 'cliente', label: 'Cliente (Centro de Trabajo)', type: 'select', required: true, masterType: 'client' },
     { key: 'proyecto', label: 'Proyecto', type: 'select-dependent', required: true, dependsOn: 'cliente' },
     { key: 'empresa_pertenece', label: 'Seleccione la empresa a la que pertenece', type: 'select-dependent', required: true, dependsOn: 'proyecto' },
@@ -360,7 +360,7 @@ const fieldConfigs = {
     { key: 'observacion', label: 'Observación', type: 'textarea', required: false, disableWhen: { field: 'estado', value: 'cerrado' } }
   ],
   wit: [
-    { key: 'fecha', label: 'Fecha', type: 'date', required: true },
+    { key: 'fecha', label: 'Fecha del Evento', type: 'date', required: true },
     { key: 'cliente', label: 'Cliente (Centro de Trabajo)', type: 'select', required: true, masterType: 'client' },
     { key: 'proyecto', label: 'Proyecto', type: 'select-dependent', required: true, dependsOn: 'cliente' },
     { key: 'empresa_pertenece', label: 'Seleccione la empresa a la que pertenece', type: 'select-dependent', required: true, dependsOn: 'proyecto' },
@@ -373,7 +373,7 @@ const fieldConfigs = {
     { key: 'observacion', label: 'Observación', type: 'textarea', required: false, disableWhen: { field: 'estado', value: 'cerrado' } }
   ],
   swa: [
-    { key: 'fecha', label: 'Fecha', type: 'date', required: true },
+    { key: 'fecha', label: 'Fecha del Evento', type: 'date', required: true },
     { key: 'cliente', label: 'Cliente (Centro de Trabajo)', type: 'select', required: true, masterType: 'client' },
     { key: 'proyecto', label: 'Proyecto', type: 'select-dependent', required: true, dependsOn: 'cliente' },
     { key: 'empresa_pertenece', label: 'Seleccione la empresa a la que pertenece', type: 'select-dependent', required: true, dependsOn: 'proyecto' },
@@ -391,7 +391,7 @@ const fieldConfigs = {
     { key: 'observacion', label: 'Observación', type: 'textarea', required: false, disableWhen: { field: 'estado', value: 'cerrado' } }
   ],
   fdkar: [
-    { key: 'fecha', label: 'Fecha', type: 'date', required: true },
+    { key: 'fecha', label: 'Fecha del Evento', type: 'date', required: true },
     { key: 'cliente', label: 'Cliente (Centro de Trabajo)', type: 'select', required: true, masterType: 'client' },
     { key: 'proyecto', label: 'Proyecto', type: 'select-dependent', required: true, dependsOn: 'cliente' },
     { key: 'nombre_quien_reporta', label: 'Nombre de quien reporta', type: 'text', required: true },

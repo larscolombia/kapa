@@ -15,8 +15,8 @@
           <q-item-section class="text-white text-right ">
             {{ user.role.name }}
           </q-item-section>
-          <q-item-section class="text-blue-8 text-right" style="font-size: x-small;">
-            V2.0 by <a href="https://lars.net.co" target="_blank" class="text-blue-4" style="text-decoration: none;">LARS</a>
+          <q-item-section class="text-right" style="font-size: x-small;">
+            <span style="color: #1976D2;">V2.0 by <a href="https://lars.net.co" target="_blank" style="color: #64B5F6; text-decoration: none;">LARS</a></span>
           </q-item-section>
         </div>
       </q-toolbar>

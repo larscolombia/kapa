@@ -56,7 +56,7 @@
               filled
               emit-value
               map-options
-              @update:model-value="applyFilters"
+              @update:model-value="onTipoChange"
             />
           </div>
           
@@ -126,8 +126,42 @@
           </div>
         </div>
 
-        <!-- Segunda fila: Fechas y botón limpiar -->
+        <!-- Segunda fila: Categoría, Subcategoría, Responsable -->
         <div class="row q-gutter-md q-mt-sm items-center">
+          <div class="col-md-2 col-sm-4 col-xs-12">
+            <q-select
+              v-model="filters.categoria_id"
+              :options="categorias"
+              option-value="maestro_id"
+              option-label="valor"
+              label="Categoría"
+              clearable
+              filled
+              emit-value
+              map-options
+              :loading="loadingCategorias"
+              :disable="!filters.tipo"
+              @update:model-value="onCategoriaChange"
+            />
+          </div>
+
+          <div class="col-md-2 col-sm-4 col-xs-12">
+            <q-select
+              v-model="filters.subcategoria_id"
+              :options="subcategoriasFiltradas"
+              option-value="maestro_id"
+              option-label="valor"
+              label="Subcategoría"
+              clearable
+              filled
+              emit-value
+              map-options
+              :loading="loadingSubcategorias"
+              :disable="!filters.categoria_id"
+              @update:model-value="applyFilters"
+            />
+          </div>
+
           <div class="col-md-3 col-sm-4 col-xs-12">
             <q-input
               v-model="filters.fecha_desde"
@@ -261,6 +295,8 @@ const loading = ref(false)
 const loadingClientes = ref(false)
 const loadingProyectos = ref(false)
 const loadingEmpresas = ref(false)
+const loadingCategorias = ref(false)
+const loadingSubcategorias = ref(false)
 const exporting = ref(false)
 const downloadingPdf = ref(null)
 const reports = ref([])
@@ -268,6 +304,8 @@ const selected = ref([])
 const clientes = ref([])
 const proyectos = ref([])
 const contratistas = ref([])
+const categorias = ref([])
+const subcategorias = ref([])
 
 const isAdmin = computed(() => {
   const roleId = authStore.user?.role_id ?? authStore.user?.role?.role_id
@@ -289,6 +327,12 @@ const empresasFiltradas = computed(() => {
   return proyecto.projectContractors.map(pc => pc.contractor || pc).filter(c => c)
 })
 
+// Subcategorías filtradas por categoría seleccionada
+const subcategoriasFiltradas = computed(() => {
+  if (!filters.value.categoria_id) return subcategorias.value
+  return subcategorias.value.filter(s => s.parent_id === filters.value.categoria_id)
+})
+
 const filters = ref({
   tipo: null,
   estado: null,
@@ -296,7 +340,9 @@ const filters = ref({
   fecha_hasta: null,
   cliente_id: null,
   proyecto_id: null,
-  empresa_id: null
+  empresa_id: null,
+  categoria_id: null,
+  subcategoria_id: null
 })
 
 const pagination = ref({
@@ -358,7 +404,7 @@ const columns = [
   },
   {
     name: 'creado_en',
-    label: 'Fecha',
+    label: 'Fecha Registro',
     align: 'left',
     field: 'creado_en',
     sortable: true,
@@ -431,6 +477,71 @@ const onProyectoChange = () => {
   applyFilters()
 }
 
+const onTipoChange = async () => {
+  // Al cambiar tipo, limpiar categoría y subcategoría y cargar las nuevas
+  filters.value.categoria_id = null
+  filters.value.subcategoria_id = null
+  
+  if (filters.value.tipo) {
+    await loadCategoriasByTipo(filters.value.tipo)
+  } else {
+    categorias.value = []
+    subcategorias.value = []
+  }
+  
+  applyFilters()
+}
+
+const onCategoriaChange = async () => {
+  // Al cambiar categoría, limpiar subcategoría y cargar las nuevas
+  filters.value.subcategoria_id = null
+  
+  if (filters.value.categoria_id) {
+    await loadSubcategorias(filters.value.categoria_id)
+  } else {
+    subcategorias.value = []
+  }
+  
+  applyFilters()
+}
+
+const loadCategoriasByTipo = async (tipo) => {
+  loadingCategorias.value = true
+  try {
+    // Mapear tipo de reporte al tipo de maestro de categoría
+    const tipoMaestroMap = {
+      'hazard_id': 'categoria_hid',
+      'wit': 'categoria_wit',
+      'swa': 'categoria_swa',
+      'fdkar': 'categoria_fdkar'
+    }
+    const tipoMaestro = tipoMaestroMap[tipo]
+    if (tipoMaestro) {
+      const response = await api.get(`/ilv/maestros/${tipoMaestro}`)
+      categorias.value = response.data || []
+      console.log('Categorias cargadas:', categorias.value)
+    }
+  } catch (error) {
+    console.error('Error loading categorias:', error)
+    categorias.value = []
+  } finally {
+    loadingCategorias.value = false
+  }
+}
+
+const loadSubcategorias = async (categoriaId) => {
+  loadingSubcategorias.value = true
+  try {
+    const response = await api.get(`/ilv/maestros/subcategorias/${categoriaId}`)
+    subcategorias.value = response.data || []
+  } catch (error) {
+    console.error('Error loading subcategorias:', error)
+    subcategorias.value = []
+  } finally {
+    loadingSubcategorias.value = false
+  }
+}
+
 const clearFilters = () => {
   filters.value = {
     tipo: null,
@@ -439,8 +550,12 @@ const clearFilters = () => {
     fecha_hasta: null,
     cliente_id: null,
     proyecto_id: null,
-    empresa_id: null
+    empresa_id: null,
+    categoria_id: null,
+    subcategoria_id: null
   }
+  categorias.value = []
+  subcategorias.value = []
   applyFilters()
 }
 

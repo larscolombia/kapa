@@ -20,7 +20,7 @@
                 <!-- 1. Fecha -->
                 <q-input
                   v-model="form.fecha"
-                  label="Fecha *"
+                  label="Fecha de la Inspección *"
                   type="date"
                   filled
                   dense
@@ -209,7 +209,7 @@
                 <!-- 1. Fecha -->
                 <q-input
                   v-model="form.fecha"
-                  label="Fecha *"
+                  label="Fecha de la Auditoría *"
                   type="date"
                   filled
                   dense

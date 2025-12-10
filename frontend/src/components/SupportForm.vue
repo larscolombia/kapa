@@ -8,14 +8,12 @@
       </q-card-section>
 
       <q-card-section>
-        <q-form @submit="onSubmit" @reset="onReset" class="q-gutter-md">
+        <q-form ref="formRef" @submit.prevent="onSubmit" @reset="onReset" class="q-gutter-md">
           <q-input
             filled
             v-model="supportFile.display_name"
             label="Título del documento *"
             hint="Nombre que aparecerá en la lista de soportes"
-            lazy-rules
-            :rules="[val => val && val.length > 0 || 'El título es obligatorio']"
           />
 
           <q-select
@@ -26,8 +24,6 @@
             hint="¿En qué sección debe aparecer este documento?"
             emit-value
             map-options
-            lazy-rules
-            :rules="[val => val || 'La categoría es obligatoria']"
           />
 
           <div class="q-gutter-sm">
@@ -99,10 +95,11 @@
             <q-btn label="Cancelar" type="reset" color="primary" flat class="q-ml-sm" />
             <q-btn 
               :label="props.supportFileId ? 'Actualizar' : 'Crear'" 
-              type="submit" 
+              type="button" 
               color="primary" 
               :loading="loading"
               :disable="!props.supportFileId && !uploadedFile"
+              @click="handleSubmitClick"
             />
           </div>
         </q-form>
@@ -124,11 +121,20 @@ const { proxy } = getCurrentInstance();
 const props = defineProps(['dialogOpen', 'supportFileId']);
 const emit = defineEmits(['update:dialogOpen', 'formSubmitted']);
 
+const formRef = ref(null);
 const loading = ref(false);
 const error = ref(null);
 const uploadedFile = ref(null);
 const fileName = ref('');
 const fileExtension = ref('');
+
+const logSupportForm = (event, payload = {}) => {
+  try {
+    console.log(`[SupportForm] ${event}`, payload);
+  } catch (logError) {
+    console.log('[SupportForm] Error logging event', logError);
+  }
+};
 
 const originalSupportFile = ref({
   name: '',
@@ -141,6 +147,12 @@ const originalSupportFile = ref({
 
 // Function to upload file using the backend endpoint
 const uploadSupportFile = async (file, supportFileData) => {
+  logSupportForm('Preparing upload payload', {
+    fileName: file?.name,
+    displayName: supportFileData?.display_name,
+    category: supportFileData?.category
+  });
+
   const formData = new FormData();
   formData.append('file', file);
   formData.append('displayName', supportFileData.display_name);
@@ -168,6 +180,11 @@ const uploadSupportFile = async (file, supportFileData) => {
   const response = await fetch('/api/upload/support-file', {
     method: 'POST',
     body: formData
+  });
+
+  logSupportForm('Upload request dispatched', {
+    endpoint: '/api/upload/support-file',
+    status: response.status
   });
 
   if (!response.ok) {
@@ -203,6 +220,12 @@ const handleFileUpload = (file) => {
   if (!file) return;
   
   uploadedFile.value = file;
+
+  logSupportForm('File attached', {
+    name: file.name,
+    size: file.size,
+    type: file.type
+  });
   
   // Auto-fill display name if empty
   if (!supportFile.value.display_name) {
@@ -230,6 +253,7 @@ const clearFile = () => {
   supportFile.value.file_path = '';
   supportFile.value.file_size = 0;
   supportFile.value.mime_type = '';
+  logSupportForm('File cleared by user');
 };
 
 const onFileRejected = (rejectedEntries) => {
@@ -325,9 +349,41 @@ const onSubmit = async () => {
     loading.value = true;
     error.value = null;
 
+    logSupportForm('onSubmit triggered', {
+      hasFile: !!uploadedFile.value,
+      supportFileId: props.supportFileId,
+      payload: {
+        display_name: supportFile.value.display_name,
+        category: supportFile.value.category,
+        file_path: supportFile.value.file_path
+      }
+    });
+
+    // Validación manual en lugar de depender de q-form
+    const validationErrors = [];
+    if (!supportFile.value.display_name || supportFile.value.display_name.trim() === '') {
+      validationErrors.push('El título es obligatorio');
+    }
+    if (!supportFile.value.category) {
+      validationErrors.push('La categoría es obligatoria');
+    }
+    if (!props.supportFileId && !uploadedFile.value) {
+      validationErrors.push('Debe seleccionar un archivo');
+    }
+    
+    if (validationErrors.length > 0) {
+      logSupportForm('Manual validation failed', { errors: validationErrors });
+      throw new Error(validationErrors.join(', '));
+    }
+    
+    logSupportForm('Validation passed, proceeding with upload');
+
     // Upload file if it's a new file
     if (uploadedFile.value && !props.supportFileId) {
       try {
+        logSupportForm('Invoking uploadSupportFile', {
+          fileName: uploadedFile.value.name
+        });
         const uploadResult = await uploadSupportFile(uploadedFile.value, supportFile.value);
         console.log('Archivo subido exitosamente:', uploadResult);
 
@@ -346,8 +402,13 @@ const onSubmit = async () => {
             title: '¡Éxito!' 
           });
 
+          logSupportForm('Upload controller created record', {
+            support_file_id: uploadResult.file.support_file_id
+          });
+
           // Refresh list by emitting event
         } else {
+          logSupportForm('Upload handler returned partial result, calling createSupportFile');
           // If upload-handler didn't create the DB record, call API to create it
           await createSupportFile(supportFile.value);
           proxy.$kapaAlert({ 
@@ -359,10 +420,15 @@ const onSubmit = async () => {
 
       } catch (uploadError) {
         console.error('Error subiendo archivo:', uploadError);
+        logSupportForm('Upload error', {
+          message: uploadError?.message,
+          stack: uploadError?.stack
+        });
         throw new Error('Error al subir el archivo: ' + uploadError.message);
       }
     } else {
       if (props.supportFileId) {
+        logSupportForm('Update flow triggered', { supportFileId: props.supportFileId });
         await updateSupportFile(props.supportFileId, supportFile.value);
         proxy.$kapaAlert({ 
           type: 'success', 
@@ -370,6 +436,7 @@ const onSubmit = async () => {
           title: '¡Éxito!' 
         });
       } else {
+        logSupportForm('Create without file flow');
         // No file uploaded and creating new: still create record
         await createSupportFile(supportFile.value);
         proxy.$kapaAlert({ 
@@ -382,9 +449,13 @@ const onSubmit = async () => {
 
     emit('formSubmitted');
     emit('update:dialogOpen', false);
+    logSupportForm('Form submission completed');
   } catch (err) {
     error.value = err.message || err.response?.data?.message || 'Error al procesar la solicitud';
     console.error('Error submitting form:', err);
+    logSupportForm('Form submission error', {
+      error: error.value
+    });
     proxy.$kapaAlert({ 
       type: 'error', 
       message: error.value, 
@@ -392,6 +463,7 @@ const onSubmit = async () => {
     });
   } finally {
     loading.value = false;
+    logSupportForm('Loading state released', { loading: loading.value });
   }
 };
 
@@ -402,12 +474,14 @@ const onReset = () => {
   fileExtension.value = '';
   error.value = null;
   emit('update:dialogOpen', false);
+  logSupportForm('Form reset');
 };
 
 watch(
   () => props.dialogOpen,
   (newVal) => {
     if (newVal) {
+      logSupportForm('Dialog opened', { supportFileId: props.supportFileId });
       loadSupportFileData();
     } else {
       // Reset form when dialog closes
@@ -416,9 +490,29 @@ watch(
       fileName.value = '';
       fileExtension.value = '';
       error.value = null;
+      logSupportForm('Dialog closed, state cleared');
     }
   }
 );
+
+watch(uploadedFile, (newFile, oldFile) => {
+  logSupportForm('uploadedFile ref changed', {
+    previous: oldFile ? { name: oldFile.name, size: oldFile.size } : null,
+    current: newFile ? { name: newFile.name, size: newFile.size } : null
+  });
+});
+
+const handleSubmitClick = async () => {
+  logSupportForm('Submit button clicked - calling onSubmit directly', {
+    disabled: !props.supportFileId && !uploadedFile.value,
+    loading: loading.value,
+    hasFile: !!uploadedFile.value,
+    supportFileId: props.supportFileId
+  });
+  
+  // Llamar directamente a onSubmit sin depender del q-form
+  await onSubmit();
+};
 </script>
 
 <style scoped>

@@ -167,6 +167,34 @@ export class IlvReportsService {
     if (filters.cliente_id) qb.andWhere('r.cliente_id = :cid', { cid: filters.cliente_id });
     if (filters.empresa_id) qb.andWhere('r.empresa_id = :eid', { eid: filters.empresa_id });
 
+    // Filtros por campos dinámicos (categoría, subcategoría, responsable)
+    if (filters.categoria_id) {
+      qb.andWhere(`EXISTS (
+        SELECT 1 FROM ilv_report_field f 
+        WHERE f.report_id = r.report_id 
+        AND f.key = 'categoria' 
+        AND f.value = :catId
+      )`, { catId: filters.categoria_id.toString() });
+    }
+
+    if (filters.subcategoria_id) {
+      qb.andWhere(`EXISTS (
+        SELECT 1 FROM ilv_report_field f 
+        WHERE f.report_id = r.report_id 
+        AND f.key = 'subcategoria' 
+        AND f.value = :subcatId
+      )`, { subcatId: filters.subcategoria_id.toString() });
+    }
+
+    if (filters.responsable_id) {
+      qb.andWhere(`EXISTS (
+        SELECT 1 FROM ilv_report_field f 
+        WHERE f.report_id = r.report_id 
+        AND f.key IN ('nombre_quien_reporta', 'nombre_ehs_contratista', 'nombre_supervisor_obra')
+        AND f.value = :respId
+      )`, { respId: filters.responsable_id.toString() });
+    }
+
     if (filters.fecha_desde) {
       // Agregar hora 00:00:00 para incluir todo el día desde el inicio
       qb.andWhere('r.creado_en >= :desde', { desde: `${filters.fecha_desde} 00:00:00` });
@@ -478,6 +506,9 @@ export class IlvReportsService {
   async exportToExcel(filters: FilterIlvReportDto, userId: number): Promise<Buffer> {
     const { data } = await this.findAll(filters, userId);
 
+    // SLA en horas (configurable)
+    const SLA_HOURS = 72; // 3 días para cerrar un reporte
+
     const columns = [
       { header: 'ID', key: 'report_id', width: 8 },
       { header: 'Tipo', key: 'tipo_label', width: 20 },
@@ -485,9 +516,15 @@ export class IlvReportsService {
       { header: 'Centro de Trabajo', key: 'cliente', width: 25 },
       { header: 'Proyecto', key: 'proyecto', width: 25 },
       { header: 'Empresa/Contratista', key: 'empresa', width: 25 },
+      { header: 'Área', key: 'area', width: 20 },
+      { header: 'Categoría', key: 'categoria', width: 20 },
+      { header: 'Subcategoría', key: 'subcategoria', width: 20 },
+      { header: 'Descripción', key: 'descripcion', width: 40 },
       { header: 'Creado Por', key: 'creador', width: 20 },
       { header: 'Fecha Creación', key: 'fecha_creacion', width: 15 },
       { header: 'Fecha Cierre', key: 'fecha_cierre', width: 15 },
+      { header: 'Tiempo Resolución (hrs)', key: 'tiempo_resolucion', width: 18 },
+      { header: 'Cumplimiento SLA', key: 'cumplimiento_sla', width: 15 },
     ];
 
     const tipoLabels: Record<string, string> = {
@@ -497,17 +534,41 @@ export class IlvReportsService {
       'fdkar': 'Safety Cards'
     };
 
-    const excelData = data.map(r => ({
-      report_id: r.report_id,
-      tipo_label: tipoLabels[r.tipo] || r.tipo,
-      estado: r.estado === 'abierto' ? 'Abierto' : 'Cerrado',
-      cliente: r.client?.name || 'N/A',
-      proyecto: r.project?.name || 'N/A',
-      empresa: r.contractor?.name || 'N/A',
-      creador: r.created_by?.name || 'N/A',
-      fecha_creacion: r.creado_en ? new Date(r.creado_en).toLocaleDateString('es-CO') : 'N/A',
-      fecha_cierre: r.fecha_cierre ? new Date(r.fecha_cierre).toLocaleDateString('es-CO') : 'N/A',
-    }));
+    // Función para obtener valor de campo dinámico
+    const getFieldValue = (report: any, key: string): string => {
+      const field = report.fields?.find(f => f.key === key);
+      return field?.value_display || field?.value || 'N/A';
+    };
+
+    // Calcular tiempo de resolución en horas
+    const calcResolutionTime = (creado: Date, cierre: Date | null): number | null => {
+      if (!cierre) return null;
+      const diffMs = new Date(cierre).getTime() - new Date(creado).getTime();
+      return Math.round(diffMs / (1000 * 60 * 60) * 10) / 10; // Redondear a 1 decimal
+    };
+
+    const excelData = data.map(r => {
+      const tiempoResolucion = calcResolutionTime(r.creado_en, r.fecha_cierre);
+      return {
+        report_id: r.report_id,
+        tipo_label: tipoLabels[r.tipo] || r.tipo,
+        estado: r.estado === 'abierto' ? 'Abierto' : 'Cerrado',
+        cliente: r.client?.name || 'N/A',
+        proyecto: r.project?.name || 'N/A',
+        empresa: r.contractor?.name || 'N/A',
+        area: getFieldValue(r, 'area'),
+        categoria: getFieldValue(r, 'categoria'),
+        subcategoria: getFieldValue(r, 'subcategoria'),
+        descripcion: getFieldValue(r, 'descripcion_condicion') || getFieldValue(r, 'descripcion_hallazgo'),
+        creador: r.created_by?.name || 'N/A',
+        fecha_creacion: r.creado_en ? new Date(r.creado_en).toLocaleDateString('es-CO') : 'N/A',
+        fecha_cierre: r.fecha_cierre ? new Date(r.fecha_cierre).toLocaleDateString('es-CO') : 'N/A',
+        tiempo_resolucion: tiempoResolucion !== null ? tiempoResolucion : 'Pendiente',
+        cumplimiento_sla: r.estado === 'cerrado' 
+          ? (tiempoResolucion !== null && tiempoResolucion <= SLA_HOURS ? 'Cumple' : 'No Cumple')
+          : 'Pendiente',
+      };
+    });
 
     let subtitle = 'Todos los reportes';
     if (filters.tipo) subtitle = `Tipo: ${tipoLabels[filters.tipo] || filters.tipo}`;
@@ -587,8 +648,17 @@ export class IlvReportsService {
       ]
     };
 
+    // Calcular tiempo de resolución y cumplimiento SLA
+    const SLA_HOURS = 72; // 3 días
     if (report.estado === 'cerrado' && report.fecha_cierre) {
       infoGeneral.campos.push({ label: 'Fecha de Cierre', value: new Date(report.fecha_cierre).toLocaleString('es-CO') });
+      
+      // Calcular tiempo de resolución
+      const diffMs = new Date(report.fecha_cierre).getTime() - new Date(report.creado_en).getTime();
+      const tiempoHoras = Math.round(diffMs / (1000 * 60 * 60) * 10) / 10;
+      const tiempoDias = Math.round(tiempoHoras / 24 * 10) / 10;
+      infoGeneral.campos.push({ label: 'Tiempo de Resolución', value: `${tiempoHoras} horas (${tiempoDias} días)` });
+      infoGeneral.campos.push({ label: 'Cumplimiento SLA', value: tiempoHoras <= SLA_HOURS ? '✅ Cumple (≤72h)' : '❌ No Cumple (>72h)' });
     }
 
     // Campos dinámicos del formulario

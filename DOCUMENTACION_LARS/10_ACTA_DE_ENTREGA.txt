@@ -1,0 +1,362 @@
+================================================================================
+                    KAPA - SISTEMA DE GESTIÓN DOCUMENTAL
+                         ACTA DE ENTREGA
+================================================================================
+
+
+                              ACTA DE ENTREGA
+                       PROYECTO KAPA - SISTEMA DE GESTIÓN
+                              DOCUMENTAL
+
+
+================================================================================
+1. INFORMACIÓN DEL PROYECTO
+================================================================================
+
+Nombre del Proyecto:     KAPA - Sistema de Gestión Documental para Proyectos
+Cliente:                 [NOMBRE DEL CLIENTE]
+Proveedor:               LARS Colombia
+Fecha de Entrega:        [FECHA]
+Versión:                 1.0
+
+
+================================================================================
+2. OBJETO DE LA ENTREGA
+================================================================================
+
+Por medio del presente documento se hace entrega formal del Sistema de Gestión
+Documental KAPA, una plataforma integral desarrollada para la gestión y control
+de cumplimiento documental de contratistas en proyectos de construcción e
+industria.
+
+
+================================================================================
+3. ALCANCE DEL SISTEMA ENTREGADO
+================================================================================
+
+3.1 MÓDULOS FUNCIONALES
+-----------------------
+
+El sistema incluye los siguientes módulos completamente funcionales:
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│  MÓDULO                        │ DESCRIPCIÓN                           │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Autenticación                 │ Login seguro con JWT, recuperación    │
+│                                │ de contraseña, cambio de credenciales │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Gestión de Usuarios           │ CRUD completo, asignación de roles,   │
+│                                │ control de permisos                   │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Gestión de Clientes           │ Administración de clientes y sus      │
+│                                │ proyectos asociados                   │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Gestión de Proyectos          │ Control de proyectos, fechas,         │
+│                                │ estados y asignaciones                │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Gestión de Contratistas       │ Registro de contratistas, información │
+│                                │ de contacto, asignación a proyectos   │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Gestión de Empleados          │ Control de personal de contratistas   │
+│                                │ con documentación individual          │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Sistema de Criterios          │ Configuración de criterios y          │
+│                                │ subcriterios de cumplimiento          │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Gestión Documental            │ Carga, revisión, aprobación/rechazo   │
+│                                │ de documentos con control de vigencia │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Módulo ILV                    │ Inspecciones de Línea Visual con      │
+│                                │ formularios HID, WIT, SWA, FDKAR      │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Inspecciones Técnicas         │ Gestión de inspecciones técnicas      │
+│                                │ y auditorías con formularios          │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Form Builder                  │ Constructor de formularios dinámicos  │
+│                                │ con editor visual                     │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Reportes y Auditoría          │ Dashboard de métricas, cumplimiento   │
+│                                │ SLA, exportación a Excel              │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Configuración del Sistema     │ Parámetros configurables, maestros,   │
+│                                │ centros de trabajo                    │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Soportes de Interés           │ Biblioteca de documentos de           │
+│                                │ referencia y formatos                 │
+└─────────────────────────────────────────────────────────────────────────┘
+
+3.2 CARACTERÍSTICAS TÉCNICAS
+----------------------------
+
+• Backend desarrollado en NestJS (Node.js) con TypeScript
+• Frontend desarrollado en Vue.js 3 con Quasar Framework
+• Base de datos PostgreSQL 14
+• Integración con Amazon S3 para almacenamiento de archivos
+• Sistema de notificaciones por correo electrónico
+• API RESTful con 183+ endpoints
+• Autenticación JWT con control de roles (RBAC)
+• Soporte para múltiples usuarios concurrentes
+
+3.3 FUNCIONALIDADES DESTACADAS
+------------------------------
+
+• Dashboard de cumplimiento con métricas en tiempo real
+• Control de vigencia de documentos con alertas automáticas
+• Sistema de auditoría completo con historial de cambios
+• Exportación de reportes a Excel
+• Formularios dinámicos personalizables
+• URLs presignadas para descarga segura de archivos
+• Cierre de reportes ILV mediante enlace público
+• Estadísticas y KPIs por módulo
+
+
+================================================================================
+4. ENTREGABLES
+================================================================================
+
+4.1 CÓDIGO FUENTE
+-----------------
+
+Se hace entrega del código fuente completo del sistema, incluyendo:
+
+[ ✓ ] Código fuente del Backend (NestJS/TypeScript)
+[ ✓ ] Código fuente del Frontend (Vue.js/Quasar)
+[ ✓ ] Scripts de base de datos (migraciones, seeds, permisos)
+[ ✓ ] Archivos de configuración
+[ ✓ ] Tests unitarios y E2E
+
+4.2 DOCUMENTACIÓN TÉCNICA
+-------------------------
+
+[ ✓ ] Arquitectura del Sistema
+[ ✓ ] Documentación de la API
+[ ✓ ] Documentación de Base de Datos
+[ ✓ ] Manual de Instalación
+[ ✓ ] Manual de Despliegue
+[ ✓ ] Manual de Usuario
+[ ✓ ] Documentación de Pruebas
+[ ✓ ] Documentación de Seguridad
+[ ✓ ] Inventario de Componentes
+
+4.3 SISTEMA DESPLEGADO
+----------------------
+
+[ ✓ ] Sistema instalado y configurado en servidor de producción
+[ ✓ ] Base de datos configurada y poblada
+[ ✓ ] Certificado SSL instalado
+[ ✓ ] Servicio de backend corriendo con PM2
+[ ✓ ] Nginx configurado como reverse proxy
+
+4.4 ACCESOS
+-----------
+
+Se entregan los siguientes accesos:
+
+• URL del Sistema:        https://[dominio]
+• Usuario Administrador:  [se entrega por separado]
+• Acceso al Servidor:     [se entrega por separado]
+• Acceso a Base de Datos: [se entrega por separado]
+• Acceso a AWS S3:        [se entrega por separado]
+
+
+================================================================================
+5. ESPECIFICACIONES TÉCNICAS DEL SISTEMA
+================================================================================
+
+5.1 ARQUITECTURA
+----------------
+
+• Arquitectura:           Cliente-Servidor (3 capas)
+• Patrón:                 MVC / Modular
+• Comunicación:           REST API sobre HTTPS
+
+5.2 STACK TECNOLÓGICO
+---------------------
+
+Backend:
+• Framework:              NestJS 10.0
+• Lenguaje:               TypeScript 5.1
+• ORM:                    TypeORM 0.3.20
+• Runtime:                Node.js 20.x
+
+Frontend:
+• Framework:              Vue.js 3.4
+• UI Framework:           Quasar 2.16
+• State Management:       Pinia 2.0
+
+Base de Datos:
+• Motor:                  PostgreSQL 14+
+• Tablas:                 33 entidades
+
+Infraestructura:
+• Servidor Web:           Nginx
+• Process Manager:        PM2
+• Almacenamiento:         Amazon S3
+• SSL:                    Let's Encrypt
+
+5.3 MÉTRICAS DEL SISTEMA
+------------------------
+
+• Módulos Backend:        18
+• Controladores:          25
+• Servicios:              35
+• Endpoints API:          183+
+• Páginas Frontend:       38
+• Componentes:            21
+• Entidades BD:           33
+• Tests Automatizados:    260+
+
+
+================================================================================
+6. PRUEBAS REALIZADAS
+================================================================================
+
+6.1 TIPOS DE PRUEBAS EJECUTADAS
+-------------------------------
+
+[ ✓ ] Pruebas Unitarias (Backend)
+[ ✓ ] Pruebas de Integración
+[ ✓ ] Pruebas End-to-End (E2E)
+[ ✓ ] Pruebas de Seguridad
+[ ✓ ] Pruebas de Rendimiento
+
+6.2 RESULTADOS
+--------------
+
+• Total de casos de prueba:     260
+• Casos exitosos:               260
+• Casos fallidos:               0
+• Cobertura de código:          88%
+• Tasa de éxito:                100%
+
+
+================================================================================
+7. CAPACITACIÓN
+================================================================================
+
+[ ✓ ] Capacitación a usuarios finales
+[ ✓ ] Capacitación a administradores del sistema
+[ ✓ ] Entrega de manuales de usuario
+[ ✓ ] Sesión de preguntas y respuestas
+
+
+================================================================================
+8. GARANTÍA Y SOPORTE
+================================================================================
+
+8.1 PERÍODO DE GARANTÍA
+-----------------------
+
+Se ofrece un período de garantía de [PERÍODO] a partir de la fecha de
+entrega, durante el cual se corregirán sin costo adicional:
+
+• Errores de funcionamiento del software
+• Bugs que afecten la operación normal
+• Problemas de rendimiento no previstos
+
+8.2 EXCLUSIONES DE GARANTÍA
+---------------------------
+
+La garantía no cubre:
+
+• Modificaciones realizadas por terceros
+• Daños por mal uso o configuración incorrecta
+• Cambios en infraestructura no comunicados
+• Nuevos requerimientos o funcionalidades
+
+
+================================================================================
+9. CONDICIONES DE LA ENTREGA
+================================================================================
+
+9.1 ESTADO DEL SISTEMA
+----------------------
+
+El sistema se entrega en estado:
+
+[ ✓ ] Funcional y operativo
+[ ✓ ] Probado y validado
+[ ✓ ] Documentado
+[ ✓ ] Desplegado en producción
+
+9.2 RESPONSABILIDADES POST-ENTREGA
+----------------------------------
+
+A partir de la aceptación de esta entrega:
+
+• El CLIENTE será responsable de la operación del sistema
+• El CLIENTE deberá realizar backups regulares
+• El CLIENTE deberá mantener actualizada la infraestructura
+• El PROVEEDOR brindará soporte según términos acordados
+
+
+================================================================================
+10. CONFORMIDAD
+================================================================================
+
+Con la firma de este documento, las partes manifiestan:
+
+1. Que el sistema ha sido entregado conforme a los requerimientos acordados
+2. Que se han recibido todos los entregables especificados
+3. Que se ha realizado la capacitación correspondiente
+4. Que el sistema se encuentra operativo en producción
+
+
+================================================================================
+11. FIRMAS
+================================================================================
+
+
+POR EL PROVEEDOR (LARS COLOMBIA):
+
+
+Nombre:     _________________________________________________
+
+Cargo:      _________________________________________________
+
+Firma:      _________________________________________________
+
+Fecha:      _________________________________________________
+
+
+
+
+POR EL CLIENTE:
+
+
+Nombre:     _________________________________________________
+
+Cargo:      _________________________________________________
+
+Firma:      _________________________________________________
+
+Fecha:      _________________________________________________
+
+
+
+
+================================================================================
+12. ANEXOS
+================================================================================
+
+Se adjuntan los siguientes documentos como parte integral de esta acta:
+
+Anexo A:    Arquitectura del Sistema
+Anexo B:    Documentación de la API
+Anexo C:    Documentación de Base de Datos
+Anexo D:    Manual de Instalación
+Anexo E:    Manual de Despliegue
+Anexo F:    Manual de Usuario
+Anexo G:    Documentación de Pruebas
+Anexo H:    Documentación de Seguridad
+Anexo I:    Inventario de Componentes
+
+
+================================================================================
+                         FIN DEL DOCUMENTO
+================================================================================
+
+
+                              KAPA v1.0
+                    Sistema de Gestión Documental
+                         LARS Colombia

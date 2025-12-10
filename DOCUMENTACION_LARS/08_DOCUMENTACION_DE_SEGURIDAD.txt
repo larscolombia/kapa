@@ -1,0 +1,493 @@
+================================================================================
+                    KAPA - SISTEMA DE GESTIÓN DOCUMENTAL
+                       DOCUMENTACIÓN DE SEGURIDAD
+================================================================================
+
+1. INTRODUCCIÓN
+================================================================================
+
+Este documento describe las medidas de seguridad implementadas en el sistema
+KAPA para proteger la información, garantizar la integridad de los datos y
+cumplir con las mejores prácticas de seguridad en aplicaciones web.
+
+
+2. ARQUITECTURA DE SEGURIDAD
+================================================================================
+
+2.1 CAPAS DE PROTECCIÓN
+-----------------------
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         CAPA 1: PERÍMETRO                               │
+│  ┌───────────────────────────────────────────────────────────────────┐ │
+│  │  • Firewall (UFW)                                                  │ │
+│  │  • SSL/TLS 1.3                                                     │ │
+│  │  • DDoS Protection                                                 │ │
+│  │  • Rate Limiting                                                   │ │
+│  └───────────────────────────────────────────────────────────────────┘ │
+├─────────────────────────────────────────────────────────────────────────┤
+│                         CAPA 2: APLICACIÓN                              │
+│  ┌───────────────────────────────────────────────────────────────────┐ │
+│  │  • Autenticación JWT                                               │ │
+│  │  • Autorización RBAC                                               │ │
+│  │  • Validación de Entrada                                           │ │
+│  │  • Sanitización de Datos                                           │ │
+│  │  • Guards de Seguridad                                             │ │
+│  └───────────────────────────────────────────────────────────────────┘ │
+├─────────────────────────────────────────────────────────────────────────┤
+│                         CAPA 3: DATOS                                   │
+│  ┌───────────────────────────────────────────────────────────────────┐ │
+│  │  • Encriptación de Contraseñas (bcrypt)                           │ │
+│  │  • URLs Presignadas (S3)                                           │ │
+│  │  • Conexiones Seguras a BD                                         │ │
+│  │  • Backups Encriptados                                             │ │
+│  └───────────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────┘
+
+
+3. AUTENTICACIÓN
+================================================================================
+
+3.1 SISTEMA DE AUTENTICACIÓN JWT
+--------------------------------
+
+El sistema utiliza JSON Web Tokens (JWT) para autenticación stateless.
+
+Características implementadas:
+
+• Algoritmo de firma: HS256 (HMAC con SHA-256)
+• Expiración configurable de tokens (default: 24 horas)
+• Payload incluye: userId, email, roleId, permissions
+• Token firmado con clave secreta de 256 bits mínimo
+• Refresh token para renovación segura
+
+Flujo de autenticación:
+
+┌──────────┐    1. Credenciales     ┌──────────┐
+│  Cliente │ ──────────────────────▶│  Server  │
+│          │                        │          │
+│          │    2. JWT Token        │          │
+│          │ ◀────────────────────── │          │
+│          │                        │          │
+│          │    3. Request + JWT    │          │
+│          │ ──────────────────────▶│          │
+│          │                        │          │
+│          │    4. Response         │          │
+│          │ ◀────────────────────── │          │
+└──────────┘                        └──────────┘
+
+3.2 PROTECCIÓN DE CONTRASEÑAS
+-----------------------------
+
+• Algoritmo: bcrypt con salt rounds de 10
+• Nunca se almacenan contraseñas en texto plano
+• Password no se retorna en respuestas de API
+• Políticas de contraseña segura recomendadas
+
+Implementación:
+
+// Hash de contraseña al crear usuario
+const hashedPassword = await bcrypt.hash(password, 10);
+
+// Validación de contraseña
+const isValid = await bcrypt.compare(inputPassword, hashedPassword);
+
+3.3 PROTECCIÓN CONTRA ATAQUES
+-----------------------------
+
+• Protección contra brute force (rate limiting)
+• reCAPTCHA v3 en formulario de login
+• Bloqueo temporal después de intentos fallidos
+• Logging de intentos de acceso
+
+
+4. AUTORIZACIÓN
+================================================================================
+
+4.1 CONTROL DE ACCESO BASADO EN ROLES (RBAC)
+--------------------------------------------
+
+Roles definidos en el sistema:
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│  ROL           │ DESCRIPCIÓN                │ PERMISOS                  │
+├─────────────────────────────────────────────────────────────────────────┤
+│  admin         │ Administrador total        │ Todos los permisos        │
+│  operator      │ Operador del sistema       │ CRUD en módulos asignados │
+│  viewer        │ Solo lectura               │ Lectura en todos          │
+│  contractor    │ Usuario contratista        │ Sus propios documentos    │
+└─────────────────────────────────────────────────────────────────────────┘
+
+4.2 GUARDS DE SEGURIDAD
+-----------------------
+
+Guards implementados en NestJS:
+
+• JwtAuthGuard: Valida token JWT en cada request
+• RolesGuard: Verifica permisos del rol
+• OwnershipGuard: Verifica propiedad del recurso
+• VisibilityGuard: Controla visibilidad de datos
+• TokenGuard: Valida tokens especiales (ILV close)
+
+Ejemplo de implementación:
+
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin', 'operator')
+@Controller('users')
+export class UsersController {
+  // Solo admin y operator pueden acceder
+}
+
+4.3 PROTECCIÓN A NIVEL DE RECURSO
+---------------------------------
+
+El sistema implementa validación de propiedad:
+
+• Usuarios solo ven datos de su cliente asignado
+• Contratistas solo acceden a sus propios documentos
+• Validación de ownership en operaciones de modificación
+
+
+5. SEGURIDAD EN COMUNICACIONES
+================================================================================
+
+5.1 HTTPS/TLS
+-------------
+
+• Protocolo: TLS 1.2 y 1.3 (TLS 1.0 y 1.1 deshabilitados)
+• Certificados: Let's Encrypt (renovación automática)
+• HSTS habilitado (Strict-Transport-Security)
+• Redirección automática HTTP → HTTPS
+
+Configuración Nginx:
+
+ssl_protocols TLSv1.2 TLSv1.3;
+ssl_prefer_server_ciphers on;
+ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains";
+
+5.2 HEADERS DE SEGURIDAD
+------------------------
+
+Headers implementados:
+
+• X-Content-Type-Options: nosniff
+• X-Frame-Options: DENY
+• X-XSS-Protection: 1; mode=block
+• Content-Security-Policy: configurado
+• Referrer-Policy: strict-origin-when-cross-origin
+
+5.3 CORS (Cross-Origin Resource Sharing)
+----------------------------------------
+
+Configuración restrictiva de CORS:
+
+• Orígenes permitidos: Solo dominios autorizados
+• Métodos permitidos: GET, POST, PUT, PATCH, DELETE
+• Headers permitidos: Lista específica
+• Credentials: Habilitado para requests autenticados
+
+
+6. SEGURIDAD EN ALMACENAMIENTO
+================================================================================
+
+6.1 AWS S3 - ALMACENAMIENTO DE ARCHIVOS
+---------------------------------------
+
+Medidas implementadas:
+
+• Bucket privado (no público)
+• URLs presignadas con expiración corta (15 minutos)
+• Políticas IAM restrictivas
+• Versionado de objetos habilitado
+• Server-side encryption (AES-256)
+
+Flujo de acceso a archivos:
+
+┌──────────┐   1. Solicita URL    ┌──────────┐   2. Genera URL    ┌─────────┐
+│  Cliente │ ─────────────────────▶│  Backend │ ─────────────────▶│   S3    │
+│          │                       │          │                    │         │
+│          │   3. URL Presignada   │          │                    │         │
+│          │ ◀───────────────────── │          │                    │         │
+│          │                       │          │                    │         │
+│          │   4. Acceso directo con URL presignada                │         │
+│          │ ────────────────────────────────────────────────────▶│         │
+└──────────┘                       └──────────┘                    └─────────┘
+
+6.2 BASE DE DATOS
+-----------------
+
+Medidas implementadas:
+
+• Conexiones solo desde localhost o IPs autorizadas
+• Usuario de BD con permisos mínimos necesarios
+• Queries parametrizadas (prevención SQL Injection)
+• Connection pooling seguro
+• Backups regulares
+
+6.3 VARIABLES DE ENTORNO
+------------------------
+
+• Credenciales almacenadas en .env (no en código)
+• .env excluido de control de versiones
+• Variables sensibles solo en servidor
+• Rotación periódica de secretos recomendada
+
+
+7. VALIDACIÓN Y SANITIZACIÓN
+================================================================================
+
+7.1 VALIDACIÓN DE ENTRADA
+-------------------------
+
+Implementación con class-validator:
+
+• Validación de tipos de datos
+• Validación de formatos (email, fechas, etc.)
+• Validación de rangos y longitudes
+• Mensajes de error descriptivos
+
+Ejemplo:
+
+export class CreateUserDto {
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+
+  @IsString()
+  @MinLength(8)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+  password: string;
+
+  @IsString()
+  @MaxLength(255)
+  name: string;
+}
+
+7.2 SANITIZACIÓN DE DATOS
+-------------------------
+
+• Escape de caracteres especiales en salidas
+• Prevención de XSS en frontend (Vue.js escaping)
+• Validación de tipos de archivo permitidos
+• Límites de tamaño de archivo
+
+7.3 PREVENCIÓN DE INYECCIÓN
+---------------------------
+
+• SQL Injection: Queries parametrizadas con TypeORM
+• NoSQL Injection: Validación de tipos
+• Command Injection: No ejecución de comandos de usuario
+• Path Traversal: Validación de rutas de archivo
+
+
+8. LOGGING Y AUDITORÍA
+================================================================================
+
+8.1 SISTEMA DE LOGGING
+----------------------
+
+Información registrada:
+
+• Timestamp de cada operación
+• ID de request único (requestId)
+• Usuario que realizó la acción
+• Endpoint accedido
+• Método HTTP
+• IP de origen
+• Tiempo de respuesta
+• Errores y excepciones
+
+8.2 AUDITORÍA DE DOCUMENTOS
+---------------------------
+
+El sistema registra:
+
+• Cambios de estado de documentos
+• Usuario que realizó el cambio
+• Timestamp del cambio
+• Estado anterior y nuevo
+• Comentarios/motivos
+
+Tabla: document_state_audit
+
+• document_id
+• previous_state
+• new_state
+• changed_by
+• changed_at
+• comments
+
+8.3 AUDITORÍA DE MÓDULO ILV
+---------------------------
+
+Tabla: ilv_audit
+
+• report_id
+• action (create, update, close)
+• performed_by
+• details (JSON)
+• performed_at
+
+8.4 RETENCIÓN DE LOGS
+---------------------
+
+• Logs de aplicación: 90 días
+• Logs de auditoría: 2 años
+• Logs de acceso: 1 año
+
+
+9. PROTECCIÓN CONTRA AMENAZAS COMUNES
+================================================================================
+
+9.1 OWASP TOP 10 - MITIGACIONES
+-------------------------------
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Vulnerabilidad           │ Mitigación Implementada                    │
+├─────────────────────────────────────────────────────────────────────────┤
+│  A01: Broken Access       │ RBAC, Guards, Ownership validation         │
+│  Control                  │                                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│  A02: Cryptographic       │ bcrypt, TLS 1.3, JWT HS256                 │
+│  Failures                 │                                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│  A03: Injection           │ Parametrized queries, Input validation     │
+├─────────────────────────────────────────────────────────────────────────┤
+│  A04: Insecure Design     │ Threat modeling, Security guards           │
+├─────────────────────────────────────────────────────────────────────────┤
+│  A05: Security            │ Security headers, Secure defaults          │
+│  Misconfiguration         │                                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│  A06: Vulnerable          │ Dependency updates, npm audit              │
+│  Components               │                                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│  A07: Authentication      │ JWT, bcrypt, Rate limiting                 │
+│  Failures                 │                                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│  A08: Software and Data   │ Input validation, Output encoding          │
+│  Integrity Failures       │                                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│  A09: Security Logging    │ Comprehensive logging, Audit trails        │
+│  Failures                 │                                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│  A10: Server-Side         │ URL validation, Restricted outbound        │
+│  Request Forgery          │                                            │
+└─────────────────────────────────────────────────────────────────────────┘
+
+9.2 PROTECCIÓN CONTRA ATAQUES ESPECÍFICOS
+-----------------------------------------
+
+CSRF (Cross-Site Request Forgery):
+• SameSite cookies
+• Origin validation
+• Token-based requests
+
+XSS (Cross-Site Scripting):
+• Vue.js auto-escaping
+• Content-Security-Policy
+• HttpOnly cookies
+
+Clickjacking:
+• X-Frame-Options: DENY
+• frame-ancestors 'none'
+
+
+10. GESTIÓN DE SESIONES
+================================================================================
+
+10.1 TOKENS DE ACCESO
+---------------------
+
+• Expiración: 24 horas (configurable)
+• Almacenamiento: localStorage (frontend)
+• Validación en cada request
+• Revocación al cerrar sesión
+
+10.2 TOKENS ESPECIALES
+----------------------
+
+Para operaciones sensibles (cierre de ILV):
+
+• Token único por operación
+• Expiración corta (24-48 horas)
+• Uso único (invalidado después de uso)
+• Asociado a recurso específico
+
+
+11. SEGURIDAD EN DESARROLLO
+================================================================================
+
+11.1 PRÁCTICAS DE CÓDIGO SEGURO
+-------------------------------
+
+• Code reviews obligatorios
+• Análisis estático de código
+• Dependencias actualizadas
+• Secretos fuera del código fuente
+
+11.2 GESTIÓN DE DEPENDENCIAS
+----------------------------
+
+• npm audit regular
+• Actualización de paquetes con vulnerabilidades
+• Lock files para versiones exactas
+• Revisión de licencias
+
+
+12. RESPUESTA A INCIDENTES
+================================================================================
+
+12.1 PLAN DE RESPUESTA
+----------------------
+
+1. Detección: Monitoreo de logs y alertas
+2. Contención: Aislamiento del componente afectado
+3. Erradicación: Eliminación de la amenaza
+4. Recuperación: Restauración del servicio
+5. Lecciones aprendidas: Documentación y mejoras
+
+12.2 CONTACTOS DE EMERGENCIA
+----------------------------
+
+En caso de incidente de seguridad:
+• Equipo de Desarrollo: [contacto]
+• Administrador de Sistemas: [contacto]
+• Oficial de Seguridad: [contacto]
+
+
+13. CUMPLIMIENTO Y NORMATIVAS
+================================================================================
+
+El sistema está diseñado considerando:
+
+• Ley de Protección de Datos Personales (Colombia)
+• Mejores prácticas OWASP
+• Estándares de seguridad de la industria
+
+
+14. RECOMENDACIONES ADICIONALES
+================================================================================
+
+14.1 PARA ADMINISTRADORES
+-------------------------
+
+• Revisar logs de acceso regularmente
+• Mantener actualizados los componentes
+• Realizar backups frecuentes
+• Rotar credenciales periódicamente
+• Monitorear métricas de seguridad
+
+14.2 PARA USUARIOS
+------------------
+
+• Usar contraseñas fuertes y únicas
+• No compartir credenciales
+• Cerrar sesión al terminar
+• Reportar actividad sospechosa
+• Mantener navegador actualizado
+
+
+================================================================================
+                         FIN DEL DOCUMENTO
+================================================================================

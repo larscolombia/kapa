@@ -3,7 +3,7 @@ import { SupportsService } from './supports.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { SupportFile } from '@entities/support-file.entity';
 import { Repository } from 'typeorm';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 
 describe('SupportsService', () => {
   let service: SupportsService;
@@ -166,7 +166,7 @@ describe('SupportsService', () => {
       mockSupportFileRepository.findOne.mockResolvedValue(existingFile);
 
       await expect(service.createSupportFile(mockSupportFileData)).rejects.toThrow(
-        BadRequestException,
+        ConflictException,
       );
     });
   });

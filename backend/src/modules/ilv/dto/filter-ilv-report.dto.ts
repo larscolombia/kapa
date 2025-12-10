@@ -27,6 +27,21 @@ export class FilterIlvReportDto {
   empresa_id?: number;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  categoria_id?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  subcategoria_id?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  responsable_id?: number;
+
+  @IsOptional()
   @IsDateString()
   fecha_desde?: string;
 

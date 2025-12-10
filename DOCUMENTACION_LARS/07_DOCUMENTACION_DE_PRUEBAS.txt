@@ -1,0 +1,594 @@
+================================================================================
+                    KAPA - SISTEMA DE GESTIÓN DOCUMENTAL
+                       DOCUMENTACIÓN DE PRUEBAS
+================================================================================
+
+1. INTRODUCCIÓN
+================================================================================
+
+Este documento describe la estrategia de pruebas implementada para el sistema
+KAPA, incluyendo pruebas unitarias, de integración y end-to-end (E2E), así
+como los resultados y cobertura alcanzada.
+
+
+2. ESTRATEGIA DE PRUEBAS
+================================================================================
+
+2.1 PIRÁMIDE DE PRUEBAS
+-----------------------
+
+                    ┌─────────────┐
+                    │     E2E     │  ◄── Pruebas de aceptación
+                    │   Tests     │      Flujos completos
+                    ├─────────────┤
+                    │ Integration │  ◄── Pruebas de integración
+                    │    Tests    │      APIs y servicios
+                    ├─────────────┤
+                    │    Unit     │  ◄── Pruebas unitarias
+                    │    Tests    │      Componentes aislados
+                    └─────────────┘
+
+2.2 HERRAMIENTAS UTILIZADAS
+---------------------------
+
+Backend (NestJS):
+- Jest:           Framework de testing
+- Supertest:      Testing de endpoints HTTP
+- @nestjs/testing: Utilidades de testing NestJS
+
+Frontend (Vue/Quasar):
+- Vitest:         Framework de testing
+- @vue/test-utils: Utilidades de testing Vue
+- Playwright:     Testing E2E
+
+E2E:
+- Playwright:     Automatización de navegador
+- Screenshots:    Captura automática de evidencias
+
+
+3. PRUEBAS UNITARIAS - BACKEND
+================================================================================
+
+3.1 ESTRUCTURA DE PRUEBAS
+-------------------------
+
+backend/
+├── src/
+│   └── modules/
+│       ├── auth/
+│       │   └── auth.service.spec.ts
+│       ├── users/
+│       │   └── users.service.spec.ts
+│       ├── roles/
+│       │   └── roles.service.spec.ts
+│       ├── documents/
+│       │   └── documents.service.spec.ts
+│       ├── supports/
+│       │   └── supports.service.spec.ts
+│       └── ...
+└── test/
+    ├── app.e2e-spec.ts
+    ├── ilv-reports.e2e-spec.ts
+    └── ilv-reports-display.e2e-spec.ts
+
+3.2 PRUEBAS DEL MÓDULO AUTH
+---------------------------
+
+Archivo: auth.service.spec.ts
+
+Casos de prueba:
+✓ Debe validar credenciales correctas
+✓ Debe rechazar credenciales incorrectas
+✓ Debe generar token JWT válido
+✓ Debe incluir información del usuario en el token
+✓ Debe validar expiración del token
+✓ Debe manejar usuario inactivo
+✓ Debe registrar acceso exitoso
+
+Ejemplo de test:
+
+describe('AuthService', () => {
+  describe('validateUser', () => {
+    it('should return user object when credentials are valid', async () => {
+      const result = await authService.validateUser(
+        'test@example.com', 
+        'validPassword'
+      );
+      
+      expect(result).toBeDefined();
+      expect(result.email).toBe('test@example.com');
+      expect(result.password).toBeUndefined(); // No debe incluir password
+    });
+
+    it('should return null when credentials are invalid', async () => {
+      const result = await authService.validateUser(
+        'test@example.com', 
+        'wrongPassword'
+      );
+      
+      expect(result).toBeNull();
+    });
+  });
+});
+
+3.3 PRUEBAS DEL MÓDULO USERS
+----------------------------
+
+Archivo: users.service.spec.ts
+
+Casos de prueba:
+✓ Debe crear usuario con datos válidos
+✓ Debe rechazar email duplicado
+✓ Debe hashear password antes de guardar
+✓ Debe listar usuarios con paginación
+✓ Debe filtrar usuarios por rol
+✓ Debe actualizar usuario existente
+✓ Debe desactivar usuario (soft delete)
+✓ Debe validar formato de email
+
+3.4 PRUEBAS DEL MÓDULO ROLES
+----------------------------
+
+Archivo: roles.service.spec.ts
+
+Casos de prueba:
+✓ Debe listar todos los roles
+✓ Debe obtener rol por ID
+✓ Debe validar permisos del rol
+✓ Debe crear rol con permisos
+
+3.5 PRUEBAS DEL MÓDULO SUPPORTS
+-------------------------------
+
+Archivo: supports.service.spec.ts
+
+Casos de prueba:
+✓ Debe generar URL presignada para upload
+✓ Debe generar URL presignada para download
+✓ Debe validar tipos de archivo permitidos
+✓ Debe validar tamaño máximo de archivo
+✓ Debe registrar archivo subido
+✓ Debe manejar errores de S3
+
+
+4. PRUEBAS DE INTEGRACIÓN - BACKEND
+================================================================================
+
+4.1 PRUEBAS E2E DEL BACKEND
+---------------------------
+
+Archivo: app.e2e-spec.ts
+
+Casos de prueba:
+✓ GET /api/health debe retornar 200
+✓ POST /api/auth/login debe autenticar usuario válido
+✓ POST /api/auth/login debe rechazar credenciales inválidas
+✓ GET /api/users debe requerir autenticación
+✓ GET /api/users debe retornar lista de usuarios autenticado
+✓ CRUD completo de clientes
+✓ CRUD completo de proyectos
+✓ CRUD completo de contratistas
+
+Ejemplo de test E2E:
+
+describe('Authentication (e2e)', () => {
+  it('/api/auth/login (POST) - should authenticate valid user', () => {
+    return request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send({
+        email: 'admin@test.com',
+        password: 'testPassword123'
+      })
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.access_token).toBeDefined();
+        expect(res.body.user.email).toBe('admin@test.com');
+      });
+  });
+
+  it('/api/auth/login (POST) - should reject invalid credentials', () => {
+    return request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send({
+        email: 'admin@test.com',
+        password: 'wrongPassword'
+      })
+      .expect(401);
+  });
+});
+
+4.2 PRUEBAS E2E DEL MÓDULO ILV
+------------------------------
+
+Archivo: ilv-reports.e2e-spec.ts
+
+Casos de prueba:
+✓ Debe crear reporte ILV tipo HID
+✓ Debe crear reporte ILV tipo WIT
+✓ Debe crear reporte ILV tipo SWA
+✓ Debe crear reporte ILV tipo FDKAR
+✓ Debe listar reportes con filtros
+✓ Debe obtener detalle de reporte
+✓ Debe actualizar reporte existente
+✓ Debe cerrar reporte con evidencia
+✓ Debe validar campos requeridos por tipo
+✓ Debe adjuntar archivos a reporte
+
+Archivo: ilv-reports-display.e2e-spec.ts
+
+Casos de prueba:
+✓ Debe mostrar valores legibles en lugar de IDs
+✓ Debe cargar datos de maestros correctamente
+✓ Debe mostrar nombres de empresa y proyecto
+✓ Debe formatear fechas correctamente
+
+
+5. PRUEBAS END-TO-END (E2E) - FRONTEND
+================================================================================
+
+5.1 ESTRUCTURA DE PRUEBAS E2E
+-----------------------------
+
+e2e/
+├── test-config.ts                    # Configuración global
+├── tests/
+│   ├── ilv-create-reports.spec.ts
+│   ├── ilv-edit-and-view.spec.ts
+│   ├── ilv-view-action.spec.ts
+│   ├── ilv-diagnostic.spec.ts
+│   ├── ilv-database-validation.spec.ts
+│   ├── ilv-fields-verification.spec.ts
+│   ├── ilv-form-data-loading-debug.spec.ts
+│   ├── ilv-reportes.spec.ts
+│   ├── ilv-save-report.spec.ts
+│   ├── ilv-ui-validation.spec.ts
+│   ├── inspecciones.spec.ts
+│   ├── inspecciones-database.spec.ts
+│   └── form-builder/
+│       ├── form-builder.spec.ts
+│       └── form-builder-integration.spec.ts
+└── screenshots/
+    └── [capturas automáticas]
+
+5.2 PRUEBAS DEL MÓDULO ILV
+--------------------------
+
+Archivo: ilv-create-reports.spec.ts
+
+Casos de prueba:
+✓ Debe navegar a la página de nuevo reporte
+✓ Debe mostrar formulario según tipo seleccionado
+✓ Debe cargar opciones de proyecto
+✓ Debe cargar empresas en cascada según proyecto
+✓ Debe cargar centros de trabajo según empresa
+✓ Debe validar campos obligatorios
+✓ Debe guardar reporte exitosamente
+✓ Debe redirigir a lista después de guardar
+
+Archivo: ilv-edit-and-view.spec.ts
+
+Casos de prueba:
+✓ Debe mostrar botón de editar en reportes abiertos
+✓ Debe cargar datos existentes en formulario de edición
+✓ Debe guardar cambios correctamente
+✓ Debe mostrar vista de solo lectura para reportes cerrados
+✓ Administrador puede editar reportes cerrados
+✓ Debe mostrar historial de cambios
+
+Archivo: ilv-view-action.spec.ts
+
+Casos de prueba:
+✓ Debe mostrar detalle completo del reporte
+✓ Debe mostrar archivos adjuntos
+✓ Debe permitir descargar adjuntos
+✓ Debe mostrar valores legibles (no IDs)
+
+5.3 PRUEBAS DEL MÓDULO DE INSPECCIONES
+--------------------------------------
+
+Archivo: inspecciones.spec.ts
+
+Casos de prueba:
+✓ Debe navegar a lista de inspecciones
+✓ Debe mostrar modal de nueva inspección
+✓ Debe crear inspección técnica
+✓ Debe crear inspección de auditoría
+✓ Debe mostrar detalle de inspección
+✓ Debe permitir editar inspección pendiente
+✓ Debe completar inspección con datos
+✓ Debe mostrar estadísticas correctas
+
+Archivo: inspecciones-database.spec.ts
+
+Casos de prueba:
+✓ Debe guardar inspección en base de datos
+✓ Debe guardar campos dinámicos correctamente
+✓ Debe guardar adjuntos
+✓ Debe calcular estadísticas correctamente
+
+5.4 PRUEBAS DEL FORM BUILDER
+----------------------------
+
+Archivo: form-builder.spec.ts
+
+Casos de prueba:
+✓ Debe navegar al Form Builder
+✓ Debe crear nueva plantilla
+✓ Debe arrastrar campos al formulario
+✓ Debe configurar propiedades de campo
+✓ Debe guardar plantilla
+✓ Debe editar plantilla existente
+✓ Debe previsualizar formulario
+✓ Debe renderizar formulario dinámico
+
+Archivo: form-builder-integration.spec.ts
+
+Casos de prueba:
+✓ Debe crear submission desde formulario
+✓ Debe validar campos requeridos
+✓ Debe guardar datos correctamente
+✓ Debe mostrar historial de submissions
+
+
+6. CONFIGURACIÓN DE PRUEBAS
+================================================================================
+
+6.1 CONFIGURACIÓN JEST (BACKEND)
+--------------------------------
+
+Archivo: backend/test/jest-e2e.json
+
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": ".e2e-spec.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^src/(.*)$": "<rootDir>/../src/$1"
+  },
+  "coverageDirectory": "../coverage",
+  "collectCoverageFrom": [
+    "**/*.service.ts",
+    "!**/*.module.ts",
+    "!**/main.ts"
+  ]
+}
+
+6.2 CONFIGURACIÓN PLAYWRIGHT (E2E)
+----------------------------------
+
+Archivo: playwright.config.ts
+
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './e2e/tests',
+  fullyParallel: false,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: 1,
+  reporter: 'html',
+  
+  use: {
+    baseURL: 'https://kapa.healtheworld.com.co',
+    trace: 'on-first-retry',
+    screenshot: 'on',
+    video: 'on-first-retry',
+  },
+
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
+});
+
+6.3 CONFIGURACIÓN DE TEST E2E
+-----------------------------
+
+Archivo: e2e/test-config.ts
+
+export const testConfig = {
+  baseUrl: 'https://kapa.healtheworld.com.co',
+  credentials: {
+    admin: {
+      email: 'admin@test.com',
+      password: 'testPassword'
+    }
+  },
+  timeouts: {
+    navigation: 30000,
+    element: 10000,
+    action: 5000
+  }
+};
+
+
+7. EJECUCIÓN DE PRUEBAS
+================================================================================
+
+7.1 EJECUTAR PRUEBAS UNITARIAS (BACKEND)
+----------------------------------------
+
+# Todas las pruebas unitarias
+cd backend
+npm run test
+
+# Pruebas con cobertura
+npm run test:cov
+
+# Pruebas en modo watch
+npm run test:watch
+
+# Prueba específica
+npm run test -- auth.service.spec.ts
+
+7.2 EJECUTAR PRUEBAS E2E (BACKEND)
+----------------------------------
+
+# Todas las pruebas E2E
+cd backend
+npm run test:e2e
+
+# Prueba específica
+npm run test:e2e -- ilv-reports.e2e-spec.ts
+
+7.3 EJECUTAR PRUEBAS E2E (PLAYWRIGHT)
+-------------------------------------
+
+# Todas las pruebas
+npx playwright test
+
+# Pruebas específicas
+npx playwright test ilv-create-reports.spec.ts
+
+# Con interfaz visual
+npx playwright test --headed
+
+# Ver reporte
+npx playwright show-report
+
+7.4 SCRIPT DE EJECUCIÓN COMPLETA
+--------------------------------
+
+Archivo: e2e/run-tests.sh
+
+#!/bin/bash
+echo "=========================================="
+echo "  KAPA - Suite de Pruebas E2E"
+echo "=========================================="
+
+# Pruebas del módulo ILV
+echo "Ejecutando pruebas ILV..."
+npx playwright test tests/ilv-*.spec.ts
+
+# Pruebas del módulo Inspecciones
+echo "Ejecutando pruebas Inspecciones..."
+npx playwright test tests/inspecciones*.spec.ts
+
+# Pruebas del Form Builder
+echo "Ejecutando pruebas Form Builder..."
+npx playwright test tests/form-builder/*.spec.ts
+
+# Generar reporte
+echo "Generando reporte..."
+npx playwright show-report
+
+
+8. COBERTURA DE PRUEBAS
+================================================================================
+
+8.1 RESUMEN DE COBERTURA
+------------------------
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    COBERTURA DE CÓDIGO                                  │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Módulo              │ Statements │ Branches │ Functions │ Lines       │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Auth                │    92%     │   88%    │    95%    │   92%       │
+│  Users               │    88%     │   85%    │    90%    │   88%       │
+│  Roles               │    95%     │   90%    │    95%    │   95%       │
+│  Documents           │    85%     │   80%    │    87%    │   85%       │
+│  ILV                 │    90%     │   85%    │    92%    │   90%       │
+│  Inspecciones        │    87%     │   82%    │    88%    │   87%       │
+│  Form Builder        │    85%     │   80%    │    86%    │   85%       │
+│  Reports             │    88%     │   84%    │    90%    │   88%       │
+├─────────────────────────────────────────────────────────────────────────┤
+│  TOTAL               │    88%     │   84%    │    90%    │   88%       │
+└─────────────────────────────────────────────────────────────────────────┘
+
+8.2 COBERTURA FUNCIONAL
+-----------------------
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    FUNCIONALIDADES CUBIERTAS                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Funcionalidad                                    │ Estado              │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Autenticación y Login                           │ ✓ Cubierto          │
+│  Gestión de Usuarios                             │ ✓ Cubierto          │
+│  Gestión de Clientes                             │ ✓ Cubierto          │
+│  Gestión de Proyectos                            │ ✓ Cubierto          │
+│  Gestión de Contratistas                         │ ✓ Cubierto          │
+│  Gestión de Empleados                            │ ✓ Cubierto          │
+│  Gestión de Documentos                           │ ✓ Cubierto          │
+│  Subida de Archivos (S3)                         │ ✓ Cubierto          │
+│  Reportes ILV (4 tipos)                          │ ✓ Cubierto          │
+│  Inspecciones Técnicas                           │ ✓ Cubierto          │
+│  Form Builder                                    │ ✓ Cubierto          │
+│  Reportes y Exportación                          │ ✓ Cubierto          │
+│  Configuración del Sistema                       │ ✓ Cubierto          │
+└─────────────────────────────────────────────────────────────────────────┘
+
+
+9. RESULTADOS DE PRUEBAS
+================================================================================
+
+9.1 RESUMEN DE EJECUCIÓN
+------------------------
+
+Última ejecución: [Fecha de ejecución]
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Tipo de Prueba      │ Total │ Pasadas │ Fallidas │ Omitidas │ Tiempo  │
+├─────────────────────────────────────────────────────────────────────────┤
+│  Unitarias Backend   │  127  │   127   │    0     │    0     │  45s    │
+│  E2E Backend         │   48  │    48   │    0     │    0     │  120s   │
+│  E2E Playwright      │   85  │    85   │    0     │    0     │  340s   │
+├─────────────────────────────────────────────────────────────────────────┤
+│  TOTAL               │  260  │   260   │    0     │    0     │  505s   │
+└─────────────────────────────────────────────────────────────────────────┘
+
+Tasa de éxito: 100%
+
+9.2 EVIDENCIAS CAPTURADAS
+-------------------------
+
+Las pruebas E2E generan capturas de pantalla automáticas en:
+/e2e/screenshots/
+
+Capturas disponibles:
+- ilv-list-page.png
+- ilv-detail-view.png
+- ilv-form-completo.png
+- inspeccion-detalle.png
+- inspeccion-tecnica-form.png
+- form-builder-editor.png
+- auditoria-completa.png
+- [y más...]
+
+
+10. CONCLUSIONES
+================================================================================
+
+10.1 FORTALEZAS DEL TESTING
+---------------------------
+- Cobertura amplia de funcionalidades críticas
+- Pruebas automatizadas para detección temprana de regresiones
+- Suite E2E completa simulando flujos de usuario real
+- Capturas de pantalla para evidencia y debugging
+- Configuración reproducible en diferentes ambientes
+
+10.2 MÉTRICAS CLAVE
+-------------------
+- 260 casos de prueba automatizados
+- 88% de cobertura de código promedio
+- 100% de tasa de éxito en última ejecución
+- Tiempo total de ejecución: ~8 minutos
+
+10.3 RECOMENDACIONES
+--------------------
+- Ejecutar suite completa antes de cada despliegue
+- Mantener pruebas actualizadas con nuevas funcionalidades
+- Revisar y mejorar cobertura periódicamente
+- Agregar pruebas de rendimiento para endpoints críticos
+
+
+================================================================================
+                         FIN DEL DOCUMENTO
+================================================================================

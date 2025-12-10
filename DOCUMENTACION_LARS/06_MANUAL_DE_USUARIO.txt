@@ -1,0 +1,511 @@
+================================================================================
+                    KAPA - SISTEMA DE GESTIÓN DOCUMENTAL
+                         MANUAL DE USUARIO
+================================================================================
+
+1. INTRODUCCIÓN
+================================================================================
+
+Bienvenido a KAPA, el Sistema de Gestión Documental diseñado para optimizar
+el control y seguimiento de documentación de contratistas en proyectos de
+construcción e industria.
+
+Este manual le guiará a través de todas las funcionalidades del sistema
+para que pueda aprovechar al máximo sus capacidades.
+
+
+2. ACCESO AL SISTEMA
+================================================================================
+
+2.1 REQUISITOS DEL NAVEGADOR
+----------------------------
+El sistema es compatible con:
+- Google Chrome (recomendado) - versión 90 o superior
+- Mozilla Firefox - versión 88 o superior
+- Microsoft Edge - versión 90 o superior
+- Safari - versión 14 o superior
+
+2.2 INICIO DE SESIÓN
+--------------------
+1. Abra su navegador web
+2. Ingrese la URL del sistema: https://[dominio]
+3. En la pantalla de login, ingrese:
+   - Email: su correo electrónico registrado
+   - Contraseña: su contraseña asignada
+4. Haga clic en "Iniciar Sesión"
+
+2.3 RECUPERAR CONTRASEÑA
+------------------------
+1. En la pantalla de login, haga clic en "¿Olvidó su contraseña?"
+2. Ingrese su correo electrónico
+3. Recibirá un email con instrucciones para restablecer su contraseña
+4. Siga el enlace y cree una nueva contraseña segura
+
+2.4 CAMBIAR CONTRASEÑA
+----------------------
+1. Una vez dentro del sistema, haga clic en su nombre de usuario
+2. Seleccione "Cambiar Contraseña"
+3. Ingrese su contraseña actual
+4. Ingrese y confirme la nueva contraseña
+5. Haga clic en "Guardar"
+
+
+3. NAVEGACIÓN PRINCIPAL
+================================================================================
+
+3.1 MENÚ LATERAL
+----------------
+El menú lateral izquierdo contiene las secciones principales:
+
+┌─────────────────────────────────────┐
+│  🏠 Inicio                          │
+│  👥 Clientes                        │
+│  📁 Proyectos                       │
+│  🏢 Contratistas                    │
+│  👷 Empleados                       │
+│  📋 Criterios                       │
+│  📄 Documentos                      │
+│  📊 Reportes                        │
+│  🔍 ILV (Inspecciones)              │
+│  📝 Inspecciones Técnicas           │
+│  ⚙️ Configuración                   │
+│  📚 Soportes de Interés             │
+└─────────────────────────────────────┘
+
+3.2 BARRA SUPERIOR
+------------------
+- Logo de la aplicación (clic para ir al inicio)
+- Nombre del usuario actual
+- Menú de usuario (perfil, cambiar contraseña, cerrar sesión)
+
+
+4. MÓDULO DE CLIENTES
+================================================================================
+
+4.1 VER LISTA DE CLIENTES
+-------------------------
+1. En el menú lateral, haga clic en "Clientes"
+2. Verá la lista de todos los clientes registrados
+3. Use el buscador para filtrar por nombre o NIT
+4. Haga clic en un cliente para ver sus proyectos
+
+4.2 CREAR NUEVO CLIENTE
+-----------------------
+1. En la lista de clientes, haga clic en "+ Nuevo Cliente"
+2. Complete el formulario:
+   - Nombre: Razón social del cliente
+   - NIT: Número de identificación tributaria
+   - Dirección: Dirección física (opcional)
+   - Teléfono: Número de contacto (opcional)
+   - Email: Correo electrónico de contacto
+3. Haga clic en "Guardar"
+
+
+5. MÓDULO DE PROYECTOS
+================================================================================
+
+5.1 VER PROYECTOS
+-----------------
+1. Desde la lista de clientes, haga clic en un cliente
+2. Verá todos los proyectos asociados a ese cliente
+3. Cada proyecto muestra:
+   - Nombre del proyecto
+   - Fechas de inicio y fin
+   - Estado actual
+   - Porcentaje de cumplimiento
+
+5.2 CREAR PROYECTO
+------------------
+1. Dentro de un cliente, haga clic en "+ Nuevo Proyecto"
+2. Complete la información:
+   - Nombre del proyecto
+   - Descripción
+   - Fecha de inicio
+   - Fecha de finalización
+   - Ubicación
+3. Haga clic en "Guardar"
+
+5.3 ASIGNAR CONTRATISTAS A PROYECTO
+-----------------------------------
+1. Dentro de un proyecto, vaya a la pestaña "Contratistas"
+2. Haga clic en "+ Asignar Contratista"
+3. Seleccione el contratista de la lista
+4. Configure los criterios que debe cumplir
+5. Haga clic en "Asignar"
+
+
+6. MÓDULO DE CONTRATISTAS
+================================================================================
+
+6.1 GESTIÓN DE CONTRATISTAS
+---------------------------
+1. En el menú, seleccione "Contratistas"
+2. Verá la lista con todos los contratistas
+3. Cada registro muestra:
+   - Razón social
+   - NIT
+   - Estado de cumplimiento (indicador visual)
+   - Proyectos asignados
+
+6.2 CREAR CONTRATISTA
+---------------------
+1. Haga clic en "+ Nuevo Contratista"
+2. Complete el formulario:
+   - Razón Social
+   - NIT
+   - Representante Legal
+   - Dirección
+   - Teléfono
+   - Email principal
+   - Emails adicionales (para notificaciones)
+3. Haga clic en "Guardar"
+
+6.3 VER DETALLE DE CONTRATISTA
+------------------------------
+1. Haga clic en el nombre del contratista
+2. Verá:
+   - Información general
+   - Lista de empleados
+   - Documentos pendientes
+   - Historial de cumplimiento
+   - Proyectos asignados
+
+
+7. MÓDULO DE EMPLEADOS
+================================================================================
+
+7.1 GESTIÓN DE EMPLEADOS
+------------------------
+1. Seleccione un contratista
+2. Vaya a la sección "Empleados"
+3. Verá la lista de empleados con:
+   - Nombre
+   - Documento de identidad
+   - Cargo
+   - Estado de documentación
+
+7.2 CREAR EMPLEADO
+------------------
+1. Haga clic en "+ Nuevo Empleado"
+2. Complete:
+   - Nombre completo
+   - Tipo de documento
+   - Número de documento
+   - Cargo
+   - Email (opcional)
+   - Teléfono (opcional)
+3. Haga clic en "Guardar"
+
+
+8. GESTIÓN DE DOCUMENTOS
+================================================================================
+
+8.1 VER DOCUMENTOS REQUERIDOS
+-----------------------------
+1. Navegue a un contratista o empleado específico
+2. Seleccione la pestaña de criterios/documentos
+3. Verá los criterios organizados con sus subcriterios
+4. Cada subcriterio indica:
+   - Nombre del documento requerido
+   - Estado (pendiente, aprobado, rechazado, vencido)
+   - Fecha de vencimiento (si aplica)
+
+8.2 SUBIR UN DOCUMENTO
+----------------------
+1. Ubique el subcriterio donde desea subir el documento
+2. Haga clic en "Subir Documento" o el ícono de carga
+3. Seleccione el archivo desde su computador
+   - Formatos permitidos: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG
+   - Tamaño máximo: 10 MB
+4. Si el documento requiere fecha de vencimiento, ingrésela
+5. Haga clic en "Cargar"
+6. El documento quedará en estado "Pendiente de revisión"
+
+8.3 ESTADOS DE DOCUMENTOS
+-------------------------
+- ⏳ PENDIENTE:   Documento subido, esperando revisión
+- ✅ APROBADO:    Documento verificado y aceptado
+- ❌ RECHAZADO:   Documento no cumple requisitos
+- ⚠️ VENCIDO:     Documento expiró, requiere actualización
+- 🔄 REEMPLAZADO: Documento fue sustituido por versión nueva
+
+8.4 REVISAR DOCUMENTOS (ADMINISTRADORES)
+----------------------------------------
+1. Vaya a la sección de documentos pendientes
+2. Seleccione un documento para revisar
+3. Visualice el documento adjunto
+4. Seleccione la acción:
+   - Aprobar: El documento cumple los requisitos
+   - Rechazar: El documento no cumple (debe indicar motivo)
+5. Agregue comentarios si es necesario
+6. Haga clic en "Guardar"
+
+
+9. MÓDULO ILV (INSPECCIONES DE LÍNEA VISUAL)
+================================================================================
+
+9.1 DASHBOARD ILV
+-----------------
+1. En el menú, seleccione "ILV"
+2. Verá el dashboard con:
+   - Resumen de reportes abiertos/cerrados
+   - Gráficos por tipo de hallazgo
+   - Estadísticas de tiempo de cierre
+   - Reportes recientes
+
+9.2 CREAR REPORTE ILV
+---------------------
+1. Haga clic en "+ Nuevo Reporte"
+2. Seleccione el tipo de reporte:
+   - HID: Hallazgo de Identificación
+   - WIT: Witness (Testigo)
+   - SWA: Safety Walk Around
+   - FDKAR: First Day Knowledge Assessment Review
+3. Complete los campos según el tipo:
+   - Proyecto
+   - Empresa
+   - Centro de trabajo
+   - Descripción del hallazgo
+   - Categoría
+   - Severidad
+   - Acciones requeridas
+4. Adjunte fotografías si es necesario (solo HID)
+5. Haga clic en "Guardar"
+
+9.3 GESTIONAR REPORTES ILV
+--------------------------
+1. En la lista de reportes, use los filtros:
+   - Por tipo (HID, WIT, SWA, FDKAR)
+   - Por estado (Abierto, Cerrado)
+   - Por proyecto
+   - Por fecha
+2. Haga clic en un reporte para ver detalles
+3. Para cerrar un reporte:
+   - Haga clic en "Cerrar Reporte"
+   - Ingrese los comentarios de cierre
+   - Adjunte evidencia de la acción correctiva
+   - Confirme el cierre
+
+
+10. MÓDULO DE INSPECCIONES TÉCNICAS
+================================================================================
+
+10.1 DASHBOARD DE INSPECCIONES
+------------------------------
+1. Seleccione "Inspecciones Técnicas" en el menú
+2. Visualice:
+   - Inspecciones programadas
+   - Inspecciones completadas
+   - Estadísticas de cumplimiento
+
+10.2 CREAR INSPECCIÓN
+---------------------
+1. Haga clic en "+ Nueva Inspección"
+2. Seleccione el tipo:
+   - Técnica: Inspección de seguridad en campo
+   - Auditoría: Auditoría documental
+3. Complete la información:
+   - Proyecto
+   - Contratista
+   - Fecha programada
+   - Inspector asignado
+4. Complete el formulario de inspección según el tipo
+5. Haga clic en "Guardar"
+
+10.3 COMPLETAR INSPECCIÓN
+-------------------------
+1. Seleccione una inspección de la lista
+2. Complete todos los campos del formulario
+3. Agregue observaciones y fotografías
+4. Asigne puntuación si aplica
+5. Haga clic en "Completar Inspección"
+
+
+11. REPORTES Y AUDITORÍA
+================================================================================
+
+11.1 ACCEDER A REPORTES
+-----------------------
+1. En el menú, seleccione "Reportes"
+2. Verá el dashboard de auditoría con:
+   - Métricas de cumplimiento SLA
+   - Tiempo promedio de respuesta
+   - Documentos dentro/fuera de SLA
+   - Timeline de actividad
+
+11.2 FILTRAR REPORTES
+---------------------
+1. Use los filtros disponibles:
+   - Cliente
+   - Proyecto
+   - Contratista
+   - Rango de fechas
+   - Estado del documento
+2. Los resultados se actualizan automáticamente
+
+11.3 EXPORTAR A EXCEL
+---------------------
+1. Configure los filtros deseados
+2. Haga clic en "Exportar a Excel"
+3. Se descargará un archivo con:
+   - Hoja de Resumen: Métricas generales
+   - Hoja de Detalle: Todos los registros
+   - Hoja de Timeline: Historial de cambios
+
+
+12. CONSTRUCTOR DE FORMULARIOS (FORM BUILDER)
+================================================================================
+
+12.1 CREAR PLANTILLA DE FORMULARIO
+----------------------------------
+1. Vaya a Configuración > Form Builder
+2. Haga clic en "+ Nueva Plantilla"
+3. Ingrese nombre y descripción
+4. Arrastre campos desde el panel izquierdo:
+   - Texto corto
+   - Texto largo
+   - Número
+   - Fecha
+   - Selección única
+   - Selección múltiple
+   - Archivo adjunto
+   - Firma
+5. Configure cada campo:
+   - Etiqueta
+   - Placeholder
+   - Obligatorio (sí/no)
+   - Opciones (para selección)
+6. Haga clic en "Guardar Plantilla"
+
+12.2 USAR FORMULARIO DINÁMICO
+-----------------------------
+1. Los formularios creados aparecen en las secciones correspondientes
+2. Complete los campos requeridos
+3. El sistema valida automáticamente los datos
+4. Envíe el formulario
+
+
+13. CONFIGURACIÓN DEL SISTEMA
+================================================================================
+
+13.1 PARÁMETROS DEL SISTEMA
+---------------------------
+1. Vaya a Configuración > Parámetros
+2. Visualice y modifique parámetros como:
+   - Horas de SLA
+   - Días de anticipación para alertas de vencimiento
+   - Configuraciones de email
+3. Haga clic en "Guardar" después de modificar
+
+13.2 GESTIÓN DE MAESTROS
+------------------------
+1. Vaya a Configuración > Maestros
+2. Administre catálogos de:
+   - Categorías ILV
+   - Severidades
+   - Áreas de trabajo
+   - Centros de trabajo
+3. Puede agregar, editar o desactivar registros
+
+13.3 GESTIÓN DE USUARIOS
+------------------------
+1. Vaya a Configuración > Usuarios
+2. Administre usuarios del sistema:
+   - Crear nuevos usuarios
+   - Asignar roles
+   - Activar/desactivar usuarios
+   - Resetear contraseñas
+
+
+14. SOPORTES DE INTERÉS
+================================================================================
+
+14.1 ACCEDER A DOCUMENTOS DE REFERENCIA
+---------------------------------------
+1. En el menú, seleccione "Soportes de Interés"
+2. Navegue por las categorías:
+   - Manuales de contratistas
+   - Formatos oficiales
+   - Procedimientos
+   - Estándares de seguridad
+3. Haga clic en un documento para descargarlo
+
+14.2 ADMINISTRAR SOPORTES (ADMINISTRADORES)
+-------------------------------------------
+1. Vaya a Administración > Soportes
+2. Puede:
+   - Subir nuevos documentos
+   - Organizar por categorías
+   - Editar descripción
+   - Eliminar documentos obsoletos
+
+
+15. NOTIFICACIONES
+================================================================================
+
+15.1 TIPOS DE NOTIFICACIONES
+----------------------------
+El sistema envía notificaciones por email para:
+- Documentos próximos a vencer
+- Documentos rechazados (al contratista)
+- Nuevos documentos para revisión (a revisores)
+- Reportes ILV asignados
+- Inspecciones programadas
+
+15.2 CONFIGURAR PREFERENCIAS
+----------------------------
+Las notificaciones se configuran según el rol del usuario.
+Contacte al administrador para ajustar preferencias.
+
+
+16. PREGUNTAS FRECUENTES
+================================================================================
+
+P: ¿Por qué no puedo ver ciertos proyectos?
+R: Los usuarios solo ven los proyectos a los que tienen acceso según su rol
+   y cliente asignado.
+
+P: ¿Qué hago si un documento es rechazado?
+R: Revise los comentarios del revisor, corrija el documento y súbalo
+   nuevamente.
+
+P: ¿Cómo sé si un documento está por vencer?
+R: El sistema muestra indicadores visuales y envía notificaciones con
+   anticipación configurable.
+
+P: ¿Puedo editar un documento ya aprobado?
+R: No puede editarlo, pero puede subir una nueva versión que reemplazará
+   la anterior.
+
+P: ¿Cómo exporto información del sistema?
+R: Use la función de exportar a Excel disponible en la sección de Reportes.
+
+
+17. ATAJOS DE TECLADO
+================================================================================
+
+Ctrl + S          Guardar
+Ctrl + N          Nuevo registro
+Ctrl + F          Buscar
+Esc               Cerrar modal/cancelar
+Enter             Confirmar acción
+
+
+18. SOPORTE TÉCNICO
+================================================================================
+
+Si tiene problemas técnicos o consultas sobre el sistema:
+
+- Email: soporte@dominio.com
+- Teléfono: [número de contacto]
+- Horario: Lunes a Viernes, 8:00 AM - 6:00 PM
+
+Antes de contactar soporte, tenga a mano:
+- Descripción del problema
+- Captura de pantalla (si aplica)
+- Navegador y versión que utiliza
+
+
+================================================================================
+                         FIN DEL DOCUMENTO
+================================================================================

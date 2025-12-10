@@ -1,0 +1,724 @@
+================================================================================
+                    KAPA - SISTEMA DE GESTIÓN DOCUMENTAL
+                       INVENTARIO DE COMPONENTES
+================================================================================
+
+1. RESUMEN EJECUTIVO
+================================================================================
+
+Este documento presenta el inventario completo de componentes del sistema KAPA,
+incluyendo módulos de backend, páginas de frontend, componentes reutilizables,
+servicios, entidades de base de datos y dependencias del proyecto.
+
+
+2. COMPONENTES DEL BACKEND
+================================================================================
+
+2.1 MÓDULOS PRINCIPALES (18 MÓDULOS)
+------------------------------------
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│  #  │ Módulo                      │ Descripción                        │
+├─────────────────────────────────────────────────────────────────────────┤
+│  1  │ AuthModule                  │ Autenticación y autorización JWT   │
+│  2  │ UsersModule                 │ Gestión de usuarios del sistema    │
+│  3  │ RolesModule                 │ Roles y permisos                   │
+│  4  │ ClientsModule               │ Gestión de clientes                │
+│  5  │ ProjectsModule              │ Gestión de proyectos               │
+│  6  │ ContractorsModule           │ Gestión de contratistas            │
+│  7  │ EmployeesModule             │ Gestión de empleados               │
+│  8  │ CriterionModule             │ Criterios de evaluación            │
+│  9  │ SubcriterionModule          │ Subcriterios                       │
+│ 10  │ DocumentsModule             │ Gestión de documentos              │
+│ 11  │ SupportsModule              │ Soportes y archivos S3             │
+│ 12  │ ReportsModule               │ Reportes y auditoría               │
+│ 13  │ ILVModule                   │ Inspecciones de Línea Visual       │
+│ 14  │ InspeccionesModule          │ Inspecciones técnicas              │
+│ 15  │ FormBuilderModule           │ Constructor de formularios         │
+│ 16  │ SystemConfigModule          │ Configuración del sistema          │
+│ 17  │ ProjectContractorsModule    │ Relación proyecto-contratista      │
+│ 18  │ ProjectContractorCriterions │ Criterios por proyecto-contratista │
+└─────────────────────────────────────────────────────────────────────────┘
+
+2.2 CONTROLADORES (25 CONTROLADORES)
+------------------------------------
+
+Auth:
+  - AuthController               POST /auth/login, /auth/profile
+
+Users:
+  - UsersController              CRUD /users
+
+Roles:
+  - RolesController              GET /roles
+
+Clients:
+  - ClientsController            CRUD /clients
+
+Projects:
+  - ProjectsController           CRUD /projects
+
+Contractors:
+  - ContractorsController        CRUD /contractors
+
+Employees:
+  - EmployeesController          CRUD /employees
+
+Criterion:
+  - CriterionController          CRUD /criterion
+
+Subcriterion:
+  - SubcriterionController       CRUD /subcriterion
+
+Documents:
+  - DocumentsController          CRUD /documents, estados, revisión
+
+Supports:
+  - SupportsController           GET/POST presigned URLs
+  - UploadController             POST upload de archivos
+
+Reports:
+  - ReportsController            GET /reports/audit, metrics, export
+
+ILV:
+  - IlvReportsController         CRUD /ilv/reports
+  - IlvMaestrosController        CRUD /ilv/maestros
+  - IlvCloseController           POST /ilv/close
+  - IlvAttachmentsController     CRUD /ilv/attachments
+  - IlvStatsController           GET /ilv/stats
+
+Inspecciones:
+  - InspeccionesController       CRUD /inspecciones
+  - InspeccionesAttachmentsCtrl  CRUD /inspecciones/attachments
+  - InspeccionesStatsController  GET /inspecciones/stats
+
+Form Builder:
+  - FormTemplateController       CRUD /form-builder/templates
+  - FormSubmissionController     CRUD /form-builder/submissions
+
+System Config:
+  - SystemConfigController       CRUD /system-config
+
+2.3 SERVICIOS (35 SERVICIOS)
+----------------------------
+
+Módulos Base:
+  - AuthService
+  - UsersService
+  - RolesService
+  - ClientsService
+  - ProjectsService
+  - ContractorsService
+  - EmployeesService
+  - CriterionService
+  - SubcriterionService
+  - DocumentsService
+  - SupportsService
+  - ReportsService
+
+Módulo ILV:
+  - IlvReportsService
+  - IlvMaestrosService
+  - IlvAuthService
+  - IlvNotificationsService
+  - IlvAttachmentsService
+  - IlvStatsService
+  - IlvSchedulerService
+
+Módulo Inspecciones:
+  - InspeccionesReportsService
+  - InspeccionesAttachmentsService
+  - InspeccionesNotificationsService
+  - InspeccionesStatsService
+  - InspeccionesSchedulerService
+
+Módulo Form Builder:
+  - FormTemplateService
+  - FormSubmissionService
+  - FormDraftService
+
+Sistema:
+  - SystemConfigService
+  - ExportService
+  - NotificationService
+
+2.4 ENTIDADES DE BASE DE DATOS (33 ENTIDADES)
+---------------------------------------------
+
+Módulo de Usuarios:
+  - User
+  - Role
+  - Access
+
+Módulo de Clientes/Proyectos:
+  - Client
+  - Project
+  - ProjectContractor
+  - ProjectContractorCriterion
+
+Módulo de Contratistas:
+  - Contractor
+  - ContractorEmail
+  - Employee
+
+Módulo de Documentos:
+  - Document
+  - DocumentType
+  - Criterion
+  - Subcriterion
+  - DocumentStateAudit
+
+Módulo ILV:
+  - IlvReport
+  - IlvReportField
+  - IlvMaestro
+  - IlvAttachment
+  - IlvCloseToken
+  - IlvEmailLog
+  - IlvAudit
+
+Módulo Inspecciones:
+  - InspeccionReport
+  - InspeccionReportField
+  - InspeccionMaestro
+  - InspeccionAttachment
+
+Módulo Form Builder:
+  - FormTemplate
+  - FormTemplateClassification
+  - FormSubmission
+  - FormSubmissionHistory
+  - FormDraft
+
+Sistema:
+  - SystemParameter
+  - SupportFile
+
+2.5 GUARDS DE SEGURIDAD (6 GUARDS)
+----------------------------------
+
+  - JwtAuthGuard           Validación de token JWT
+  - LocalAuthGuard         Autenticación local (login)
+  - RolesGuard             Validación de roles
+  - IlvOwnershipGuard      Propiedad de recursos ILV
+  - IlvVisibilityGuard     Visibilidad de datos ILV
+  - IlvTokenGuard          Tokens de cierre público
+
+2.6 INTERCEPTORS (1 INTERCEPTOR)
+--------------------------------
+
+  - DebugInterceptor       Logging de requests con timing
+
+2.7 DECORATORS (1 DECORATOR)
+----------------------------
+
+  - @Public()              Marca endpoints como públicos
+
+2.8 DTOs (45+ DTOs)
+-------------------
+
+Auth:
+  - LoginDto
+
+Users:
+  - CreateUserDto
+  - UpdateUserDto
+
+ILV:
+  - CreateIlvReportDto
+  - UpdateIlvReportDto
+  - FilterIlvReportDto
+  - CloseIlvReportDto
+  - CreateMaestroDto
+
+Inspecciones:
+  - CreateInspeccionReportDto
+  - UpdateInspeccionReportDto
+  - FilterInspeccionDto
+
+Form Builder:
+  - CreateFormTemplateDto
+  - UpdateFormTemplateDto
+  - CreateFormSubmissionDto
+  - FormDraftDto
+
+[Y más DTOs para cada módulo...]
+
+2.9 UTILIDADES (4 ARCHIVOS)
+---------------------------
+
+  - field-mapper.util.ts    Mapeo de campos ILV
+  - validators.util.ts      Validadores personalizados
+  - mail.util.ts            Utilidades de email
+  - export.service.ts       Exportación Excel/PDF
+
+
+3. COMPONENTES DEL FRONTEND
+================================================================================
+
+3.1 PÁGINAS (38 PÁGINAS)
+------------------------
+
+Autenticación:
+  - LoginPage.vue
+  - RestorePassword.vue
+
+Dashboard:
+  - IndexPage.vue
+
+Gestión de Clientes:
+  - ClientProjectsPage.vue
+
+Gestión de Proyectos:
+  - ProjectsPage.vue
+  - ProjectPage.vue
+  - ProjectContractorsPage.vue
+
+Gestión de Contratistas:
+  - ContractorsPage.vue
+
+Gestión de Empleados:
+  - EmployeesPage.vue
+  - EmployeesSubCriterionPage.vue
+
+Gestión de Criterios:
+  - CriterionPage.vue
+  - SubCriterionPage.vue
+
+Módulo ILV:
+  - ILVDashboard.vue
+  - ILVReportsList.vue
+  - ILVReportForm.vue
+  - ILVReportDetail.vue
+  - ILVClosePublic.vue
+  - ILVMaestrosAdmin.vue
+  - ILVStatsPage.vue
+
+Módulo Inspecciones:
+  - InspeccionesDashboard.vue
+  - InspeccionesReportsList.vue
+  - InspeccionesReportForm.vue
+  - InspeccionesReportDetail.vue
+
+Form Builder:
+  - FormBuilderList.vue
+  - FormBuilderEditor.vue
+
+Reportes:
+  - ReportsPage.vue
+
+Configuración:
+  - SystemConfigPage.vue
+  - SystemConfigParameters.vue
+  - SystemConfigIlvMaestros.vue
+  - SystemConfigInspeccionMaestros.vue
+  - SystemConfigWorkCenters.vue
+
+Administración:
+  - UsersPage.vue
+  - AdminSupportsPage.vue
+
+Soportes:
+  - SupportsOfInterestPage.vue
+  - GroupSupportsOfInterestPage.vue
+
+Errores:
+  - ErrorNotFound.vue
+  - ErrorUnauthorized.vue
+
+Testing:
+  - TestILVDataLoad.vue
+
+3.2 COMPONENTES REUTILIZABLES (21 COMPONENTES)
+----------------------------------------------
+
+Formularios:
+  - ContractorForm.vue        Formulario de contratista
+  - ProjectForm.vue           Formulario de proyecto
+  - UserForm.vue              Formulario de usuario
+  - SupportForm.vue           Formulario de soportes
+  - ModalForm.vue             Modal genérico con formulario
+
+Tarjetas:
+  - SimpleCard.vue            Tarjeta simple
+  - FileCard.vue              Tarjeta de archivo
+  - PercentageCard.vue        Tarjeta con porcentaje
+  - SubCriterionCard.vue      Tarjeta de subcriterio
+
+Inputs:
+  - DatePicker.vue            Selector de fecha
+  - EmailGroupBox.vue         Grupo de emails
+
+Diálogos:
+  - KapaAlertDialog.vue       Diálogo de alertas
+  - ChangePassword.vue        Cambio de contraseña
+
+Información:
+  - ProjectInfo.vue           Información de proyecto
+  - SubContractorList.vue     Lista de subcontratistas
+
+Form Builder:
+  - FormBuilderEditor.vue     Editor de formularios
+  - FieldPreview.vue          Vista previa de campo
+  - FieldProperties.vue       Propiedades de campo
+  - FormRenderer.vue          Renderizador de formulario
+  - RenderField.vue           Renderizado de campo
+  - DynamicFormsSection.vue   Sección de formularios
+
+3.3 LAYOUTS (1 LAYOUT)
+----------------------
+
+  - MainLayout.vue            Layout principal con menú lateral
+
+3.4 SERVICIOS (15 SERVICIOS)
+----------------------------
+
+  - authService.js            Autenticación
+  - userService.js            Usuarios
+  - clientService.js          Clientes
+  - projectService.js         Proyectos
+  - contractorService.js      Contratistas
+  - employeesService.js       Empleados
+  - criterionService.js       Criterios
+  - subcriterionService.js    Subcriterios
+  - documentService.js        Documentos
+  - supportService.js         Soportes generales
+  - supportsService.js        Soportes de interés
+  - roleService.js            Roles
+  - ilvService.js             Módulo ILV
+  - inspeccionesService.js    Inspecciones
+  - formBuilderService.js     Form Builder
+  - systemConfigService.js    Configuración
+
+3.5 COMPOSABLES (2 COMPOSABLES)
+-------------------------------
+
+  - useAuth.js                Lógica de autenticación
+  - useDocument.js            Lógica de documentos
+
+3.6 STORES (PINIA) (2 STORES)
+-----------------------------
+
+  - auth.js                   Store de autenticación
+  - index.js                  Configuración de stores
+
+3.7 UTILIDADES (2 UTILIDADES)
+-----------------------------
+
+  - s3Manager.js              Gestión de archivos S3
+  - kapaAlert.js              Sistema de alertas
+
+
+4. RUTAS DEL SISTEMA
+================================================================================
+
+4.1 RUTAS FRONTEND (40+ RUTAS)
+------------------------------
+
+Públicas:
+  /login                      Inicio de sesión
+  /restore-password           Recuperar contraseña
+  /ilv/close/:token           Cierre público ILV
+
+Protegidas:
+  /                           Dashboard principal
+  /clients                    Lista de clientes
+  /clients/:id/projects       Proyectos del cliente
+  /projects                   Lista de proyectos
+  /projects/:id               Detalle de proyecto
+  /projects/:id/contractors   Contratistas del proyecto
+  /contractors                Lista de contratistas
+  /employees                  Lista de empleados
+  /criterion                  Criterios
+  /subcriterion               Subcriterios
+  /documents                  Documentos
+
+  /ilv                        Dashboard ILV
+  /ilv/reports                Lista de reportes ILV
+  /ilv/reports/new            Nuevo reporte ILV
+  /ilv/reports/:id            Detalle reporte ILV
+  /ilv/reports/:id/edit       Editar reporte ILV
+  /ilv/maestros               Administrar maestros ILV
+  /ilv/stats                  Estadísticas ILV
+
+  /inspecciones               Dashboard inspecciones
+  /inspecciones/list          Lista de inspecciones
+  /inspecciones/new           Nueva inspección
+  /inspecciones/:id           Detalle inspección
+  /inspecciones/:id/edit      Editar inspección
+
+  /form-builder               Lista de plantillas
+  /form-builder/new           Nueva plantilla
+  /form-builder/:id/edit      Editar plantilla
+
+  /admin-reports              Reportes de auditoría
+  /admin-supports             Administrar soportes
+  /supports-of-interest       Soportes de interés
+  /users                      Gestión de usuarios
+
+  /system-config              Configuración general
+  /system-config/parameters   Parámetros del sistema
+  /system-config/ilv-maestros Maestros ILV
+  /system-config/inspeccion-maestros  Maestros inspecciones
+  /system-config/work-centers Centros de trabajo
+
+
+5. ENDPOINTS API (183+ ENDPOINTS)
+================================================================================
+
+5.1 AUTENTICACIÓN
+-----------------
+POST   /api/auth/login
+GET    /api/auth/profile
+POST   /api/auth/refresh
+
+5.2 USUARIOS
+------------
+GET    /api/users
+POST   /api/users
+GET    /api/users/:id
+PUT    /api/users/:id
+DELETE /api/users/:id
+PATCH  /api/users/:id/password
+
+5.3 CLIENTES
+------------
+GET    /api/clients
+POST   /api/clients
+GET    /api/clients/:id
+PUT    /api/clients/:id
+DELETE /api/clients/:id
+GET    /api/clients/:id/projects
+
+5.4 PROYECTOS
+-------------
+GET    /api/projects
+POST   /api/projects
+GET    /api/projects/:id
+PUT    /api/projects/:id
+DELETE /api/projects/:id
+GET    /api/projects/:id/contractors
+
+5.5 CONTRATISTAS
+----------------
+GET    /api/contractors
+POST   /api/contractors
+GET    /api/contractors/:id
+PUT    /api/contractors/:id
+DELETE /api/contractors/:id
+GET    /api/contractors/:id/employees
+GET    /api/contractors/:id/compliance
+
+5.6 EMPLEADOS
+-------------
+GET    /api/employees
+POST   /api/employees
+GET    /api/employees/:id
+PUT    /api/employees/:id
+DELETE /api/employees/:id
+
+5.7 DOCUMENTOS
+--------------
+GET    /api/documents
+POST   /api/documents
+GET    /api/documents/:id
+PUT    /api/documents/:id
+DELETE /api/documents/:id
+PATCH  /api/documents/:id/status
+GET    /api/documents/:id/history
+
+5.8 ILV
+-------
+GET    /api/ilv/reports
+POST   /api/ilv/reports
+GET    /api/ilv/reports/:id
+PUT    /api/ilv/reports/:id
+DELETE /api/ilv/reports/:id
+PATCH  /api/ilv/reports/:id/close
+GET    /api/ilv/maestros
+POST   /api/ilv/maestros
+GET    /api/ilv/stats
+POST   /api/ilv/attachments
+GET    /api/ilv/close/:token
+
+5.9 INSPECCIONES
+----------------
+GET    /api/inspecciones
+POST   /api/inspecciones
+GET    /api/inspecciones/:id
+PUT    /api/inspecciones/:id
+DELETE /api/inspecciones/:id
+GET    /api/inspecciones/stats
+POST   /api/inspecciones/attachments
+
+5.10 FORM BUILDER
+-----------------
+GET    /api/form-builder/templates
+POST   /api/form-builder/templates
+GET    /api/form-builder/templates/:id
+PUT    /api/form-builder/templates/:id
+DELETE /api/form-builder/templates/:id
+GET    /api/form-builder/submissions
+POST   /api/form-builder/submissions
+
+5.11 REPORTES
+-------------
+GET    /api/reports/audit
+GET    /api/reports/metrics
+GET    /api/reports/sla
+GET    /api/reports/export/excel
+
+5.12 SOPORTES
+-------------
+POST   /api/supports/presigned-url/upload
+GET    /api/supports/presigned-url/:fileKey
+POST   /api/upload/support-file
+
+5.13 CONFIGURACIÓN
+------------------
+GET    /api/system-config/parameters
+PUT    /api/system-config/parameters/:key
+GET    /api/system-config/maestros/:type
+POST   /api/system-config/maestros
+
+
+6. DEPENDENCIAS DEL PROYECTO
+================================================================================
+
+6.1 DEPENDENCIAS BACKEND (30 DEPENDENCIAS)
+------------------------------------------
+
+Framework:
+  @nestjs/common            ^10.0.0
+  @nestjs/core              ^10.0.0
+  @nestjs/platform-express  ^10.4.20
+  @nestjs/config            ^3.2.3
+
+Autenticación:
+  @nestjs/jwt               ^10.2.0
+  @nestjs/passport          ^10.0.3
+  passport                  ^0.7.0
+  passport-jwt              ^4.0.1
+  passport-local            ^1.0.0
+  bcrypt                    ^5.1.1
+
+Base de Datos:
+  @nestjs/typeorm           ^10.0.2
+  typeorm                   ^0.3.20
+  pg                        ^8.16.3
+
+AWS:
+  @aws-sdk/s3-request-presigner  ^3.914.0
+
+Validación:
+  class-transformer         ^0.5.1
+  class-validator           ^0.14.2
+
+Email:
+  nodemailer                ^6.9.14
+  resend                    ^6.5.2
+
+Exportación:
+  exceljs                   ^4.4.0
+  pdfmake                   ^0.2.20
+
+Utilidades:
+  axios                     ^1.7.4
+  cors                      ^2.8.5
+  dotenv                    ^16.4.5
+  multer                    ^2.0.2
+  @nestjs/schedule          ^6.0.1
+  rxjs                      ^7.8.1
+  reflect-metadata          ^0.2.0
+
+6.2 DEPENDENCIAS FRONTEND (12 DEPENDENCIAS)
+-------------------------------------------
+
+Framework:
+  vue                       ^3.4.18
+  quasar                    ^2.16.0
+  @quasar/extras            ^1.16.4
+
+Estado y Routing:
+  pinia                     ^2.0.11
+  vue-router                ^4.0.12
+
+HTTP:
+  axios                     ^1.2.1
+
+AWS:
+  @aws-sdk/client-s3        ^3.635.0
+  @aws-sdk/s3-request-presigner  ^3.635.0
+
+Utilidades:
+  uuid                      ^13.0.0
+  vuedraggable              ^4.1.0
+
+Seguridad:
+  vue-recaptcha-v3          ^2.0.1
+
+
+7. ARCHIVOS DE CONFIGURACIÓN
+================================================================================
+
+Backend:
+  - package.json            Dependencias y scripts
+  - tsconfig.json           Configuración TypeScript
+  - tsconfig.build.json     Config build TypeScript
+  - nest-cli.json           Configuración NestJS
+  - ecosystem.config.js     Configuración PM2
+  - .env                    Variables de entorno
+
+Frontend:
+  - package.json            Dependencias y scripts
+  - quasar.config.js        Configuración Quasar
+  - jsconfig.json           Configuración JavaScript
+  - postcss.config.cjs      Configuración PostCSS
+  - nginx.conf              Configuración Nginx
+
+E2E:
+  - playwright.config.ts    Configuración Playwright
+  - test-config.ts          Configuración de tests
+
+
+8. SCRIPTS DE BASE DE DATOS
+================================================================================
+
+Migraciones:
+  - create_audit_table.sql
+  - create_ilb_tables.sql
+  - create_inspeccion_attachment.sql
+  - create_form_builder_tables.sql
+  - create_system_parameters.sql
+  - add_maestros_hid_campos.sql
+  - add_parent_maestro_id.sql
+
+Seeds:
+  - seed-maestros-hid.sql
+  - seed-maestros-ilb.sql
+  - seed_categorias_hid_jerarquicas.sql
+  - insert_categorias_hid.sql
+
+Permisos:
+  - add_reports_permissions.sql
+  - add_form_builder_permissions.sql
+  - add_system_config_permissions.sql
+  - add-ilb-permissions.sql
+
+Mantenimiento:
+  - fix_duplicated_maestros.sql
+  - migrate_historical_audit.sql
+
+
+9. SCRIPTS DE MONITOREO
+================================================================================
+
+  - monitoring/apache_worker_monitor.sh
+  - monitoring/check_apache_health.sh
+  - monitoring/check_apache_health_v2.sh
+  - monitoring/check_health.sh
+
+
+================================================================================
+                         FIN DEL DOCUMENTO
+================================================================================

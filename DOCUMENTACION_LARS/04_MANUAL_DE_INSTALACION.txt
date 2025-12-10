@@ -1,0 +1,476 @@
+================================================================================
+                    KAPA - SISTEMA DE GESTIÓN DOCUMENTAL
+                       MANUAL DE INSTALACIÓN
+================================================================================
+
+1. REQUISITOS DEL SISTEMA
+================================================================================
+
+1.1 REQUISITOS DE HARDWARE (MÍNIMOS)
+------------------------------------
+- Procesador:        2 núcleos (recomendado 4)
+- Memoria RAM:       4 GB (recomendado 8 GB)
+- Almacenamiento:    20 GB SSD (recomendado 50 GB)
+- Red:               Conexión estable a Internet
+
+1.2 REQUISITOS DE SOFTWARE
+--------------------------
+- Sistema Operativo: Ubuntu 20.04 LTS / 22.04 LTS (o compatible)
+- Node.js:           v18.x o v20.x LTS
+- NPM:               v9.x o superior
+- PostgreSQL:        v14 o superior
+- Nginx:             v1.18 o superior
+- Git:               v2.25 o superior
+
+1.3 SERVICIOS EXTERNOS REQUERIDOS
+---------------------------------
+- Cuenta AWS con acceso a S3
+- Servicio de email (SMTP o Resend)
+- Dominio con certificado SSL (para producción)
+
+
+2. PREPARACIÓN DEL SERVIDOR
+================================================================================
+
+2.1 ACTUALIZACIÓN DEL SISTEMA
+-----------------------------
+sudo apt update && sudo apt upgrade -y
+
+2.2 INSTALACIÓN DE DEPENDENCIAS BASE
+------------------------------------
+sudo apt install -y curl wget git build-essential
+
+2.3 INSTALACIÓN DE NODE.JS
+--------------------------
+# Usando NodeSource
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# Verificar instalación
+node --version
+npm --version
+
+2.4 INSTALACIÓN DE POSTGRESQL
+-----------------------------
+sudo apt install -y postgresql postgresql-contrib
+
+# Iniciar servicio
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+
+# Verificar instalación
+psql --version
+
+2.5 INSTALACIÓN DE NGINX
+------------------------
+sudo apt install -y nginx
+
+# Iniciar servicio
+sudo systemctl start nginx
+sudo systemctl enable nginx
+
+2.6 INSTALACIÓN DE PM2 (GLOBAL)
+-------------------------------
+sudo npm install -g pm2
+
+
+3. CONFIGURACIÓN DE BASE DE DATOS
+================================================================================
+
+3.1 CREAR USUARIO Y BASE DE DATOS
+---------------------------------
+# Acceder a PostgreSQL
+sudo -u postgres psql
+
+# Crear usuario
+CREATE USER kapa_user WITH PASSWORD 'contraseña_segura';
+
+# Crear base de datos
+CREATE DATABASE kapa_db OWNER kapa_user;
+
+# Otorgar privilegios
+GRANT ALL PRIVILEGES ON DATABASE kapa_db TO kapa_user;
+
+# Salir
+\q
+
+3.2 CONFIGURAR ACCESO
+---------------------
+# Editar pg_hba.conf
+sudo nano /etc/postgresql/14/main/pg_hba.conf
+
+# Agregar línea para acceso local:
+local   kapa_db    kapa_user                           md5
+host    kapa_db    kapa_user    127.0.0.1/32          md5
+
+# Reiniciar PostgreSQL
+sudo systemctl restart postgresql
+
+3.3 IMPORTAR ESTRUCTURA INICIAL (OPCIONAL)
+------------------------------------------
+# Si se proporciona dump de base de datos:
+psql -U kapa_user -d kapa_db -f database.sql
+
+
+4. INSTALACIÓN DEL BACKEND
+================================================================================
+
+4.1 CLONAR REPOSITORIO
+----------------------
+cd /var/www
+git clone [URL_REPOSITORIO] kapa.dominio.com
+cd kapa.dominio.com
+
+4.2 CONFIGURAR VARIABLES DE ENTORNO
+-----------------------------------
+cd backend
+cp .env.example .env
+nano .env
+
+# Configurar las siguientes variables:
+
+# Base de datos
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USER=kapa_user
+DATABASE_PASSWORD=contraseña_segura
+DATABASE_NAME=kapa_db
+
+# JWT
+JWT_SECRET=tu_clave_secreta_muy_larga_y_segura
+JWT_EXPIRATION=24h
+
+# AWS S3
+AWS_ACCESS_KEY_ID=tu_access_key
+AWS_SECRET_ACCESS_KEY=tu_secret_key
+AWS_REGION=us-east-1
+AWS_S3_BUCKET=nombre-bucket
+
+# Email (opción SMTP)
+SMTP_HOST=smtp.servidor.com
+SMTP_PORT=587
+SMTP_USER=usuario@dominio.com
+SMTP_PASSWORD=contraseña_smtp
+
+# Email (opción Resend)
+RESEND_API_KEY=re_xxxxxxxxxxxx
+
+# General
+NODE_ENV=production
+PORT=3001
+
+4.3 INSTALAR DEPENDENCIAS
+-------------------------
+npm install
+
+4.4 COMPILAR TYPESCRIPT
+-----------------------
+npm run build
+
+4.5 EJECUTAR MIGRACIONES
+------------------------
+# Ejecutar scripts SQL de migración
+psql -U kapa_user -d kapa_db -f migrations/create_audit_table.sql
+psql -U kapa_user -d kapa_db -f migrations/create_ilb_tables.sql
+psql -U kapa_user -d kapa_db -f migrations/create_form_builder_tables.sql
+psql -U kapa_user -d kapa_db -f migrations/create_system_parameters.sql
+
+4.6 CARGAR DATOS INICIALES
+--------------------------
+psql -U kapa_user -d kapa_db -f seed-maestros-hid.sql
+psql -U kapa_user -d kapa_db -f seed-maestros-ilb.sql
+psql -U kapa_user -d kapa_db -f add_reports_permissions.sql
+psql -U kapa_user -d kapa_db -f add_form_builder_permissions.sql
+
+4.7 VERIFICAR INSTALACIÓN
+-------------------------
+# Iniciar en modo desarrollo para probar
+npm run start:dev
+
+# Debería mostrar:
+# [Nest] Application is running on: http://localhost:3001
+
+
+5. INSTALACIÓN DEL FRONTEND
+================================================================================
+
+5.1 NAVEGAR AL DIRECTORIO
+-------------------------
+cd /var/www/kapa.dominio.com/frontend
+
+5.2 CONFIGURAR VARIABLES DE ENTORNO
+-----------------------------------
+# Crear archivo de configuración
+nano .env
+
+# Agregar:
+VITE_API_URL=https://dominio.com/api
+VITE_RECAPTCHA_SITE_KEY=tu_clave_recaptcha
+
+5.3 INSTALAR DEPENDENCIAS
+-------------------------
+npm install
+
+5.4 COMPILAR PARA PRODUCCIÓN
+----------------------------
+npm run build
+
+# Los archivos compilados estarán en: dist/spa/
+
+5.5 VERIFICAR BUILD
+-------------------
+# Debe existir la carpeta dist/spa con:
+ls -la dist/spa/
+# - index.html
+# - assets/
+# - icons/
+
+
+6. CONFIGURACIÓN DE NGINX
+================================================================================
+
+6.1 CREAR ARCHIVO DE CONFIGURACIÓN
+----------------------------------
+sudo nano /etc/nginx/sites-available/kapa.dominio.com
+
+# Contenido:
+
+server {
+    listen 80;
+    server_name dominio.com www.dominio.com;
+    
+    # Redirección a HTTPS
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name dominio.com www.dominio.com;
+    
+    # Certificados SSL
+    ssl_certificate /etc/letsencrypt/live/dominio.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/dominio.com/privkey.pem;
+    
+    # Configuración SSL
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
+    
+    # Frontend
+    root /var/www/kapa.dominio.com/frontend/dist/spa;
+    index index.html;
+    
+    # Compresión
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript;
+    
+    # Frontend SPA
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+    
+    # Backend API
+    location /api {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+    
+    # Archivos estáticos
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
+
+6.2 HABILITAR SITIO
+-------------------
+sudo ln -s /etc/nginx/sites-available/kapa.dominio.com /etc/nginx/sites-enabled/
+
+6.3 VERIFICAR CONFIGURACIÓN
+---------------------------
+sudo nginx -t
+
+6.4 REINICIAR NGINX
+-------------------
+sudo systemctl restart nginx
+
+
+7. CONFIGURACIÓN DE PM2
+================================================================================
+
+7.1 CREAR ARCHIVO DE CONFIGURACIÓN
+----------------------------------
+cd /var/www/kapa.dominio.com/backend
+nano ecosystem.config.js
+
+# Contenido:
+
+module.exports = {
+  apps: [{
+    name: 'kapa-backend',
+    script: 'dist/main.js',
+    instances: 1,
+    exec_mode: 'fork',
+    autorestart: true,
+    watch: false,
+    max_memory_restart: '1G',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 3001
+    },
+    error_file: '/var/log/pm2/kapa-error.log',
+    out_file: '/var/log/pm2/kapa-out.log',
+    log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+  }]
+};
+
+7.2 INICIAR APLICACIÓN
+----------------------
+pm2 start ecosystem.config.js
+
+7.3 CONFIGURAR INICIO AUTOMÁTICO
+--------------------------------
+pm2 startup systemd
+pm2 save
+
+7.4 COMANDOS ÚTILES PM2
+-----------------------
+pm2 list              # Ver procesos
+pm2 logs kapa-backend # Ver logs
+pm2 restart all       # Reiniciar
+pm2 stop all          # Detener
+pm2 monit             # Monitor en tiempo real
+
+
+8. CONFIGURACIÓN SSL (LET'S ENCRYPT)
+================================================================================
+
+8.1 INSTALAR CERTBOT
+--------------------
+sudo apt install -y certbot python3-certbot-nginx
+
+8.2 OBTENER CERTIFICADO
+-----------------------
+sudo certbot --nginx -d dominio.com -d www.dominio.com
+
+8.3 CONFIGURAR RENOVACIÓN AUTOMÁTICA
+------------------------------------
+# Certbot configura automáticamente un cron para renovación
+# Verificar:
+sudo certbot renew --dry-run
+
+
+9. CONFIGURACIÓN DE FIREWALL
+================================================================================
+
+9.1 CONFIGURAR UFW
+------------------
+sudo ufw allow ssh
+sudo ufw allow 'Nginx Full'
+sudo ufw enable
+
+9.2 VERIFICAR REGLAS
+--------------------
+sudo ufw status
+
+
+10. VERIFICACIÓN DE INSTALACIÓN
+================================================================================
+
+10.1 VERIFICAR SERVICIOS
+------------------------
+# PostgreSQL
+sudo systemctl status postgresql
+
+# Nginx
+sudo systemctl status nginx
+
+# PM2 (Backend)
+pm2 status
+
+10.2 VERIFICAR CONECTIVIDAD
+---------------------------
+# API Health Check
+curl -X GET https://dominio.com/api/health
+
+# Frontend
+curl -I https://dominio.com
+
+10.3 VERIFICAR LOGS
+-------------------
+# Nginx
+sudo tail -f /var/log/nginx/error.log
+
+# PM2/Backend
+pm2 logs kapa-backend
+
+# PostgreSQL
+sudo tail -f /var/log/postgresql/postgresql-14-main.log
+
+
+11. SOLUCIÓN DE PROBLEMAS COMUNES
+================================================================================
+
+11.1 ERROR: PUERTO EN USO
+-------------------------
+# Verificar qué proceso usa el puerto
+sudo lsof -i :3001
+# Terminar proceso si es necesario
+kill -9 [PID]
+
+11.2 ERROR: CONEXIÓN A BASE DE DATOS
+------------------------------------
+# Verificar que PostgreSQL está corriendo
+sudo systemctl status postgresql
+
+# Verificar credenciales en .env
+# Probar conexión manual:
+psql -U kapa_user -d kapa_db -h localhost
+
+11.3 ERROR: PERMISOS DE ARCHIVOS
+--------------------------------
+# Ajustar permisos del proyecto
+sudo chown -R www-data:www-data /var/www/kapa.dominio.com
+sudo chmod -R 755 /var/www/kapa.dominio.com
+
+11.4 ERROR: CERTIFICADO SSL
+---------------------------
+# Renovar certificado manualmente
+sudo certbot renew
+
+11.5 ERROR: MEMORIA INSUFICIENTE
+--------------------------------
+# Agregar swap si es necesario
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+
+
+12. NOTAS FINALES
+================================================================================
+
+- Realizar backup de la base de datos regularmente
+- Monitorear logs del sistema
+- Mantener actualizados los paquetes de seguridad
+- Configurar alertas de monitoreo
+- Documentar cualquier cambio de configuración
+
+Para soporte técnico, contactar al equipo de desarrollo.
+
+
+================================================================================
+                         FIN DEL DOCUMENTO
+================================================================================

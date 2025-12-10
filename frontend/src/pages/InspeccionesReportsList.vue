@@ -417,6 +417,7 @@ const columns = [
   { name: 'empresa', label: 'Empresa/Contratista', align: 'left', field: row => row.contractor?.name || 'N/A', sortable: true },
   { name: 'estado', label: 'Estado', align: 'center', field: 'estado', sortable: true },
   { name: 'fecha', label: 'Fecha Inspección', align: 'left', field: 'fecha', sortable: true, format: val => formatDateLocal(val) },
+  { name: 'creado_en', label: 'Fecha Registro', align: 'left', field: 'creado_en', sortable: true, format: val => formatDateLocal(val) },
   { name: 'actions', label: 'Acciones', align: 'center' }
 ]
 

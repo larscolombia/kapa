@@ -8,16 +8,7 @@ import { CreateMaestroDto } from '../dto';
 export class IlvMaestrosController {
   constructor(private maestrosService: IlvMaestrosService) { }
 
-  @Get(':tipo')
-  async findByTipo(@Param('tipo') tipo: string) {
-    return this.maestrosService.findByTipo(tipo);
-  }
-
-  @Get(':tipo/tree')
-  async getMaestrosTree(@Param('tipo') tipo: string) {
-    return this.maestrosService.getMaestrosTree(tipo);
-  }
-
+  // Rutas específicas primero (antes de las rutas con parámetros genéricos)
   @Get('subcategorias/:categoriaId')
   async getSubcategorias(@Param('categoriaId', ParseIntPipe) categoriaId: number) {
     return this.maestrosService.getSubcategorias(categoriaId);
@@ -26,6 +17,17 @@ export class IlvMaestrosController {
   @Get('subcategorias-by-clave/:clave')
   async getSubcategoriasByClave(@Param('clave') clave: string) {
     return this.maestrosService.getSubcategoriasByClave(clave);
+  }
+
+  // Rutas con parámetros genéricos después
+  @Get(':tipo/tree')
+  async getMaestrosTree(@Param('tipo') tipo: string) {
+    return this.maestrosService.getMaestrosTree(tipo);
+  }
+
+  @Get(':tipo')
+  async findByTipo(@Param('tipo') tipo: string) {
+    return this.maestrosService.findByTipo(tipo);
   }
 
   @Post()

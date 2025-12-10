@@ -1,0 +1,669 @@
+================================================================================
+                    KAPA - SISTEMA DE GESTIÓN DOCUMENTAL
+                         BASE DE DATOS
+================================================================================
+
+1. INFORMACIÓN GENERAL
+================================================================================
+
+Motor de Base de Datos:   PostgreSQL 14+
+ORM:                      TypeORM 0.3.20
+Tipo de Conexión:         Connection Pool
+Encoding:                 UTF-8
+Collation:                en_US.UTF-8
+
+Total de Entidades:       33
+Módulos de Datos:         6
+
+
+2. DIAGRAMA ENTIDAD-RELACIÓN (SIMPLIFICADO)
+================================================================================
+
+                            ┌──────────────┐
+                            │    clients   │
+                            └──────┬───────┘
+                                   │ 1:N
+                    ┌──────────────┴──────────────┐
+                    │                             │
+              ┌─────▼─────┐                 ┌─────▼─────┐
+              │  projects │                 │   users   │
+              └─────┬─────┘                 └───────────┘
+                    │ 1:N
+         ┌──────────┼──────────┐
+         │          │          │
+    ┌────▼────┐ ┌───▼───┐ ┌────▼────────────┐
+    │contractors│ │ ilv   │ │  inspecciones  │
+    └────┬────┘ │reports │ │    reports     │
+         │      └───────┘ └────────────────┘
+         │ 1:N
+    ┌────▼────┐
+    │employees│
+    └────┬────┘
+         │ 1:N
+    ┌────▼────┐
+    │documents│
+    └─────────┘
+
+
+3. MÓDULO DE AUTENTICACIÓN Y USUARIOS
+================================================================================
+
+3.1 TABLA: users
+----------------
+Almacena la información de los usuarios del sistema.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| name          | VARCHAR(255) | NOT NULL           | Nombre completo          |
+| email         | VARCHAR(255) | UNIQUE, NOT NULL   | Correo electrónico       |
+| password      | VARCHAR(255) | NOT NULL           | Contraseña (hash bcrypt) |
+| role_id       | INTEGER      | FOREIGN KEY        | Rol del usuario          |
+| client_id     | INTEGER      | FOREIGN KEY        | Cliente asociado         |
+| is_active     | BOOLEAN      | DEFAULT true       | Estado del usuario       |
+| created_at    | TIMESTAMP    | DEFAULT NOW()      | Fecha de creación        |
+| updated_at    | TIMESTAMP    | DEFAULT NOW()      | Última actualización     |
+
+Índices:
+- idx_users_email (email)
+- idx_users_role (role_id)
+- idx_users_client (client_id)
+
+3.2 TABLA: roles
+----------------
+Define los roles del sistema y sus permisos.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| name          | VARCHAR(100) | UNIQUE, NOT NULL   | Nombre del rol           |
+| permissions   | JSONB        |                    | Permisos del rol (JSON)  |
+| description   | TEXT         |                    | Descripción del rol      |
+| created_at    | TIMESTAMP    | DEFAULT NOW()      | Fecha de creación        |
+
+Roles predefinidos:
+- admin: Administrador con acceso total
+- operator: Operador con acceso limitado
+- viewer: Solo lectura
+- contractor: Usuario contratista
+
+3.3 TABLA: access
+-----------------
+Registro de accesos al sistema.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| user_id       | INTEGER      | FOREIGN KEY        | Usuario que accedió      |
+| ip_address    | VARCHAR(50)  |                    | Dirección IP             |
+| user_agent    | TEXT         |                    | Información del navegador|
+| accessed_at   | TIMESTAMP    | DEFAULT NOW()      | Fecha/hora del acceso    |
+
+
+4. MÓDULO DE CLIENTES Y PROYECTOS
+================================================================================
+
+4.1 TABLA: clients
+------------------
+Información de los clientes corporativos.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| name          | VARCHAR(255) | NOT NULL           | Nombre del cliente       |
+| nit           | VARCHAR(50)  | UNIQUE             | NIT/Identificación fiscal|
+| address       | TEXT         |                    | Dirección                |
+| phone         | VARCHAR(50)  |                    | Teléfono                 |
+| email         | VARCHAR(255) |                    | Email de contacto        |
+| is_active     | BOOLEAN      | DEFAULT true       | Estado                   |
+| created_at    | TIMESTAMP    | DEFAULT NOW()      | Fecha de creación        |
+
+4.2 TABLA: projects
+-------------------
+Proyectos asociados a clientes.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| name          | VARCHAR(255) | NOT NULL           | Nombre del proyecto      |
+| description   | TEXT         |                    | Descripción              |
+| client_id     | INTEGER      | FOREIGN KEY        | Cliente propietario      |
+| start_date    | DATE         |                    | Fecha de inicio          |
+| end_date      | DATE         |                    | Fecha de finalización    |
+| status        | VARCHAR(50)  | DEFAULT 'active'   | Estado del proyecto      |
+| location      | VARCHAR(255) |                    | Ubicación                |
+| created_at    | TIMESTAMP    | DEFAULT NOW()      | Fecha de creación        |
+
+Índices:
+- idx_projects_client (client_id)
+- idx_projects_status (status)
+
+
+5. MÓDULO DE CONTRATISTAS Y EMPLEADOS
+================================================================================
+
+5.1 TABLA: contractors
+----------------------
+Empresas contratistas.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| name          | VARCHAR(255) | NOT NULL           | Razón social             |
+| nit           | VARCHAR(50)  | UNIQUE             | NIT                      |
+| legal_rep     | VARCHAR(255) |                    | Representante legal      |
+| address       | TEXT         |                    | Dirección                |
+| phone         | VARCHAR(50)  |                    | Teléfono                 |
+| email         | VARCHAR(255) |                    | Email principal          |
+| is_active     | BOOLEAN      | DEFAULT true       | Estado                   |
+| created_at    | TIMESTAMP    | DEFAULT NOW()      | Fecha de creación        |
+
+5.2 TABLA: contractor_emails
+----------------------------
+Emails adicionales de contacto para contratistas.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| contractor_id | INTEGER      | FOREIGN KEY        | Contratista              |
+| email         | VARCHAR(255) | NOT NULL           | Email                    |
+| type          | VARCHAR(50)  |                    | Tipo (principal, copia)  |
+| is_active     | BOOLEAN      | DEFAULT true       | Estado                   |
+
+5.3 TABLA: employees
+--------------------
+Empleados de contratistas.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| name          | VARCHAR(255) | NOT NULL           | Nombre completo          |
+| document      | VARCHAR(50)  | NOT NULL           | Número de documento      |
+| document_type | VARCHAR(20)  | DEFAULT 'CC'       | Tipo de documento        |
+| position      | VARCHAR(255) |                    | Cargo                    |
+| contractor_id | INTEGER      | FOREIGN KEY        | Contratista              |
+| email         | VARCHAR(255) |                    | Email                    |
+| phone         | VARCHAR(50)  |                    | Teléfono                 |
+| is_active     | BOOLEAN      | DEFAULT true       | Estado                   |
+| created_at    | TIMESTAMP    | DEFAULT NOW()      | Fecha de creación        |
+
+Índices:
+- idx_employees_contractor (contractor_id)
+- idx_employees_document (document)
+
+5.4 TABLA: project_contractors
+------------------------------
+Relación entre proyectos y contratistas.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| project_id    | INTEGER      | FOREIGN KEY        | Proyecto                 |
+| contractor_id | INTEGER      | FOREIGN KEY        | Contratista              |
+| start_date    | DATE         |                    | Fecha inicio relación    |
+| end_date      | DATE         |                    | Fecha fin relación       |
+| status        | VARCHAR(50)  | DEFAULT 'active'   | Estado                   |
+| created_at    | TIMESTAMP    | DEFAULT NOW()      | Fecha de creación        |
+
+Índices:
+- UNIQUE (project_id, contractor_id)
+
+
+6. MÓDULO DE CRITERIOS Y DOCUMENTOS
+================================================================================
+
+6.1 TABLA: criterion
+--------------------
+Criterios principales de evaluación.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| name          | VARCHAR(255) | NOT NULL           | Nombre del criterio      |
+| description   | TEXT         |                    | Descripción              |
+| order         | INTEGER      | DEFAULT 0          | Orden de visualización   |
+| applies_to    | VARCHAR(50)  |                    | contractor/employee      |
+| is_active     | BOOLEAN      | DEFAULT true       | Estado                   |
+
+6.2 TABLA: subcriterion
+-----------------------
+Subcriterios asociados a criterios.
+
+| Columna          | Tipo         | Restricciones   | Descripción              |
+|------------------|--------------|-----------------|--------------------------|
+| id               | SERIAL       | PRIMARY KEY     | Identificador único      |
+| name             | VARCHAR(255) | NOT NULL        | Nombre                   |
+| description      | TEXT         |                 | Descripción              |
+| criterion_id     | INTEGER      | FOREIGN KEY     | Criterio padre           |
+| is_required      | BOOLEAN      | DEFAULT false   | Es obligatorio           |
+| requires_expiry  | BOOLEAN      | DEFAULT false   | Requiere fecha vencim.   |
+| order            | INTEGER      | DEFAULT 0       | Orden                    |
+| is_active        | BOOLEAN      | DEFAULT true    | Estado                   |
+
+6.3 TABLA: project_contractor_criterions
+----------------------------------------
+Criterios asignados a contratistas en proyectos.
+
+| Columna               | Tipo     | Restricciones | Descripción              |
+|-----------------------|----------|---------------|--------------------------|
+| id                    | SERIAL   | PRIMARY KEY   | Identificador único      |
+| project_contractor_id | INTEGER  | FOREIGN KEY   | Relación proy-contrat.   |
+| criterion_id          | INTEGER  | FOREIGN KEY   | Criterio asignado        |
+| is_active             | BOOLEAN  | DEFAULT true  | Estado                   |
+
+6.4 TABLA: documents
+--------------------
+Documentos cargados al sistema.
+
+| Columna          | Tipo         | Restricciones   | Descripción              |
+|------------------|--------------|-----------------|--------------------------|
+| id               | SERIAL       | PRIMARY KEY     | Identificador único      |
+| name             | VARCHAR(255) | NOT NULL        | Nombre del archivo       |
+| file_key         | VARCHAR(500) | NOT NULL        | Clave en S3              |
+| file_type        | VARCHAR(100) |                 | Tipo MIME                |
+| file_size        | INTEGER      |                 | Tamaño en bytes          |
+| status           | VARCHAR(50)  | DEFAULT 'pending'| Estado del documento    |
+| subcriterion_id  | INTEGER      | FOREIGN KEY     | Subcriterio              |
+| employee_id      | INTEGER      | FOREIGN KEY     | Empleado (opcional)      |
+| contractor_id    | INTEGER      | FOREIGN KEY     | Contratista              |
+| expiration_date  | DATE         |                 | Fecha de vencimiento     |
+| uploaded_by      | INTEGER      | FOREIGN KEY     | Usuario que subió        |
+| reviewed_by      | INTEGER      | FOREIGN KEY     | Usuario que revisó       |
+| reviewed_at      | TIMESTAMP    |                 | Fecha de revisión        |
+| comments         | TEXT         |                 | Comentarios              |
+| rejection_reason | TEXT         |                 | Motivo de rechazo        |
+| created_at       | TIMESTAMP    | DEFAULT NOW()   | Fecha de creación        |
+| updated_at       | TIMESTAMP    | DEFAULT NOW()   | Última actualización     |
+
+Estados posibles:
+- pending: Pendiente de revisión
+- approved: Aprobado
+- rejected: Rechazado
+- expired: Vencido
+- superseded: Reemplazado
+
+Índices:
+- idx_documents_status (status)
+- idx_documents_subcriterion (subcriterion_id)
+- idx_documents_contractor (contractor_id)
+- idx_documents_employee (employee_id)
+- idx_documents_expiration (expiration_date)
+
+6.5 TABLA: document_types
+-------------------------
+Tipos de documentos permitidos.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| name          | VARCHAR(100) | NOT NULL           | Nombre del tipo          |
+| extension     | VARCHAR(20)  |                    | Extensión permitida      |
+| mime_type     | VARCHAR(100) |                    | Tipo MIME                |
+| max_size      | INTEGER      |                    | Tamaño máximo (bytes)    |
+| is_active     | BOOLEAN      | DEFAULT true       | Estado                   |
+
+6.6 TABLA: document_state_audit
+-------------------------------
+Auditoría de cambios de estado en documentos.
+
+| Columna          | Tipo         | Restricciones   | Descripción              |
+|------------------|--------------|-----------------|--------------------------|
+| id               | SERIAL       | PRIMARY KEY     | Identificador único      |
+| document_id      | INTEGER      | FOREIGN KEY     | Documento                |
+| previous_state   | VARCHAR(50)  |                 | Estado anterior          |
+| new_state        | VARCHAR(50)  | NOT NULL        | Estado nuevo             |
+| changed_by       | INTEGER      | FOREIGN KEY     | Usuario que cambió       |
+| changed_at       | TIMESTAMP    | DEFAULT NOW()   | Fecha/hora del cambio    |
+| comments         | TEXT         |                 | Comentarios              |
+| response_time    | INTEGER      |                 | Tiempo respuesta (seg)   |
+
+Índices:
+- idx_audit_document (document_id)
+- idx_audit_changed_at (changed_at)
+- idx_audit_new_state (new_state)
+
+
+7. MÓDULO ILV (Inspecciones de Línea Visual)
+================================================================================
+
+7.1 TABLA: ilv_reports
+----------------------
+Reportes de inspección ILV.
+
+| Columna          | Tipo         | Restricciones   | Descripción              |
+|------------------|--------------|-----------------|--------------------------|
+| id               | SERIAL       | PRIMARY KEY     | Identificador único      |
+| report_number    | VARCHAR(50)  | UNIQUE          | Número de reporte        |
+| type             | VARCHAR(20)  | NOT NULL        | hid/wit/swa/fdkar        |
+| status           | VARCHAR(20)  | DEFAULT 'abierto'| Estado del reporte      |
+| project_id       | INTEGER      | FOREIGN KEY     | Proyecto                 |
+| company_id       | INTEGER      | FOREIGN KEY     | Empresa                  |
+| work_center_id   | INTEGER      | FOREIGN KEY     | Centro de trabajo        |
+| created_by       | INTEGER      | FOREIGN KEY     | Usuario creador          |
+| closed_by        | INTEGER      | FOREIGN KEY     | Usuario que cerró        |
+| closed_at        | TIMESTAMP    |                 | Fecha de cierre          |
+| closing_comments | TEXT         |                 | Comentarios de cierre    |
+| created_at       | TIMESTAMP    | DEFAULT NOW()   | Fecha de creación        |
+| updated_at       | TIMESTAMP    | DEFAULT NOW()   | Última actualización     |
+
+Tipos de reporte ILV:
+- hid: Hallazgo de Identificación
+- wit: Witness (Testigo)
+- swa: Safety Walk Around
+- fdkar: First Day Knowledge Assessment Review
+
+Índices:
+- idx_ilv_type (type)
+- idx_ilv_status (status)
+- idx_ilv_project (project_id)
+- idx_ilv_created_at (created_at)
+
+7.2 TABLA: ilv_report_fields
+----------------------------
+Campos dinámicos de los reportes ILV.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| report_id     | INTEGER      | FOREIGN KEY        | Reporte ILV              |
+| field_name    | VARCHAR(100) | NOT NULL           | Nombre del campo         |
+| field_value   | TEXT         |                    | Valor del campo          |
+| field_type    | VARCHAR(50)  |                    | Tipo de campo            |
+
+Índices:
+- idx_ilv_fields_report (report_id)
+- idx_ilv_fields_name (field_name)
+
+7.3 TABLA: ilv_maestros
+-----------------------
+Catálogos maestros para ILV.
+
+| Columna          | Tipo         | Restricciones   | Descripción              |
+|------------------|--------------|-----------------|--------------------------|
+| id               | SERIAL       | PRIMARY KEY     | Identificador único      |
+| type             | VARCHAR(50)  | NOT NULL        | Tipo de maestro          |
+| code             | VARCHAR(50)  |                 | Código                   |
+| name             | VARCHAR(255) | NOT NULL        | Nombre                   |
+| description      | TEXT         |                 | Descripción              |
+| parent_id        | INTEGER      | FOREIGN KEY     | Maestro padre (jerarquía)|
+| order            | INTEGER      | DEFAULT 0       | Orden                    |
+| is_active        | BOOLEAN      | DEFAULT true    | Estado                   |
+
+Tipos de maestros:
+- categoria, severidad, area, causa_raiz, accion_correctiva
+
+7.4 TABLA: ilv_attachments
+--------------------------
+Archivos adjuntos a reportes ILV.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| report_id     | INTEGER      | FOREIGN KEY        | Reporte ILV              |
+| file_name     | VARCHAR(255) | NOT NULL           | Nombre del archivo       |
+| file_key      | VARCHAR(500) | NOT NULL           | Clave en S3              |
+| file_type     | VARCHAR(100) |                    | Tipo MIME                |
+| file_size     | INTEGER      |                    | Tamaño en bytes          |
+| uploaded_by   | INTEGER      | FOREIGN KEY        | Usuario que subió        |
+| created_at    | TIMESTAMP    | DEFAULT NOW()      | Fecha de creación        |
+
+7.5 TABLA: ilv_close_tokens
+---------------------------
+Tokens para cierre público de reportes ILV.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| report_id     | INTEGER      | FOREIGN KEY        | Reporte ILV              |
+| token         | VARCHAR(255) | UNIQUE, NOT NULL   | Token único              |
+| expires_at    | TIMESTAMP    | NOT NULL           | Fecha de expiración      |
+| used_at       | TIMESTAMP    |                    | Fecha de uso             |
+| created_at    | TIMESTAMP    | DEFAULT NOW()      | Fecha de creación        |
+
+7.6 TABLA: ilv_email_logs
+-------------------------
+Registro de emails enviados para ILV.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| report_id     | INTEGER      | FOREIGN KEY        | Reporte ILV              |
+| email_type    | VARCHAR(50)  | NOT NULL           | Tipo de email            |
+| recipient     | VARCHAR(255) | NOT NULL           | Destinatario             |
+| status        | VARCHAR(50)  |                    | Estado del envío         |
+| sent_at       | TIMESTAMP    | DEFAULT NOW()      | Fecha de envío           |
+
+7.7 TABLA: ilv_audit
+--------------------
+Auditoría de acciones en ILV.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| report_id     | INTEGER      | FOREIGN KEY        | Reporte ILV              |
+| action        | VARCHAR(100) | NOT NULL           | Acción realizada         |
+| performed_by  | INTEGER      | FOREIGN KEY        | Usuario                  |
+| details       | JSONB        |                    | Detalles adicionales     |
+| performed_at  | TIMESTAMP    | DEFAULT NOW()      | Fecha/hora               |
+
+
+8. MÓDULO DE INSPECCIONES TÉCNICAS
+================================================================================
+
+8.1 TABLA: inspeccion_reports
+-----------------------------
+Reportes de inspecciones técnicas.
+
+| Columna          | Tipo         | Restricciones   | Descripción              |
+|------------------|--------------|-----------------|--------------------------|
+| id               | SERIAL       | PRIMARY KEY     | Identificador único      |
+| inspection_number| VARCHAR(50)  | UNIQUE          | Número de inspección     |
+| type             | VARCHAR(50)  | NOT NULL        | tecnica/auditoria        |
+| status           | VARCHAR(50)  | DEFAULT 'pendiente'| Estado                |
+| project_id       | INTEGER      | FOREIGN KEY     | Proyecto                 |
+| contractor_id    | INTEGER      | FOREIGN KEY     | Contratista              |
+| inspector_id     | INTEGER      | FOREIGN KEY     | Inspector asignado       |
+| scheduled_date   | DATE         |                 | Fecha programada         |
+| completed_date   | DATE         |                 | Fecha completada         |
+| score            | DECIMAL(5,2) |                 | Puntuación               |
+| comments         | TEXT         |                 | Comentarios              |
+| created_at       | TIMESTAMP    | DEFAULT NOW()   | Fecha de creación        |
+| updated_at       | TIMESTAMP    | DEFAULT NOW()   | Última actualización     |
+
+8.2 TABLA: inspeccion_report_fields
+-----------------------------------
+Campos dinámicos de inspecciones.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| report_id     | INTEGER      | FOREIGN KEY        | Inspección               |
+| field_name    | VARCHAR(100) | NOT NULL           | Nombre del campo         |
+| field_value   | TEXT         |                    | Valor                    |
+| field_type    | VARCHAR(50)  |                    | Tipo                     |
+
+8.3 TABLA: inspeccion_maestros
+------------------------------
+Catálogos maestros para inspecciones.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| type          | VARCHAR(50)  | NOT NULL           | Tipo de maestro          |
+| code          | VARCHAR(50)  |                    | Código                   |
+| name          | VARCHAR(255) | NOT NULL           | Nombre                   |
+| is_active     | BOOLEAN      | DEFAULT true       | Estado                   |
+
+8.4 TABLA: inspeccion_attachments
+---------------------------------
+Archivos adjuntos a inspecciones.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| report_id     | INTEGER      | FOREIGN KEY        | Inspección               |
+| file_name     | VARCHAR(255) | NOT NULL           | Nombre del archivo       |
+| file_key      | VARCHAR(500) | NOT NULL           | Clave en S3              |
+| file_type     | VARCHAR(100) |                    | Tipo MIME                |
+| uploaded_by   | INTEGER      | FOREIGN KEY        | Usuario                  |
+| created_at    | TIMESTAMP    | DEFAULT NOW()      | Fecha de creación        |
+
+
+9. MÓDULO FORM BUILDER
+================================================================================
+
+9.1 TABLA: form_templates
+-------------------------
+Plantillas de formularios dinámicos.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| name          | VARCHAR(255) | NOT NULL           | Nombre de la plantilla   |
+| description   | TEXT         |                    | Descripción              |
+| schema        | JSONB        | NOT NULL           | Esquema de campos        |
+| version       | INTEGER      | DEFAULT 1          | Versión                  |
+| is_active     | BOOLEAN      | DEFAULT true       | Estado                   |
+| created_by    | INTEGER      | FOREIGN KEY        | Usuario creador          |
+| created_at    | TIMESTAMP    | DEFAULT NOW()      | Fecha de creación        |
+| updated_at    | TIMESTAMP    | DEFAULT NOW()      | Última actualización     |
+
+9.2 TABLA: form_template_classifications
+----------------------------------------
+Clasificaciones de plantillas.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| template_id   | INTEGER      | FOREIGN KEY        | Plantilla                |
+| category      | VARCHAR(100) | NOT NULL           | Categoría                |
+| tags          | VARCHAR(255) |                    | Etiquetas                |
+
+9.3 TABLA: form_submissions
+---------------------------
+Envíos de formularios.
+
+| Columna       | Type         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| template_id   | INTEGER      | FOREIGN KEY        | Plantilla usada          |
+| data          | JSONB        | NOT NULL           | Datos del formulario     |
+| status        | VARCHAR(50)  | DEFAULT 'submitted'| Estado                   |
+| submitted_by  | INTEGER      | FOREIGN KEY        | Usuario que envió        |
+| created_at    | TIMESTAMP    | DEFAULT NOW()      | Fecha de creación        |
+| updated_at    | TIMESTAMP    | DEFAULT NOW()      | Última actualización     |
+
+9.4 TABLA: form_submission_history
+----------------------------------
+Historial de cambios en submissions.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| submission_id | INTEGER      | FOREIGN KEY        | Submission               |
+| previous_data | JSONB        |                    | Datos anteriores         |
+| new_data      | JSONB        |                    | Datos nuevos             |
+| changed_by    | INTEGER      | FOREIGN KEY        | Usuario                  |
+| changed_at    | TIMESTAMP    | DEFAULT NOW()      | Fecha del cambio         |
+
+9.5 TABLA: form_drafts
+----------------------
+Borradores de formularios.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| template_id   | INTEGER      | FOREIGN KEY        | Plantilla                |
+| data          | JSONB        |                    | Datos del borrador       |
+| user_id       | INTEGER      | FOREIGN KEY        | Usuario                  |
+| created_at    | TIMESTAMP    | DEFAULT NOW()      | Fecha de creación        |
+| updated_at    | TIMESTAMP    | DEFAULT NOW()      | Última actualización     |
+
+
+10. MÓDULO DE CONFIGURACIÓN DEL SISTEMA
+================================================================================
+
+10.1 TABLA: system_parameters
+-----------------------------
+Parámetros configurables del sistema.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| key           | VARCHAR(100) | UNIQUE, NOT NULL   | Clave del parámetro      |
+| value         | TEXT         | NOT NULL           | Valor                    |
+| type          | VARCHAR(50)  | NOT NULL           | string/number/boolean/json|
+| description   | TEXT         |                    | Descripción              |
+| category      | VARCHAR(100) |                    | Categoría                |
+| is_editable   | BOOLEAN      | DEFAULT true       | Es editable              |
+| created_at    | TIMESTAMP    | DEFAULT NOW()      | Fecha de creación        |
+| updated_at    | TIMESTAMP    | DEFAULT NOW()      | Última actualización     |
+
+
+11. MÓDULO DE SOPORTES
+================================================================================
+
+11.1 TABLA: support_files
+-------------------------
+Archivos de soporte general.
+
+| Columna       | Tipo         | Restricciones      | Descripción              |
+|---------------|--------------|--------------------|--------------------------| 
+| id            | SERIAL       | PRIMARY KEY        | Identificador único      |
+| name          | VARCHAR(255) | NOT NULL           | Nombre del archivo       |
+| file_key      | VARCHAR(500) | NOT NULL           | Clave en S3              |
+| file_type     | VARCHAR(100) |                    | Tipo MIME                |
+| file_size     | INTEGER      |                    | Tamaño en bytes          |
+| category      | VARCHAR(100) |                    | Categoría                |
+| description   | TEXT         |                    | Descripción              |
+| uploaded_by   | INTEGER      | FOREIGN KEY        | Usuario                  |
+| is_public     | BOOLEAN      | DEFAULT false      | Es público               |
+| created_at    | TIMESTAMP    | DEFAULT NOW()      | Fecha de creación        |
+
+
+12. SCRIPTS DE MIGRACIÓN
+================================================================================
+
+El sistema incluye scripts de migración para:
+
+- create_audit_table.sql:         Tabla de auditoría de documentos
+- create_ilb_tables.sql:          Tablas del módulo ILV
+- create_inspeccion_attachment.sql: Tabla de adjuntos de inspecciones
+- create_form_builder_tables.sql: Tablas del Form Builder
+- create_system_parameters.sql:   Tabla de parámetros del sistema
+- add_maestros_hid_campos.sql:    Campos adicionales para maestros
+- add_parent_maestro_id.sql:      Campo de jerarquía en maestros
+- seed_categorias_hid_jerarquicas.sql: Datos iniciales de categorías
+
+
+13. PERMISOS Y SEGURIDAD
+================================================================================
+
+Scripts de configuración de permisos:
+
+- add_reports_permissions.sql:       Permisos módulo de reportes
+- add_form_builder_permissions.sql:  Permisos Form Builder
+- add_system_config_permissions.sql: Permisos configuración
+- add-ilb-permissions.sql:           Permisos módulo ILV
+
+
+14. ÍNDICES Y OPTIMIZACIÓN
+================================================================================
+
+El sistema implementa índices estratégicos en:
+
+- Campos de búsqueda frecuente (email, documento, nombre)
+- Campos de filtrado (status, type, created_at)
+- Claves foráneas (todas las relaciones)
+- Campos de ordenamiento (order, created_at)
+
+Estrategias de optimización:
+- Connection pooling configurado
+- Índices compuestos donde aplica
+- Consultas optimizadas con TypeORM
+- Paginación en todas las consultas de lista
+
+
+================================================================================
+                         FIN DEL DOCUMENTO
+================================================================================

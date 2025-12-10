@@ -1,0 +1,841 @@
+================================================================================
+                    KAPA - SISTEMA DE GESTIÓN DOCUMENTAL
+                       DOCUMENTACIÓN DE LA API REST
+================================================================================
+
+1. INFORMACIÓN GENERAL
+================================================================================
+
+Base URL:               https://[dominio]/api
+Versión:                1.0
+Protocolo:              HTTPS
+Formato:                JSON
+Autenticación:          Bearer Token (JWT)
+
+Total de Endpoints:     183+
+Módulos:                18
+
+
+2. AUTENTICACIÓN
+================================================================================
+
+La API utiliza JSON Web Tokens (JWT) para autenticación. Todos los endpoints
+(excepto los marcados como públicos) requieren un token válido.
+
+2.1 OBTENER TOKEN
+-----------------
+POST /api/auth/login
+
+Request Body:
+{
+    "email": "usuario@ejemplo.com",
+    "password": "contraseña"
+}
+
+Response (200 OK):
+{
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+        "id": 1,
+        "email": "usuario@ejemplo.com",
+        "name": "Nombre Usuario",
+        "role": {
+            "id": 1,
+            "name": "admin",
+            "permissions": [...]
+        }
+    }
+}
+
+2.2 USO DEL TOKEN
+-----------------
+Incluir en todas las peticiones:
+
+Header: Authorization: Bearer <access_token>
+
+
+3. MÓDULO DE USUARIOS
+================================================================================
+
+3.1 LISTAR USUARIOS
+-------------------
+GET /api/users
+
+Query Parameters:
+- page (number):         Página actual
+- limit (number):        Registros por página
+- search (string):       Búsqueda por nombre/email
+
+Response (200 OK):
+{
+    "data": [
+        {
+            "id": 1,
+            "name": "Usuario Ejemplo",
+            "email": "usuario@ejemplo.com",
+            "role": { "id": 1, "name": "admin" },
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00.000Z"
+        }
+    ],
+    "total": 100,
+    "page": 1,
+    "limit": 10
+}
+
+3.2 CREAR USUARIO
+-----------------
+POST /api/users
+
+Request Body:
+{
+    "name": "Nuevo Usuario",
+    "email": "nuevo@ejemplo.com",
+    "password": "contraseña123",
+    "roleId": 2,
+    "clientId": 1
+}
+
+Response (201 Created):
+{
+    "id": 2,
+    "name": "Nuevo Usuario",
+    "email": "nuevo@ejemplo.com",
+    "role": { "id": 2, "name": "operator" }
+}
+
+3.3 OBTENER USUARIO
+-------------------
+GET /api/users/:id
+
+Response (200 OK):
+{
+    "id": 1,
+    "name": "Usuario Ejemplo",
+    "email": "usuario@ejemplo.com",
+    "role": { "id": 1, "name": "admin" },
+    "client": { "id": 1, "name": "Cliente A" },
+    "isActive": true
+}
+
+3.4 ACTUALIZAR USUARIO
+----------------------
+PUT /api/users/:id
+
+Request Body:
+{
+    "name": "Usuario Actualizado",
+    "roleId": 3
+}
+
+Response (200 OK):
+{
+    "id": 1,
+    "name": "Usuario Actualizado",
+    ...
+}
+
+3.5 ELIMINAR USUARIO
+--------------------
+DELETE /api/users/:id
+
+Response (200 OK):
+{
+    "message": "Usuario eliminado exitosamente"
+}
+
+
+4. MÓDULO DE CLIENTES
+================================================================================
+
+4.1 LISTAR CLIENTES
+-------------------
+GET /api/clients
+
+Response (200 OK):
+{
+    "data": [
+        {
+            "id": 1,
+            "name": "Cliente Corporativo A",
+            "nit": "900123456-7",
+            "isActive": true
+        }
+    ]
+}
+
+4.2 CREAR CLIENTE
+-----------------
+POST /api/clients
+
+Request Body:
+{
+    "name": "Nuevo Cliente",
+    "nit": "900987654-3"
+}
+
+4.3 OBTENER CLIENTE CON PROYECTOS
+---------------------------------
+GET /api/clients/:id/projects
+
+Response (200 OK):
+{
+    "id": 1,
+    "name": "Cliente Corporativo A",
+    "projects": [
+        {
+            "id": 1,
+            "name": "Proyecto Alpha",
+            "status": "active"
+        }
+    ]
+}
+
+
+5. MÓDULO DE PROYECTOS
+================================================================================
+
+5.1 LISTAR PROYECTOS
+--------------------
+GET /api/projects
+
+Query Parameters:
+- clientId (number):     Filtrar por cliente
+- status (string):       Filtrar por estado
+
+Response (200 OK):
+{
+    "data": [
+        {
+            "id": 1,
+            "name": "Proyecto Alpha",
+            "description": "Descripción del proyecto",
+            "client": { "id": 1, "name": "Cliente A" },
+            "startDate": "2025-01-01",
+            "endDate": "2025-12-31",
+            "status": "active"
+        }
+    ]
+}
+
+5.2 CREAR PROYECTO
+------------------
+POST /api/projects
+
+Request Body:
+{
+    "name": "Nuevo Proyecto",
+    "description": "Descripción",
+    "clientId": 1,
+    "startDate": "2025-01-01",
+    "endDate": "2025-12-31"
+}
+
+5.3 OBTENER PROYECTO CON CONTRATISTAS
+-------------------------------------
+GET /api/projects/:id/contractors
+
+Response (200 OK):
+{
+    "id": 1,
+    "name": "Proyecto Alpha",
+    "contractors": [
+        {
+            "id": 1,
+            "name": "Contratista XYZ",
+            "compliance": 85.5
+        }
+    ]
+}
+
+
+6. MÓDULO DE CONTRATISTAS
+================================================================================
+
+6.1 LISTAR CONTRATISTAS
+-----------------------
+GET /api/contractors
+
+Query Parameters:
+- projectId (number):    Filtrar por proyecto
+- search (string):       Búsqueda
+
+Response (200 OK):
+{
+    "data": [
+        {
+            "id": 1,
+            "name": "Contratista ABC",
+            "nit": "800111222-3",
+            "email": "contacto@contratista.com",
+            "phone": "+57 300 1234567"
+        }
+    ]
+}
+
+6.2 CREAR CONTRATISTA
+---------------------
+POST /api/contractors
+
+Request Body:
+{
+    "name": "Nuevo Contratista",
+    "nit": "800999888-1",
+    "email": "nuevo@contratista.com",
+    "phone": "+57 300 9876543",
+    "address": "Calle 123 #45-67"
+}
+
+6.3 OBTENER CUMPLIMIENTO DE CONTRATISTA
+---------------------------------------
+GET /api/contractors/:id/compliance
+
+Response (200 OK):
+{
+    "contractor": { "id": 1, "name": "Contratista ABC" },
+    "overallCompliance": 87.5,
+    "criterionCompliance": [
+        {
+            "criterion": "Documentación Legal",
+            "compliance": 100,
+            "documentsTotal": 10,
+            "documentsApproved": 10
+        }
+    ]
+}
+
+
+7. MÓDULO DE EMPLEADOS
+================================================================================
+
+7.1 LISTAR EMPLEADOS
+--------------------
+GET /api/employees
+
+Query Parameters:
+- contractorId (number): Filtrar por contratista
+- projectId (number):    Filtrar por proyecto
+
+Response (200 OK):
+{
+    "data": [
+        {
+            "id": 1,
+            "name": "Juan Pérez",
+            "document": "12345678",
+            "position": "Ingeniero",
+            "contractor": { "id": 1, "name": "Contratista ABC" }
+        }
+    ]
+}
+
+7.2 CREAR EMPLEADO
+------------------
+POST /api/employees
+
+Request Body:
+{
+    "name": "María García",
+    "document": "87654321",
+    "position": "Supervisor",
+    "contractorId": 1,
+    "email": "maria@ejemplo.com"
+}
+
+
+8. MÓDULO DE DOCUMENTOS
+================================================================================
+
+8.1 LISTAR DOCUMENTOS
+---------------------
+GET /api/documents
+
+Query Parameters:
+- status (string):       pending, approved, rejected, expired
+- subcriterionId (number)
+- employeeId (number)
+- contractorId (number)
+
+Response (200 OK):
+{
+    "data": [
+        {
+            "id": 1,
+            "name": "Certificado SST",
+            "status": "approved",
+            "expirationDate": "2025-12-31",
+            "subcriterion": { "id": 1, "name": "Seguridad" },
+            "uploadedAt": "2025-01-15T10:30:00.000Z"
+        }
+    ]
+}
+
+8.2 SUBIR DOCUMENTO
+-------------------
+POST /api/documents
+
+Request Body (multipart/form-data):
+- file: (archivo)
+- subcriterionId: 1
+- employeeId: 1 (opcional)
+- expirationDate: "2025-12-31"
+
+Response (201 Created):
+{
+    "id": 1,
+    "name": "documento.pdf",
+    "status": "pending",
+    "fileUrl": "https://..."
+}
+
+8.3 APROBAR/RECHAZAR DOCUMENTO
+------------------------------
+PATCH /api/documents/:id/status
+
+Request Body:
+{
+    "status": "approved",
+    "comments": "Documento verificado correctamente"
+}
+
+Response (200 OK):
+{
+    "id": 1,
+    "status": "approved",
+    "reviewedAt": "2025-01-16T14:00:00.000Z",
+    "reviewedBy": { "id": 1, "name": "Revisor" }
+}
+
+
+9. MÓDULO DE CRITERIOS Y SUBCRITERIOS
+================================================================================
+
+9.1 LISTAR CRITERIOS
+--------------------
+GET /api/criterion
+
+Response (200 OK):
+{
+    "data": [
+        {
+            "id": 1,
+            "name": "Documentación Legal",
+            "description": "Documentos legales requeridos",
+            "order": 1,
+            "subcriterions": [...]
+        }
+    ]
+}
+
+9.2 LISTAR SUBCRITERIOS
+-----------------------
+GET /api/subcriterion
+
+Query Parameters:
+- criterionId (number):  Filtrar por criterio
+
+Response (200 OK):
+{
+    "data": [
+        {
+            "id": 1,
+            "name": "Cédula de Ciudadanía",
+            "description": "Documento de identidad",
+            "isRequired": true,
+            "requiresExpiration": false,
+            "criterion": { "id": 1, "name": "Documentación Legal" }
+        }
+    ]
+}
+
+
+10. MÓDULO DE REPORTES Y AUDITORÍA
+================================================================================
+
+10.1 OBTENER REPORTE DE AUDITORÍA
+---------------------------------
+GET /api/reports/audit
+
+Query Parameters:
+- clientId (number)
+- projectId (number)
+- contractorId (number)
+- startDate (date)
+- endDate (date)
+- status (string)
+
+Response (200 OK):
+{
+    "data": [
+        {
+            "documentId": 1,
+            "documentName": "Certificado SST",
+            "previousState": "pending",
+            "newState": "approved",
+            "changedAt": "2025-01-16T14:00:00.000Z",
+            "changedBy": "Admin",
+            "responseTime": 3600
+        }
+    ]
+}
+
+10.2 OBTENER MÉTRICAS
+---------------------
+GET /api/reports/metrics
+
+Response (200 OK):
+{
+    "totalDocuments": 1500,
+    "approved": 1200,
+    "pending": 200,
+    "rejected": 100,
+    "averageResponseTime": 4.5,
+    "slaCompliance": 92.5
+}
+
+10.3 EXPORTAR A EXCEL
+---------------------
+GET /api/reports/export/excel
+
+Query Parameters: (mismos que audit)
+
+Response: Archivo Excel (.xlsx)
+
+
+11. MÓDULO ILV (Inspecciones de Línea Visual)
+================================================================================
+
+11.1 LISTAR REPORTES ILV
+------------------------
+GET /api/ilv/reports
+
+Query Parameters:
+- type (string):         hid, wit, swa, fdkar
+- status (string):       abierto, cerrado
+- projectId (number)
+- companyId (number)
+
+Response (200 OK):
+{
+    "data": [
+        {
+            "id": 1,
+            "type": "hid",
+            "reportNumber": "ILV-2025-0001",
+            "status": "abierto",
+            "project": { "id": 1, "name": "Proyecto A" },
+            "company": { "id": 1, "name": "Empresa X" },
+            "createdAt": "2025-01-10T09:00:00.000Z"
+        }
+    ]
+}
+
+11.2 CREAR REPORTE ILV
+----------------------
+POST /api/ilv/reports
+
+Request Body:
+{
+    "type": "hid",
+    "projectId": 1,
+    "companyId": 1,
+    "workCenterId": 1,
+    "fields": {
+        "descripcion_hallazgo": "Descripción del hallazgo",
+        "categoria": "seguridad",
+        "severidad": "alta"
+    }
+}
+
+11.3 CERRAR REPORTE ILV
+-----------------------
+PATCH /api/ilv/reports/:id/close
+
+Request Body:
+{
+    "closingComments": "Acción correctiva implementada",
+    "evidenceUrls": ["https://..."]
+}
+
+11.4 OBTENER ESTADÍSTICAS ILV
+-----------------------------
+GET /api/ilv/stats
+
+Response (200 OK):
+{
+    "totalReports": 150,
+    "byType": {
+        "hid": 50,
+        "wit": 40,
+        "swa": 35,
+        "fdkar": 25
+    },
+    "byStatus": {
+        "abierto": 30,
+        "cerrado": 120
+    },
+    "averageClosureTime": 48
+}
+
+11.5 LISTAR MAESTROS ILV
+------------------------
+GET /api/ilv/maestros
+
+Query Parameters:
+- type (string):         categoria, severidad, area
+
+Response (200 OK):
+{
+    "data": [
+        {
+            "id": 1,
+            "type": "categoria",
+            "code": "SEG",
+            "name": "Seguridad",
+            "isActive": true
+        }
+    ]
+}
+
+
+12. MÓDULO DE INSPECCIONES TÉCNICAS
+================================================================================
+
+12.1 LISTAR INSPECCIONES
+------------------------
+GET /api/inspecciones
+
+Query Parameters:
+- type (string):         tecnica, auditoria
+- projectId (number)
+- status (string)
+
+Response (200 OK):
+{
+    "data": [
+        {
+            "id": 1,
+            "type": "tecnica",
+            "inspectionNumber": "INS-2025-0001",
+            "status": "completada",
+            "inspector": { "id": 1, "name": "Inspector A" },
+            "scheduledDate": "2025-01-20"
+        }
+    ]
+}
+
+12.2 CREAR INSPECCIÓN
+---------------------
+POST /api/inspecciones
+
+Request Body:
+{
+    "type": "tecnica",
+    "projectId": 1,
+    "contractorId": 1,
+    "scheduledDate": "2025-01-25",
+    "fields": {
+        "area_inspeccion": "Zona Norte",
+        "tipo_trabajo": "Obra civil"
+    }
+}
+
+12.3 OBTENER ESTADÍSTICAS DE INSPECCIONES
+-----------------------------------------
+GET /api/inspecciones/stats
+
+Response (200 OK):
+{
+    "totalInspections": 200,
+    "completedOnTime": 180,
+    "byType": {
+        "tecnica": 120,
+        "auditoria": 80
+    },
+    "complianceRate": 90
+}
+
+
+13. MÓDULO FORM BUILDER
+================================================================================
+
+13.1 LISTAR PLANTILLAS
+----------------------
+GET /api/form-builder/templates
+
+Response (200 OK):
+{
+    "data": [
+        {
+            "id": 1,
+            "name": "Formulario de Seguridad",
+            "description": "Checklist de seguridad",
+            "version": 2,
+            "isActive": true,
+            "fieldsCount": 15
+        }
+    ]
+}
+
+13.2 CREAR PLANTILLA
+--------------------
+POST /api/form-builder/templates
+
+Request Body:
+{
+    "name": "Nueva Plantilla",
+    "description": "Descripción",
+    "fields": [
+        {
+            "type": "text",
+            "label": "Nombre completo",
+            "required": true,
+            "order": 1
+        },
+        {
+            "type": "select",
+            "label": "Categoría",
+            "options": ["A", "B", "C"],
+            "required": true,
+            "order": 2
+        }
+    ]
+}
+
+13.3 CREAR SUBMISSION
+---------------------
+POST /api/form-builder/submissions
+
+Request Body:
+{
+    "templateId": 1,
+    "data": {
+        "nombre_completo": "Juan Pérez",
+        "categoria": "A"
+    }
+}
+
+
+14. MÓDULO DE CONFIGURACIÓN DEL SISTEMA
+================================================================================
+
+14.1 LISTAR PARÁMETROS
+----------------------
+GET /api/system-config/parameters
+
+Response (200 OK):
+{
+    "data": [
+        {
+            "id": 1,
+            "key": "SLA_HOURS",
+            "value": "24",
+            "description": "Horas máximas para SLA",
+            "type": "number"
+        }
+    ]
+}
+
+14.2 ACTUALIZAR PARÁMETRO
+-------------------------
+PUT /api/system-config/parameters/:key
+
+Request Body:
+{
+    "value": "48"
+}
+
+
+15. MÓDULO DE SOPORTES Y ARCHIVOS
+================================================================================
+
+15.1 OBTENER URL PRESIGNADA PARA SUBIDA
+---------------------------------------
+POST /api/supports/presigned-url/upload
+
+Request Body:
+{
+    "fileName": "documento.pdf",
+    "fileType": "application/pdf",
+    "category": "documentos"
+}
+
+Response (200 OK):
+{
+    "uploadUrl": "https://s3.amazonaws.com/...",
+    "fileKey": "documentos/1234567890_documento.pdf"
+}
+
+15.2 OBTENER URL PRESIGNADA PARA DESCARGA
+-----------------------------------------
+GET /api/supports/presigned-url/:fileKey
+
+Response (200 OK):
+{
+    "downloadUrl": "https://s3.amazonaws.com/..."
+}
+
+
+16. CÓDIGOS DE RESPUESTA HTTP
+================================================================================
+
+200 OK                  - Petición exitosa
+201 Created             - Recurso creado exitosamente
+400 Bad Request         - Error en los datos enviados
+401 Unauthorized        - Token inválido o ausente
+403 Forbidden           - Sin permisos para el recurso
+404 Not Found           - Recurso no encontrado
+409 Conflict            - Conflicto (ej: registro duplicado)
+422 Unprocessable       - Error de validación
+500 Internal Error      - Error interno del servidor
+
+
+17. ESTRUCTURA DE ERRORES
+================================================================================
+
+Todas las respuestas de error siguen el formato:
+
+{
+    "statusCode": 400,
+    "message": "Descripción del error",
+    "error": "Bad Request",
+    "details": {
+        "field": ["mensaje de validación"]
+    }
+}
+
+
+18. PAGINACIÓN
+================================================================================
+
+Los endpoints que retornan listas soportan paginación:
+
+Query Parameters:
+- page:    Número de página (default: 1)
+- limit:   Registros por página (default: 10, max: 100)
+
+Response incluye:
+{
+    "data": [...],
+    "total": 100,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 10
+}
+
+
+19. FILTROS Y ORDENAMIENTO
+================================================================================
+
+Muchos endpoints soportan:
+
+Query Parameters:
+- search:      Búsqueda general
+- sortBy:      Campo para ordenar
+- sortOrder:   asc | desc
+- [campo]:     Filtro específico por campo
+
+
+================================================================================
+                         FIN DEL DOCUMENTO
+================================================================================

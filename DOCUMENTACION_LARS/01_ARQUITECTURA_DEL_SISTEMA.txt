@@ -1,0 +1,271 @@
+================================================================================
+                    KAPA - SISTEMA DE GESTIÓN DOCUMENTAL
+                       ARQUITECTURA DEL SISTEMA
+================================================================================
+
+1. VISIÓN GENERAL DE LA ARQUITECTURA
+================================================================================
+
+KAPA es una plataforma empresarial de gestión documental construida sobre una 
+arquitectura moderna de tres capas, siguiendo los principios de diseño de 
+software limpio, modular y escalable.
+
+La arquitectura implementada sigue el patrón Cliente-Servidor con separación 
+completa entre frontend y backend, permitiendo escalabilidad independiente, 
+mantenibilidad mejorada y desarrollo paralelo.
+
+
+2. DIAGRAMA DE ARQUITECTURA
+================================================================================
+
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │                         CAPA DE PRESENTACIÓN                        │
+    │  ┌─────────────────────────────────────────────────────────────┐   │
+    │  │                    FRONTEND (Vue.js 3 + Quasar)              │   │
+    │  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────────────┐ │   │
+    │  │  │  Pages  │  │Components│  │Services │  │  State (Pinia)  │ │   │
+    │  │  └─────────┘  └─────────┘  └─────────┘  └─────────────────┘ │   │
+    │  └─────────────────────────────────────────────────────────────┘   │
+    └─────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      │ HTTPS/REST API
+                                      ▼
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │                          CAPA DE NEGOCIO                            │
+    │  ┌─────────────────────────────────────────────────────────────┐   │
+    │  │                    BACKEND (NestJS)                          │   │
+    │  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │   │
+    │  │  │ Controllers │  │  Services   │  │      Guards         │  │   │
+    │  │  └─────────────┘  └─────────────┘  └─────────────────────┘  │   │
+    │  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │   │
+    │  │  │    DTOs     │  │  Entities   │  │    Interceptors     │  │   │
+    │  │  └─────────────┘  └─────────────┘  └─────────────────────┘  │   │
+    │  └─────────────────────────────────────────────────────────────┘   │
+    └─────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      │ TypeORM
+                                      ▼
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │                          CAPA DE DATOS                              │
+    │  ┌───────────────────┐              ┌───────────────────────────┐  │
+    │  │    PostgreSQL     │              │        AWS S3             │  │
+    │  │  (Base de Datos)  │              │  (Almacenamiento Archivos)│  │
+    │  └───────────────────┘              └───────────────────────────┘  │
+    └─────────────────────────────────────────────────────────────────────┘
+
+
+3. STACK TECNOLÓGICO
+================================================================================
+
+3.1 FRONTEND
+------------
+- Framework Principal:     Vue.js 3.4
+- Framework UI:            Quasar 2.16 (Material Design)
+- Gestión de Estado:       Pinia 2.0
+- Enrutamiento:            Vue Router 4.0
+- Cliente HTTP:            Axios 1.2
+- Drag & Drop:             VueDraggable 4.1
+- Seguridad:               Vue reCAPTCHA v3
+- Cloud Storage:           AWS SDK v3
+
+3.2 BACKEND
+-----------
+- Framework Principal:     NestJS 10.0
+- Lenguaje:                TypeScript 5.1
+- ORM:                     TypeORM 0.3.20
+- Autenticación:           Passport.js (JWT + Local Strategy)
+- Validación:              class-validator, class-transformer
+- Email:                   Nodemailer 6.9, Resend
+- Tareas Programadas:      @nestjs/schedule
+- Exportación:             ExcelJS 4.4, PDFMake 0.2
+- Cloud Storage:           AWS SDK S3
+
+3.3 BASE DE DATOS
+-----------------
+- Motor:                   PostgreSQL 14+
+- Conexión:                pg 8.16
+- Migraciones:             TypeORM migrations
+
+3.4 INFRAESTRUCTURA
+-------------------
+- Servidor Web:            Nginx (reverse proxy)
+- Process Manager:         PM2
+- Cloud Storage:           Amazon S3
+- SSL/TLS:                 Let's Encrypt
+
+
+4. PATRONES DE DISEÑO IMPLEMENTADOS
+================================================================================
+
+4.1 ARQUITECTURA MODULAR
+------------------------
+El sistema está organizado en 18 módulos independientes:
+
+MÓDULOS DE NEGOCIO PRINCIPAL:
+├── Auth Module          - Autenticación y autorización
+├── Users Module         - Gestión de usuarios
+├── Roles Module         - Roles y permisos
+├── Clients Module       - Gestión de clientes
+├── Projects Module      - Gestión de proyectos
+├── Contractors Module   - Gestión de contratistas
+├── Employees Module     - Gestión de empleados
+├── Criterion Module     - Criterios de evaluación
+├── Subcriterion Module  - Subcriterios
+├── Documents Module     - Gestión documental
+├── Supports Module      - Soportes y archivos
+└── Reports Module       - Reportes y auditoría
+
+MÓDULOS DE FUNCIONALIDAD AVANZADA:
+├── ILV Module           - Inspecciones de Línea Visual
+├── Inspecciones Module  - Inspecciones técnicas
+├── Form-Builder Module  - Constructor de formularios dinámicos
+└── System-Config Module - Configuración del sistema
+
+MÓDULOS DE RELACIÓN:
+├── Project-Contractors Module
+└── Project-Contractor-Criterions Module
+
+4.2 PATRONES APLICADOS
+----------------------
+- Repository Pattern:     Abstracción de acceso a datos
+- Dependency Injection:   Inyección de dependencias (NestJS IoC)
+- DTO Pattern:            Data Transfer Objects para validación
+- Guard Pattern:          Protección de rutas y recursos
+- Interceptor Pattern:    Logging y transformación de respuestas
+- Service Pattern:        Lógica de negocio encapsulada
+- Module Pattern:         Encapsulación de funcionalidades
+- Factory Pattern:        Creación de objetos complejos
+
+
+5. FLUJO DE DATOS
+================================================================================
+
+5.1 FLUJO DE AUTENTICACIÓN
+--------------------------
+    ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
+    │  Cliente │────▶│ AuthCtrl │────▶│AuthService│────▶│  Users   │
+    │          │     │          │     │          │     │  Service │
+    └──────────┘     └──────────┘     └──────────┘     └──────────┘
+         │                                                   │
+         │           ┌──────────┐                            │
+         │◀──────────│   JWT    │◀───────────────────────────┘
+         │   Token   │  Guard   │   Validación
+         │           └──────────┘
+
+5.2 FLUJO DE PETICIONES API
+---------------------------
+    Request ──▶ Guard ──▶ Interceptor ──▶ Controller ──▶ Service ──▶ Repository
+       │                                                                │
+       │◀──────────────────── Response ◀────────────────────────────────┘
+
+
+6. MODELO DE SEGURIDAD
+================================================================================
+
+6.1 CAPAS DE SEGURIDAD
+----------------------
+┌─────────────────────────────────────────────────────────────────────────┐
+│  CAPA 1: Transporte                                                     │
+│  - HTTPS/TLS 1.3                                                        │
+│  - Certificados SSL (Let's Encrypt)                                     │
+├─────────────────────────────────────────────────────────────────────────┤
+│  CAPA 2: Autenticación                                                  │
+│  - JWT (JSON Web Tokens)                                                │
+│  - Passport.js strategies                                               │
+│  - Tokens de acceso con expiración                                      │
+├─────────────────────────────────────────────────────────────────────────┤
+│  CAPA 3: Autorización                                                   │
+│  - RBAC (Role-Based Access Control)                                     │
+│  - Guards personalizados                                                │
+│  - Permisos granulares por módulo                                       │
+├─────────────────────────────────────────────────────────────────────────┤
+│  CAPA 4: Validación                                                     │
+│  - DTOs con class-validator                                             │
+│  - Sanitización de entradas                                             │
+│  - Validación de tipos                                                  │
+├─────────────────────────────────────────────────────────────────────────┤
+│  CAPA 5: Protección de Recursos                                         │
+│  - Ownership guards                                                     │
+│  - Visibility guards                                                    │
+│  - Token guards para operaciones públicas                               │
+└─────────────────────────────────────────────────────────────────────────┘
+
+
+7. INTEGRACIÓN CON SERVICIOS EXTERNOS
+================================================================================
+
+7.1 AMAZON WEB SERVICES (AWS)
+-----------------------------
+- S3 Buckets:             Almacenamiento de documentos
+- Presigned URLs:         URLs temporales seguras para descarga
+- SDK Integration:        @aws-sdk/client-s3, @aws-sdk/s3-request-presigner
+
+7.2 SERVICIOS DE EMAIL
+----------------------
+- Nodemailer:             Envío de correos SMTP
+- Resend:                 API de correo transaccional
+- Plantillas HTML:        Emails profesionales personalizados
+
+7.3 SEGURIDAD ADICIONAL
+-----------------------
+- reCAPTCHA v3:           Protección contra bots
+- bcrypt:                 Hash de contraseñas
+
+
+8. ESCALABILIDAD Y RENDIMIENTO
+================================================================================
+
+8.1 ESTRATEGIAS DE ESCALABILIDAD
+--------------------------------
+- Horizontal:             Múltiples instancias con PM2 cluster mode
+- Vertical:               Optimización de recursos por instancia
+- Database:               Connection pooling con PostgreSQL
+- Cache:                  Estrategias de caché en cliente
+
+8.2 OPTIMIZACIONES IMPLEMENTADAS
+--------------------------------
+- Lazy Loading:           Carga diferida de módulos en frontend
+- Paginación:             Todas las listas soportan paginación
+- Índices DB:             Índices optimizados en tablas principales
+- Compresión:             Gzip en respuestas HTTP
+- CDN Ready:              Estructura preparada para CDN
+
+
+9. MONITOREO Y LOGGING
+================================================================================
+
+9.1 SISTEMA DE LOGGING
+----------------------
+- Request ID Tracking:    Identificación única por petición
+- Debug Interceptor:      Logging de errores con timing
+- Audit Trail:            Registro de cambios de estado
+- Health Checks:          Endpoints de salud del sistema
+
+9.2 SCRIPTS DE MONITOREO
+------------------------
+- apache_worker_monitor.sh
+- check_apache_health.sh
+- check_health.sh
+
+
+10. CONSIDERACIONES DE DESPLIEGUE
+================================================================================
+
+10.1 AMBIENTES SOPORTADOS
+-------------------------
+- Desarrollo:             Local con hot-reload
+- Staging:                Ambiente de pruebas
+- Producción:             Alta disponibilidad
+
+10.2 PROCESO DE BUILD
+---------------------
+Frontend:
+  npm run build ──▶ dist/spa/ (archivos estáticos optimizados)
+
+Backend:
+  npm run build ──▶ dist/ (código TypeScript compilado)
+
+
+================================================================================
+                         FIN DEL DOCUMENTO
+================================================================================

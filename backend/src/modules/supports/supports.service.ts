@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SupportFile } from '@entities/support-file.entity';
@@ -57,31 +57,43 @@ export class SupportsService {
     const serviceId = `SERVICE-CREATE-${Date.now()}`;
     console.log(`[${serviceId}] === createSupportFile INICIO ===`);
     console.log(`[${serviceId}] Datos recibidos:`, JSON.stringify(supportFileData, null, 2));
-    console.log(`[${serviceId}] Tipos de datos:`);
-    console.log(`[${serviceId}]   - name: ${typeof supportFileData.name} = "${supportFileData.name}"`);
-    console.log(`[${serviceId}]   - display_name: ${typeof supportFileData.display_name} = "${supportFileData.display_name}"`);
-    console.log(`[${serviceId}]   - category: ${typeof supportFileData.category} = "${supportFileData.category}"`);
-    console.log(`[${serviceId}]   - file_path: ${typeof supportFileData.file_path} = "${supportFileData.file_path}"`);
-    console.log(`[${serviceId}]   - file_size: ${typeof supportFileData.file_size} = ${supportFileData.file_size}`);
-    console.log(`[${serviceId}]   - mime_type: ${typeof supportFileData.mime_type} = "${supportFileData.mime_type}"`);
-    console.log(`[${serviceId}]   - created_by_user: ${typeof supportFileData.created_by_user} = ${JSON.stringify(supportFileData.created_by_user)}`);
 
     try {
+      // Validar campos requeridos
       console.log(`[${serviceId}] Validando campos requeridos...`);
-      await this.validateSupportFileRequiredFields(supportFileData);
-      console.log(`[${serviceId}] ✓ Validación exitosa`);
+      if (!supportFileData.name) {
+        throw new BadRequestException('El campo "name" es obligatorio');
+      }
+      if (!supportFileData.display_name) {
+        throw new BadRequestException('El campo "display_name" es obligatorio');
+      }
+      if (!supportFileData.category) {
+        throw new BadRequestException('El campo "category" es obligatorio');
+      }
+      if (!supportFileData.file_path) {
+        throw new BadRequestException('El campo "file_path" es obligatorio');
+      }
+      console.log(`[${serviceId}] ✓ Validación de campos exitosa`);
+
+      // Verificar duplicados - siguiendo patrón de system-config
+      console.log(`[${serviceId}] Verificando duplicados...`);
+      const existing = await this.supportFileRepository.findOne({
+        where: { name: supportFileData.name },
+      });
+      if (existing) {
+        throw new ConflictException(`Ya existe un archivo con el nombre "${supportFileData.name}"`);
+      }
+      console.log(`[${serviceId}] ✓ No hay duplicados`);
 
       console.log(`[${serviceId}] Creando entidad con create()...`);
       const supportFile = this.supportFileRepository.create(supportFileData);
       console.log(`[${serviceId}] ✓ Entidad creada (sin guardar):`, JSON.stringify(supportFile, null, 2));
-      console.log(`[${serviceId}]   - file_size en entidad: ${typeof supportFile.file_size} = ${supportFile.file_size}`);
 
       console.log(`[${serviceId}] Guardando en BD con save()...`);
       const savedFile = await this.supportFileRepository.save(supportFile);
       console.log(`[${serviceId}] ✓ Guardado exitoso en BD`);
       console.log(`[${serviceId}]   - ID generado: ${savedFile.support_file_id}`);
       console.log(`[${serviceId}]   - created_at: ${savedFile.created_at}`);
-      console.log(`[${serviceId}] Archivo guardado completo:`, JSON.stringify(savedFile, null, 2));
 
       console.log(`[${serviceId}] === createSupportFile FIN EXITOSO ===`);
       return savedFile;
@@ -122,14 +134,19 @@ export class SupportsService {
   ): Promise<SupportFile> {
     const supportFile = await this.getSupportFileById(id);
 
-    await this.validateSupportFileRequiredFields(supportFileData, true);
+    // Verificar duplicados si se está cambiando el nombre - siguiendo patrón de system-config
+    if (supportFileData.name) {
+      const existing = await this.supportFileRepository.findOne({
+        where: { name: supportFileData.name },
+      });
+      if (existing && existing.support_file_id !== id) {
+        throw new ConflictException(`Ya existe un archivo con el nombre "${supportFileData.name}"`);
+      }
+    }
 
-    const updatedSupportFile = this.supportFileRepository.merge(
-      supportFile,
-      supportFileData,
-    );
-
-    return this.supportFileRepository.save(updatedSupportFile);
+    Object.assign(supportFile, supportFileData);
+    supportFile.updated_at = new Date();
+    return this.supportFileRepository.save(supportFile);
   }
 
   async deleteSupportFile(id: number): Promise<void> {
@@ -301,37 +318,5 @@ export class SupportsService {
     };
 
     return mimeTypes[extension?.toLowerCase()] || 'application/octet-stream';
-  }
-
-  private async validateSupportFileRequiredFields(
-    data: Partial<SupportFile>,
-    isUpdate = false,
-  ): Promise<void> {
-    if (!isUpdate && !data.name) {
-      throw new BadRequestException('El campo "name" es obligatorio');
-    }
-
-    if (!isUpdate && !data.display_name) {
-      throw new BadRequestException('El campo "display_name" es obligatorio');
-    }
-
-    if (!isUpdate && !data.category) {
-      throw new BadRequestException('El campo "category" es obligatorio');
-    }
-
-    if (!isUpdate && !data.file_path) {
-      throw new BadRequestException('El campo "file_path" es obligatorio');
-    }
-
-    // Verificar que no exista otro archivo con el mismo nombre solo si se proporciona un nombre nuevo
-    if (data.name) {
-      const existingFile = await this.supportFileRepository.findOne({
-        where: { name: data.name },
-      });
-
-      if (existingFile && (!isUpdate || existingFile.support_file_id !== data.support_file_id)) {
-        throw new BadRequestException('Ya existe un archivo con este nombre');
-      }
-    }
   }
 }
