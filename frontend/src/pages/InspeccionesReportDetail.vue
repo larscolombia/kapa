@@ -35,6 +35,13 @@
                   :label="report.estado"
                 />
                 <q-btn 
+                  flat 
+                  icon="picture_as_pdf" 
+                  label="Descargar PDF"
+                  :loading="downloadingPdf"
+                  @click="downloadPdf"
+                />
+                <q-btn 
                   v-if="canEdit"
                   flat 
                   icon="edit" 
@@ -240,6 +247,22 @@
             </div>
 
             <!-- ============================================ -->
+            <!-- FORMULARIOS DINÁMICOS -->
+            <!-- ============================================ -->
+            <div v-if="clasificacionId" class="q-mt-lg">
+              <q-separator class="q-mb-md" />
+              <div class="text-subtitle1 q-mb-md">
+                <q-icon name="dynamic_form" class="q-mr-sm" />
+                Formularios de {{ report.tipo === 'tecnica' ? 'Inspección' : 'Auditoría' }}
+              </div>
+              <dynamic-forms-section
+                :clasificacion-id="clasificacionId"
+                :report-id="report.report_id"
+                :readonly="true"
+              />
+            </div>
+
+            <!-- ============================================ -->
             <!-- ADJUNTOS / EVIDENCIAS FOTOGRÁFICAS -->
             <!-- ============================================ -->
             <div v-if="attachments.length > 0" class="q-mt-lg">
@@ -334,7 +357,9 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from 'src/stores/auth'
+import { api } from 'src/boot/axios'
 import inspeccionesService from 'src/services/inspeccionesService'
+import DynamicFormsSection from 'src/components/form-builder/DynamicFormsSection.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -344,6 +369,7 @@ const authStore = useAuthStore()
 const loading = ref(true)
 const report = ref(null)
 const attachments = ref([])
+const downloadingPdf = ref(false)
 
 const isAdmin = computed(() => {
   const roleId = authStore.user?.role_id ?? authStore.user?.role?.role_id
@@ -353,6 +379,18 @@ const isAdmin = computed(() => {
 const canEdit = computed(() => {
   if (!report.value) return false
   return isAdmin.value || report.value.estado === 'abierto'
+})
+
+// Obtener el ID de clasificación según el tipo de reporte
+const clasificacionId = computed(() => {
+  if (!report.value?.fields) return null
+  
+  const fieldKey = report.value.tipo === 'tecnica' 
+    ? 'clasificacion_inspeccion_id' 
+    : 'clasificacion_auditoria_id'
+  
+  const field = report.value.fields.find(f => f.key === fieldKey)
+  return field?.value ? parseInt(field.value, 10) : null
 })
 
 const formatDate = (date) => {
@@ -440,6 +478,32 @@ const downloadAttachment = async (att) => {
   } catch (error) {
     console.error('Error downloading:', error)
     $q.notify({ type: 'negative', message: 'Error al descargar el archivo', position: 'top' })
+  }
+}
+
+const downloadPdf = async () => {
+  downloadingPdf.value = true
+  try {
+    const response = await api.get(`/inspecciones-reports/${report.value.report_id}/export/pdf`, {
+      responseType: 'blob'
+    })
+    
+    const blob = new Blob([response.data], { type: 'application/pdf' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `inspeccion_${report.value.report_id}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    
+    $q.notify({ type: 'positive', message: 'PDF descargado correctamente', position: 'top' })
+  } catch (error) {
+    console.error('Error downloading PDF:', error)
+    $q.notify({ type: 'negative', message: 'Error al descargar el PDF', position: 'top' })
+  } finally {
+    downloadingPdf.value = false
   }
 }
 

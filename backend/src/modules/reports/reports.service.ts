@@ -4,6 +4,7 @@ import { Repository, Between } from 'typeorm';
 import { DocumentStateAudit } from '@entities/document-state-audit.entity';
 import { Document } from '@entities/document.entity';
 import * as ExcelJS from 'exceljs';
+import { ExportService, PdfReportData, PdfSection } from '../../common/services/export.service';
 
 @Injectable()
 export class ReportsService {
@@ -272,5 +273,116 @@ export class ReportsService {
         responseTime: m.totalTimeInSubmitted,
       })),
     };
+  }
+
+  /**
+   * Generar reporte PDF de auditoría
+   */
+  async generatePdfReport(filters: {
+    clientId?: number;
+    contractorId?: number;
+    projectId?: number;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<Buffer> {
+    const metrics = await this.getResponseTimeMetrics(filters);
+    const slaMetrics = await this.getSLAMetrics(filters);
+
+    // Definir SLA
+    const SLA_HOURS = 24;
+
+    // Estadísticas generales
+    const totalDocuments = metrics.length;
+    const avgResponseTime = metrics.reduce((sum, m) => sum + (m.totalTimeInSubmitted || 0), 0) / totalDocuments || 0;
+    const totalRejections = metrics.reduce((sum, m) => sum + m.totalResubmissions, 0);
+    const documentsWithRejections = metrics.filter(m => m.totalResubmissions > 0).length;
+
+    // Construir secciones del PDF
+    const secciones: PdfSection[] = [
+      {
+        titulo: 'Resumen General',
+        campos: [
+          { label: 'Total de Documentos Analizados', value: totalDocuments },
+          { label: 'Tiempo Promedio de Respuesta', value: `${avgResponseTime.toFixed(2)} horas` },
+          { label: 'Total de Rechazos', value: totalRejections },
+          { label: 'Documentos con Rechazos', value: documentsWithRejections },
+          { label: 'Porcentaje de Rechazo', value: `${((documentsWithRejections / totalDocuments) * 100 || 0).toFixed(2)}%` },
+        ]
+      },
+      {
+        titulo: 'Cumplimiento de SLA',
+        campos: [
+          { label: 'SLA Configurado', value: `${SLA_HOURS} horas` },
+          { label: 'Documentos dentro de SLA', value: slaMetrics.withinSLA },
+          { label: 'Documentos fuera de SLA', value: slaMetrics.breachedSLA },
+          { label: 'Porcentaje de Cumplimiento', value: `${slaMetrics.slaCompliance}%` },
+        ]
+      }
+    ];
+
+    // Agregar tabla de detalle (máx 30 registros para el PDF)
+    if (metrics.length > 0) {
+      secciones.push({
+        titulo: 'Detalle de Documentos',
+        campos: [],
+        tabla: {
+          headers: ['Cliente', 'Proyecto', 'Contratista', 'Documento', 'T. Revisión (hrs)', 'Rechazos', 'Estado'],
+          rows: metrics.slice(0, 30).map(m => {
+            const doc = m.document;
+            return [
+              doc.projectContractor?.project?.client?.name || 'N/A',
+              doc.projectContractor?.project?.name || 'N/A',
+              doc.projectContractor?.contractor?.name || 'N/A',
+              doc.name?.substring(0, 25) || 'N/A',
+              m.totalTimeInSubmitted?.toFixed(1) || '0',
+              m.totalResubmissions,
+              this.translateState(doc.state)
+            ];
+          })
+        }
+      });
+
+      if (metrics.length > 30) {
+        secciones.push({
+          titulo: 'Nota',
+          campos: [
+            { label: 'Registros mostrados', value: '30' },
+            { label: 'Total de registros', value: metrics.length },
+            { label: 'Información', value: 'Para ver todos los registros, use la exportación a Excel' }
+          ]
+        });
+      }
+    }
+
+    // Agregar documentos fuera de SLA si hay
+    if (slaMetrics.breachedDocuments.length > 0) {
+      secciones.push({
+        titulo: 'Documentos Fuera de SLA (Atención Requerida)',
+        campos: [],
+        tabla: {
+          headers: ['Documento', 'Contratista', 'Tiempo de Respuesta (hrs)'],
+          rows: slaMetrics.breachedDocuments.slice(0, 15).map(d => [
+            d.document?.substring(0, 30) || 'N/A',
+            d.contractor || 'N/A',
+            d.responseTime?.toFixed(2) || 'N/A'
+          ])
+        }
+      });
+    }
+
+    // Construir subtítulo con filtros aplicados
+    const filterParts: string[] = [];
+    if (filters.startDate) filterParts.push(`Desde: ${new Date(filters.startDate).toLocaleDateString('es-CO')}`);
+    if (filters.endDate) filterParts.push(`Hasta: ${new Date(filters.endDate).toLocaleDateString('es-CO')}`);
+    const subtitle = filterParts.length > 0 ? filterParts.join(' | ') : 'Todos los registros';
+
+    const pdfData: PdfReportData = {
+      titulo: 'Reporte de Auditoría - Tiempos de Revisión',
+      subtitulo: subtitle,
+      fechaGeneracion: new Date(),
+      secciones
+    };
+
+    return ExportService.generatePdf(pdfData);
   }
 }

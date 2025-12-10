@@ -4,9 +4,13 @@ import { Repository, In } from 'typeorm';
 import { InspeccionReport } from '../../../database/entities/inspeccion-report.entity';
 import { InspeccionReportField } from '../../../database/entities/inspeccion-report-field.entity';
 import { InspeccionMaestro } from '../../../database/entities/inspeccion-maestro.entity';
+import { FormSubmission } from '../../../database/entities/form-submission.entity';
+import { FormTemplate } from '../../../database/entities/form-template.entity';
 import { CreateInspeccionReportDto } from '../dto/create-inspeccion-report.dto';
 import { UpdateInspeccionReportDto } from '../dto/update-inspeccion-report.dto';
 import { FilterInspeccionDto } from '../dto/filter-inspeccion.dto';
+import { InspeccionesNotificationsService } from './inspecciones-notifications.service';
+import { ExportService, PdfReportData, PdfSection } from '../../../common/services/export.service';
 
 /**
  * Parsea una fecha string (YYYY-MM-DD) a Date sin problemas de timezone.
@@ -30,6 +34,8 @@ function parseDateSafe(dateStr: string | Date): Date | null {
 
 @Injectable()
 export class InspeccionesReportsService {
+  private notificationsService: InspeccionesNotificationsService;
+
   constructor(
     @InjectRepository(InspeccionReport)
     private reportRepo: Repository<InspeccionReport>,
@@ -37,7 +43,9 @@ export class InspeccionesReportsService {
     private fieldRepo: Repository<InspeccionReportField>,
     @InjectRepository(InspeccionMaestro)
     private maestroRepo: Repository<InspeccionMaestro>,
-  ) {}
+  ) {
+    this.notificationsService = new InspeccionesNotificationsService();
+  }
 
   /**
    * Crea un nuevo reporte de inspección
@@ -100,7 +108,15 @@ export class InspeccionesReportsService {
 
     await this.fieldRepo.save(fields);
 
-    return this.findOne(savedReport.report_id);
+    // Obtener reporte completo con relaciones para notificación
+    const fullReport = await this.findOne(savedReport.report_id);
+    
+    // Enviar notificación de creación (async, no bloquea)
+    this.notificationsService.sendReportCreatedEmail(fullReport).catch(err => {
+      console.error(`Error enviando notificación para inspección #${savedReport.report_id}:`, err);
+    });
+
+    return fullReport;
   }
 
   /**
@@ -124,6 +140,22 @@ export class InspeccionesReportsService {
     if (filters.empresa_id) qb.andWhere('r.empresa_id = :eid', { eid: filters.empresa_id });
     if (filters.empresa_auditada_id) qb.andWhere('r.empresa_auditada_id = :eaid', { eaid: filters.empresa_auditada_id });
 
+    // Filtro por clasificación técnica (busca en campos)
+    if (filters.clasificacion_inspeccion_id) {
+      qb.andWhere(
+        `EXISTS (SELECT 1 FROM inspeccion_report_field f WHERE f.report_id = r.report_id AND f.key = 'clasificacion_inspeccion_id' AND f.value = :clfTec)`,
+        { clfTec: String(filters.clasificacion_inspeccion_id) }
+      );
+    }
+
+    // Filtro por clasificación de auditoría (busca en campos)
+    if (filters.clasificacion_auditoria_id) {
+      qb.andWhere(
+        `EXISTS (SELECT 1 FROM inspeccion_report_field f WHERE f.report_id = r.report_id AND f.key = 'clasificacion_auditoria_id' AND f.value = :clfAud)`,
+        { clfAud: String(filters.clasificacion_auditoria_id) }
+      );
+    }
+
     // Filtros de fecha con tiempo completo
     if (filters.fecha_desde) {
       qb.andWhere('r.creado_en >= :desde', { desde: `${filters.fecha_desde} 00:00:00` });
@@ -144,7 +176,25 @@ export class InspeccionesReportsService {
     const page = filters.page || 1;
     const limit = filters.limit || 50;
     qb.skip((page - 1) * limit).take(limit);
-    qb.orderBy('r.creado_en', 'DESC');
+
+    // Ordenamiento dinámico
+    const sortBy = filters.sortBy || 'creado_en';
+    const order = filters.order === 'ASC' ? 'ASC' : 'DESC';
+    
+    // Mapear campos de ordenamiento a columnas de la BD
+    const sortMapping: { [key: string]: string } = {
+      'report_id': 'r.report_id',
+      'tipo': 'r.tipo',
+      'estado': 'r.estado',
+      'fecha': 'r.fecha',
+      'creado_en': 'r.creado_en',
+      'cliente': 'client.name',
+      'proyecto': 'project.name',
+      'empresa': 'contractor.name'
+    };
+    
+    const orderColumn = sortMapping[sortBy] || 'r.creado_en';
+    qb.orderBy(orderColumn, order);
 
     const [data, total] = await qb.getManyAndCount();
 
@@ -241,6 +291,7 @@ export class InspeccionesReportsService {
     }
 
     // Actualizar estado
+    const previousState = report.estado;
     if (dto.estado) {
       report.estado = dto.estado;
       if (dto.estado === 'cerrado') {
@@ -267,7 +318,17 @@ export class InspeccionesReportsService {
     report.actualizado_en = new Date();
     await this.reportRepo.save(report);
 
-    return this.findOne(id);
+    // Obtener reporte completo con relaciones
+    const fullReport = await this.findOne(id);
+
+    // Enviar notificación si el estado cambió a cerrado
+    if (dto.estado === 'cerrado' && previousState !== 'cerrado') {
+      this.notificationsService.sendReportClosedEmail(fullReport).catch(err => {
+        console.error(`Error enviando notificación de cierre para inspección #${id}:`, err);
+      });
+    }
+
+    return fullReport;
   }
 
   /**
@@ -312,6 +373,17 @@ export class InspeccionesReportsService {
    */
   async getTiposInspeccionTecnica(): Promise<InspeccionMaestro[]> {
     return this.getMaestros('tipo_inspeccion_tecnica');
+  }
+
+  /**
+   * Obtener todas las clasificaciones técnicas (sin filtro de padre)
+   */
+  async getAllClasificacionesTecnicas(): Promise<InspeccionMaestro[]> {
+    return this.maestroRepo.createQueryBuilder('m')
+      .where('m.tipo = :tipo', { tipo: 'clasificacion_inspeccion' })
+      .andWhere('m.activo = true')
+      .orderBy('m.orden', 'ASC')
+      .getMany();
   }
 
   /**
@@ -419,51 +491,379 @@ export class InspeccionesReportsService {
   }
 
   /**
-   * Exportar a Excel
+   * Exportar listado de inspecciones a Excel
    */
   async exportToExcel(filters: FilterInspeccionDto, userId: number): Promise<Buffer> {
     const { data } = await this.findAll(filters, userId);
-    const csvContent = this.generateCSV(data);
-    return Buffer.from(csvContent, 'utf-8');
+
+    const columns = [
+      { header: 'ID', key: 'report_id', width: 8 },
+      { header: 'Tipo', key: 'tipo_label', width: 20 },
+      { header: 'Estado', key: 'estado', width: 12 },
+      { header: 'Centro de Trabajo', key: 'cliente', width: 25 },
+      { header: 'Proyecto', key: 'proyecto', width: 25 },
+      { header: 'Empresa', key: 'empresa', width: 25 },
+      { header: 'Fecha Inspección', key: 'fecha', width: 15 },
+      { header: 'Creado Por', key: 'creador', width: 20 },
+      { header: 'Fecha Creación', key: 'fecha_creacion', width: 15 },
+    ];
+
+    const excelData = data.map(r => ({
+      report_id: r.report_id,
+      tipo_label: r.tipo === 'tecnica' ? 'Inspección Técnica' : 'Auditoría Cruzada',
+      estado: r.estado === 'abierto' ? 'Abierto' : 'Cerrado',
+      cliente: r.client?.name || 'N/A',
+      proyecto: r.project?.name || 'N/A',
+      empresa: r.contractor?.name || 'N/A',
+      fecha: r.fecha ? new Date(r.fecha).toLocaleDateString('es-CO') : 'N/A',
+      creador: r.created_by?.name || 'N/A',
+      fecha_creacion: r.creado_en ? new Date(r.creado_en).toLocaleDateString('es-CO') : 'N/A',
+    }));
+
+    let subtitle = 'Todas las inspecciones';
+    if (filters.tipo) subtitle = `Tipo: ${filters.tipo === 'tecnica' ? 'Inspección Técnica' : 'Auditoría Cruzada'}`;
+    if (filters.estado) subtitle += ` | Estado: ${filters.estado}`;
+    if (filters.fecha_desde || filters.fecha_hasta) {
+      subtitle += ` | Período: ${filters.fecha_desde || '*'} - ${filters.fecha_hasta || '*'}`;
+    }
+
+    return ExportService.generateExcel({
+      title: 'Inspecciones - KAPA',
+      subtitle,
+      columns,
+      data: excelData,
+      sheetName: 'Inspecciones'
+    });
   }
 
   /**
-   * Exportar a PDF
+   * Procesar campos del form builder para mostrarlos de forma legible
    */
-  async exportToPdf(filters: FilterInspeccionDto, userId: number): Promise<Buffer> {
-    const { data } = await this.findAll(filters, userId);
-    const textContent = this.generatePdfText(data);
-    return Buffer.from(textContent, 'utf-8');
+  private processFormBuilderData(data: any, schema: any): { label: string; value: string }[] {
+    const result: { label: string; value: string }[] = [];
+    const schemaFields = schema?.fields || [];
+
+    // Crear un mapa de campos del schema para acceso rápido
+    const fieldMap = this.buildFieldMap(schemaFields);
+
+    for (const [key, value] of Object.entries(data)) {
+      if (value === null || value === undefined || value === '') continue;
+
+      const fieldInfo = fieldMap.get(key);
+      const label = fieldInfo?.label || this.formatFieldKey(key);
+      const fieldType = fieldInfo?.type || 'text';
+
+      // Procesar según el tipo de campo
+      const formattedValue = this.formatFieldValue(value, fieldType, fieldInfo);
+      
+      if (formattedValue) {
+        result.push({ label, value: formattedValue });
+      }
+    }
+
+    return result;
   }
 
-  private generateCSV(reports: InspeccionReport[]): string {
-    const headers = ['ID', 'Tipo', 'Estado', 'Proyecto', 'Cliente', 'Fecha Creación'];
-    const rows = reports.map(r => [
-      r.report_id,
-      r.tipo === 'tecnica' ? 'Inspección Técnica' : 'Auditoría Cruzada',
-      r.estado,
-      r.project?.name || 'N/A',
-      r.client?.name || 'N/A',
-      r.creado_en.toISOString().split('T')[0]
-    ]);
+  /**
+   * Construir un mapa plano de todos los campos del schema (incluyendo anidados)
+   */
+  private buildFieldMap(fields: any[], parentKey = ''): Map<string, any> {
+    const map = new Map<string, any>();
 
-    return [headers, ...rows].map(row => row.join(',')).join('\n');
+    for (const field of fields || []) {
+      const key = field.key || field.id;
+      if (key) {
+        map.set(key, field);
+      }
+
+      // Campos anidados (para grupos, repeaters, etc.)
+      if (field.fields && Array.isArray(field.fields)) {
+        const nestedMap = this.buildFieldMap(field.fields, key);
+        nestedMap.forEach((v, k) => map.set(k, v));
+      }
+
+      // Opciones de radio/checkbox/select
+      if (field.options && Array.isArray(field.options)) {
+        for (const option of field.options) {
+          if (option.key) {
+            map.set(option.key, { ...option, parentField: field });
+          }
+        }
+      }
+    }
+
+    return map;
   }
 
-  private generatePdfText(reports: InspeccionReport[]): string {
-    let content = 'REPORTE DE INSPECCIONES\n\n';
-    content += `Generado el: ${new Date().toLocaleString()}\n\n`;
+  /**
+   * Formatear una clave de campo para mostrarla legible
+   */
+  private formatFieldKey(key: string): string {
+    // Remover prefijos como text_, radio_, textarea_, etc.
+    const cleanKey = key.replace(/^(text|radio|textarea|checkbox|select|number|date|repeater|group)_[a-f0-9]+$/i, 'Campo');
+    if (cleanKey === 'Campo') return 'Campo';
+    
+    return key
+      .replace(/_/g, ' ')
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/\b\w/g, l => l.toUpperCase());
+  }
 
-    reports.forEach(r => {
-      content += `ID: ${r.report_id}\n`;
-      content += `Tipo: ${r.tipo === 'tecnica' ? 'Inspección Técnica' : 'Auditoría Cruzada'}\n`;
-      content += `Estado: ${r.estado}\n`;
-      content += `Proyecto: ${r.project?.name || 'N/A'}\n`;
-      content += `Cliente: ${r.client?.name || 'N/A'}\n`;
-      content += `Fecha: ${r.creado_en.toISOString().split('T')[0]}\n`;
-      content += '---\n\n';
+  /**
+   * Formatear el valor de un campo según su tipo
+   */
+  private formatFieldValue(value: any, fieldType: string, fieldInfo?: any): string {
+    if (value === null || value === undefined) return '';
+
+    // Manejar arrays (repeaters)
+    if (Array.isArray(value)) {
+      return this.formatRepeaterValue(value, fieldInfo);
+    }
+
+    // Manejar objetos
+    if (typeof value === 'object') {
+      return this.formatObjectValue(value, fieldInfo);
+    }
+
+    // Manejar valores de radio/select - buscar el label de la opción
+    if ((fieldType === 'radio' || fieldType === 'select') && fieldInfo?.options) {
+      const option = fieldInfo.options.find((opt: any) => 
+        opt.value === value || opt.key === value
+      );
+      if (option) {
+        return option.label || option.value || String(value);
+      }
+    }
+
+    // Manejar booleanos
+    if (typeof value === 'boolean') {
+      return value ? 'Sí' : 'No';
+    }
+
+    // Manejar fechas
+    if (fieldType === 'date' && value) {
+      try {
+        return new Date(value).toLocaleDateString('es-CO');
+      } catch {
+        return String(value);
+      }
+    }
+
+    return String(value);
+  }
+
+  /**
+   * Formatear un valor de tipo repeater (array de objetos)
+   */
+  private formatRepeaterValue(items: any[], fieldInfo?: any): string {
+    if (!items || items.length === 0) return '';
+
+    const repeaterFields = fieldInfo?.fields || [];
+    const fieldMap = this.buildFieldMap(repeaterFields);
+
+    const formattedItems = items.map((item, index) => {
+      const itemLines: string[] = [];
+      
+      for (const [key, val] of Object.entries(item)) {
+        if (val === null || val === undefined || val === '') continue;
+        
+        const subFieldInfo = fieldMap.get(key);
+        const label = subFieldInfo?.label || this.formatFieldKey(key);
+        const fieldType = subFieldInfo?.type || 'text';
+        
+        let displayValue: string;
+        
+        // Para radios y selects, buscar el label de la opción
+        if ((fieldType === 'radio' || fieldType === 'select') && subFieldInfo?.options) {
+          const option = subFieldInfo.options.find((opt: any) => 
+            opt.value === val || opt.key === val
+          );
+          displayValue = option?.label || String(val);
+        } else if (typeof val === 'object') {
+          displayValue = JSON.stringify(val);
+        } else {
+          displayValue = String(val);
+        }
+        
+        itemLines.push(`${label}: ${displayValue}`);
+      }
+      
+      return `[Registro ${index + 1}]\n${itemLines.join('\n')}`;
     });
 
-    return content;
+    return formattedItems.join('\n\n');
+  }
+
+  /**
+   * Formatear un valor de tipo objeto
+   */
+  private formatObjectValue(obj: any, fieldInfo?: any): string {
+    const lines: string[] = [];
+    
+    for (const [key, val] of Object.entries(obj)) {
+      if (val === null || val === undefined || val === '') continue;
+      const label = this.formatFieldKey(key);
+      lines.push(`${label}: ${String(val)}`);
+    }
+    
+    return lines.join(', ');
+  }
+
+  /**
+   * Exportar una inspección individual a PDF
+   */
+  async exportToPdf(reportId: number): Promise<Buffer> {
+    const report = await this.findOne(reportId);
+
+    const fieldLabels: Record<string, string> = {
+      'tipo_inspeccion_id': 'Tipo de Inspección',
+      'clasificacion_inspeccion_id': 'Clasificación',
+      'area_inspeccion_id': 'Área de Inspección',
+      'descripcion_area': 'Descripción del Área',
+      'quien_reporta_id': 'Quien Reporta',
+      'area_auditoria_id': 'Área de Auditoría',
+      'clasificacion_auditoria_id': 'Clasificación de Auditoría',
+      'hallazgos': 'Hallazgos',
+      'acciones_correctivas': 'Acciones Correctivas',
+      'observacion': 'Observación'
+    };
+
+    // Información general del reporte
+    const infoGeneral: PdfSection = {
+      titulo: 'Información General',
+      campos: [
+        { label: 'ID del Reporte', value: report.report_id },
+        { label: 'Tipo de Inspección', value: report.tipo === 'tecnica' ? 'Inspección Técnica' : 'Auditoría Cruzada' },
+        { label: 'Estado', value: report.estado === 'abierto' ? 'Abierto' : 'Cerrado' },
+        { label: 'Centro de Trabajo', value: report.client?.name || 'N/A' },
+        { label: 'Proyecto', value: report.project?.name || 'N/A' },
+        { label: 'Empresa', value: report.contractor?.name || 'N/A' },
+        { label: 'Fecha de Inspección', value: report.fecha ? new Date(report.fecha).toLocaleDateString('es-CO') : 'N/A' },
+        { label: 'Creado Por', value: report.created_by?.name || 'N/A' },
+        { label: 'Fecha de Creación', value: report.creado_en ? new Date(report.creado_en).toLocaleString('es-CO') : 'N/A' },
+      ]
+    };
+
+    // Campos dinámicos del formulario
+    const camposFormulario: PdfSection = {
+      titulo: 'Detalles de la Inspección',
+      campos: []
+    };
+
+    for (const field of report.fields) {
+      const label = fieldLabels[field.key] || field.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      const value = field.value_display || field.value;
+      camposFormulario.campos.push({ label, value });
+    }
+
+    const secciones: PdfSection[] = [infoGeneral];
+    if (camposFormulario.campos.length > 0) {
+      secciones.push(camposFormulario);
+    }
+
+    // Obtener formularios dinámicos (form builder) si existen
+    try {
+      const formSubmissions = await this.fieldRepo.query(
+        `SELECT fs.*, ft.name as form_name, ft.schema 
+         FROM form_submission fs
+         JOIN form_template ft ON fs.form_template_id = ft.form_template_id
+         WHERE fs.inspeccion_report_id = $1`,
+        [reportId]
+      );
+
+      for (const submission of formSubmissions) {
+        const formSection: PdfSection = {
+          titulo: `Formulario: ${submission.form_name}`,
+          campos: []
+        };
+
+        const data = submission.data || {};
+        const schema = submission.schema as any;
+
+        // Usar el nuevo método para procesar los datos del form builder
+        formSection.campos = this.processFormBuilderData(data, schema);
+
+        if (formSection.campos.length > 0) {
+          secciones.push(formSection);
+        }
+      }
+    } catch (error) {
+      console.warn('Error obteniendo formularios dinámicos:', error);
+    }
+
+    // Información de adjuntos si existen
+    if (report.attachments && report.attachments.length > 0) {
+      secciones.push({
+        titulo: 'Archivos Adjuntos',
+        campos: report.attachments.map((att, idx) => ({
+          label: `Archivo ${idx + 1}`,
+          value: att.filename
+        }))
+      });
+    }
+
+    const pdfData: PdfReportData = {
+      titulo: `Inspección #${report.report_id}`,
+      subtitulo: report.tipo === 'tecnica' ? 'Inspección Técnica' : 'Auditoría Cruzada',
+      fechaGeneracion: new Date(),
+      secciones
+    };
+
+    return ExportService.generatePdf(pdfData);
+  }
+
+  /**
+   * Exportar múltiples inspecciones a PDF (resumen)
+   */
+  async exportListToPdf(filters: FilterInspeccionDto, userId: number): Promise<Buffer> {
+    const { data } = await this.findAll(filters, userId);
+
+    // Estadísticas
+    const stats = {
+      total: data.length,
+      abiertos: data.filter(r => r.estado === 'abierto').length,
+      cerrados: data.filter(r => r.estado === 'cerrado').length,
+      tecnicas: data.filter(r => r.tipo === 'tecnica').length,
+      auditorias: data.filter(r => r.tipo === 'auditoria').length
+    };
+
+    const secciones: PdfSection[] = [
+      {
+        titulo: 'Resumen',
+        campos: [
+          { label: 'Total de Inspecciones', value: stats.total },
+          { label: 'Inspecciones Abiertas', value: stats.abiertos },
+          { label: 'Inspecciones Cerradas', value: stats.cerrados },
+          { label: 'Inspecciones Técnicas', value: stats.tecnicas },
+          { label: 'Auditorías Cruzadas', value: stats.auditorias },
+        ]
+      },
+      {
+        titulo: 'Listado de Inspecciones',
+        campos: [],
+        tabla: {
+          headers: ['ID', 'Tipo', 'Estado', 'Cliente', 'Proyecto', 'Fecha'],
+          rows: data.slice(0, 50).map(r => [
+            r.report_id,
+            r.tipo === 'tecnica' ? 'Inspección Técnica' : 'Auditoría Cruzada',
+            r.estado === 'abierto' ? 'Abierto' : 'Cerrado',
+            r.client?.name || 'N/A',
+            r.project?.name || 'N/A',
+            r.fecha ? new Date(r.fecha).toLocaleDateString('es-CO') : 'N/A'
+          ])
+        }
+      }
+    ];
+
+    let subtitle = 'Todas las inspecciones';
+    if (filters.tipo) subtitle = `Tipo: ${filters.tipo === 'tecnica' ? 'Inspección Técnica' : 'Auditoría Cruzada'}`;
+    if (filters.estado) subtitle += ` | Estado: ${filters.estado}`;
+
+    return ExportService.generatePdf({
+      titulo: 'Inspecciones - KAPA',
+      subtitulo: subtitle,
+      fechaGeneracion: new Date(),
+      secciones
+    });
   }
 }

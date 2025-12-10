@@ -43,4 +43,12 @@ export class FilterIlvReportDto {
   @Type(() => Number)
   @IsInt()
   limit?: number = 50;
+
+  @IsOptional()
+  @IsString()
+  sortBy?: string = 'creado_en';
+
+  @IsOptional()
+  @IsString()
+  order?: 'ASC' | 'DESC' = 'DESC';
 }

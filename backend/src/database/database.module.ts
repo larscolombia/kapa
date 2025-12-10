@@ -28,6 +28,11 @@ import { InspeccionReport } from './entities/inspeccion-report.entity';
 import { InspeccionReportField } from './entities/inspeccion-report-field.entity';
 import { InspeccionMaestro } from './entities/inspeccion-maestro.entity';
 import { InspeccionAttachment } from './entities/inspeccion-attachment.entity';
+import { FormTemplate } from './entities/form-template.entity';
+import { FormTemplateClassification } from './entities/form-template-classification.entity';
+import { FormSubmission } from './entities/form-submission.entity';
+import { FormDraft } from './entities/form-draft.entity';
+import { FormSubmissionHistory } from './entities/form-submission-history.entity';
 
 @Module({
   imports: [
@@ -72,6 +77,11 @@ import { InspeccionAttachment } from './entities/inspeccion-attachment.entity';
           InspeccionReportField,
           InspeccionMaestro,
           InspeccionAttachment,
+          FormTemplate,
+          FormTemplateClassification,
+          FormSubmission,
+          FormDraft,
+          FormSubmissionHistory,
         ],
         synchronize: true, // Solo para desarrollo; no se recomienda en producción
       }),

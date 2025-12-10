@@ -16,7 +16,7 @@
             {{ user.role.name }}
           </q-item-section>
           <q-item-section class="text-blue-8 text-right" style="font-size: x-small;">
-            v1.0.1
+            V2.0 by <a href="https://lars.net.co" target="_blank" class="text-blue-4" style="text-decoration: none;">LARS</a>
           </q-item-section>
         </div>
       </q-toolbar>
@@ -187,10 +187,28 @@ const pages = [
     moduleName: 'ilv_management',
   },
   {
-    name: 'Inspecciones',
+    name: 'Inspecciones - Dashboard',
+    icon: 'dashboard',
+    routeName: 'inspeccionesDashboard',
+    moduleName: 'inspecciones_management',
+  },
+  {
+    name: 'Inspecciones - Reportes',
     icon: 'checklist',
     routeName: 'inspeccionesLista',
     moduleName: 'inspecciones_management',
+  },
+  {
+    name: 'Generador de Formularios para Inspecciones',
+    icon: 'dynamic_form',
+    routeName: 'formBuilderList',
+    moduleName: 'form_builder_manage',
+  },
+  {
+    name: 'Configuración del Sistema',
+    icon: 'settings',
+    routeName: 'systemConfig',
+    moduleName: 'system_config',
   }
 ]
 

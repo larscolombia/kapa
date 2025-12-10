@@ -8,6 +8,7 @@ import { IlvCloseToken } from '../../database/entities/ilv-close-token.entity';
 import { IlvMaestro } from '../../database/entities/ilv-maestro.entity';
 import { IlvAudit } from '../../database/entities/ilv-audit.entity';
 import { IlvEmailLog } from '../../database/entities/ilv-email-log.entity';
+import { SystemParameter } from '../../database/entities/system-parameter.entity';
 import { Client } from '../../database/entities/client.entity';
 import { User } from '../../database/entities/user.entity';
 
@@ -47,6 +48,7 @@ import {
       IlvMaestro,
       IlvAudit,
       IlvEmailLog,
+      SystemParameter,
       Client,
       User,
     ]),

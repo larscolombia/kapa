@@ -72,6 +72,15 @@
             :loading="downloading"
             class="col-md-2 col-xs-12"
           />
+          
+          <q-btn
+            color="red-8"
+            label="Descargar PDF"
+            icon="picture_as_pdf"
+            @click="downloadPdf"
+            :loading="downloadingPdf"
+            class="col-md-2 col-xs-12"
+          />
         </div>
       </q-card-section>
     </q-card>
@@ -226,6 +235,7 @@ const metrics = ref([]);
 const slaMetrics = ref(null);
 const loading = ref(false);
 const downloading = ref(false);
+const downloadingPdf = ref(false);
 const showTimelineDialog = ref(false);
 const selectedDocument = ref(null);
 
@@ -300,6 +310,34 @@ async function downloadExcel() {
     console.error('Error al descargar Excel:', error);
   } finally {
     downloading.value = false;
+  }
+}
+
+async function downloadPdf() {
+  downloadingPdf.value = true;
+  try {
+    const params = new URLSearchParams();
+    if (filters.value.clientId) params.append('clientId', filters.value.clientId);
+    if (filters.value.projectId) params.append('projectId', filters.value.projectId);
+    if (filters.value.contractorId) params.append('contractorId', filters.value.contractorId);
+    if (filters.value.startDate) params.append('startDate', filters.value.startDate);
+    if (filters.value.endDate) params.append('endDate', filters.value.endDate);
+
+    const response = await api.get(`/reports/export/pdf?${params}`, {
+      responseType: 'blob'
+    });
+
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `reporte_auditoria_${new Date().toISOString().split('T')[0]}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } catch (error) {
+    console.error('Error al descargar PDF:', error);
+  } finally {
+    downloadingPdf.value = false;
   }
 }
 

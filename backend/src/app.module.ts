@@ -18,6 +18,8 @@ import { SupportsModule } from './modules/supports/supports.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { IlvModule } from './modules/ilv/ilv.module';
 import { InspeccionesModule } from './modules/inspecciones/inspecciones.module';
+import { FormBuilderModule } from './modules/form-builder/form-builder.module';
+import { SystemConfigModule } from './modules/system-config/system-config.module';
 import { TestUploadController } from './test-upload.controller';
 import { DebugInterceptor } from './common/interceptors/debug.interceptor';
 
@@ -40,6 +42,8 @@ import { DebugInterceptor } from './common/interceptors/debug.interceptor';
     ReportsModule,
     IlvModule,
     InspeccionesModule,
+    FormBuilderModule,
+    SystemConfigModule,
   ],
   controllers: [AppController, TestUploadController],
   providers: [

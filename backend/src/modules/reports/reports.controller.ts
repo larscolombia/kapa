@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Res, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Query, Res, BadRequestException, Header } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { Response } from 'express';
 
@@ -68,6 +68,29 @@ export class ReportsController {
       res.send(buffer);
     } catch (error) {
       throw new BadRequestException('Error al generar el reporte Excel');
+    }
+  }
+
+  @Get('/export/pdf')
+  @Header('Content-Type', 'application/pdf')
+  async exportToPdf(@Query() filters: any, @Res() res: Response) {
+    try {
+      const buffer = await this.reportsService.generatePdfReport({
+        clientId: filters.clientId ? parseInt(filters.clientId) : undefined,
+        contractorId: filters.contractorId ? parseInt(filters.contractorId) : undefined,
+        projectId: filters.projectId ? parseInt(filters.projectId) : undefined,
+        startDate: filters.startDate ? new Date(filters.startDate) : undefined,
+        endDate: filters.endDate ? new Date(filters.endDate) : undefined,
+      });
+
+      const fileName = `reporte_auditoria_${new Date().toISOString().split('T')[0]}.pdf`;
+
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.setHeader('Content-Length', buffer.length);
+      res.end(buffer);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      throw new BadRequestException('Error al generar el reporte PDF');
     }
   }
 }

@@ -1,0 +1,366 @@
+================================================================================
+        MANUAL DE USUARIO - MÓDULO DE REPORTES DE AUDITORÍA
+                         Sistema KAPA
+================================================================================
+
+ÍNDICE
+------
+1. ¿Qué es este módulo?
+2. ¿Cómo acceder?
+3. Pantalla principal
+4. Uso de filtros
+5. Métricas y qué significan
+6. Ver historial de un documento
+7. Descargar reporte en Excel
+8. Casos prácticos
+9. Preguntas frecuentes
+
+================================================================================
+1. ¿QUÉ ES ESTE MÓDULO?
+================================================================================
+
+Este módulo te permite consultar y demostrar con datos exactos:
+
+  • Cuánto tiempo tarda tu equipo en revisar documentos
+  • Cuántas veces un documento fue rechazado
+  • Qué porcentaje de documentos se revisaron a tiempo
+  • El historial completo de cada documento
+
+Es especialmente útil cuando un proveedor dice que "se demoran mucho en 
+revisar" - ahora puedes mostrarle los tiempos reales con evidencia.
+
+================================================================================
+2. ¿CÓMO ACCEDER?
+================================================================================
+
+Paso 1: Ingresa a KAPA con tu usuario y contraseña
+       https://kapa.healtheworld.com.co
+
+Paso 2: En el menú lateral izquierdo, busca la opción "Reportes"
+
+Paso 3: Haz clic en "Reportes" o "Reportes de Auditoría"
+
+NOTA: Necesitas tener permisos de administrador para ver este módulo.
+      Si no lo ves en el menú, contacta al administrador del sistema.
+
+================================================================================
+3. PANTALLA PRINCIPAL
+================================================================================
+
+Al entrar verás tres secciones principales:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  SECCIÓN 1: FILTROS (parte superior)                                        │
+│  ─────────────────────────────────────                                      │
+│  Aquí seleccionas qué información quieres ver:                              │
+│  - Cliente                                                                  │
+│  - Proyecto                                                                 │
+│  - Contratista                                                              │
+│  - Fecha de inicio                                                          │
+│  - Fecha de fin                                                             │
+│  - Botón "Buscar"                                                           │
+│  - Botón "Descargar Excel"                                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  SECCIÓN 2: TARJETAS DE MÉTRICAS (debajo de los filtros)                    │
+│  ───────────────────────────────────────────────────────                    │
+│  Cuatro tarjetas con números grandes que muestran:                          │
+│  - Cumplimiento SLA (porcentaje)                                            │
+│  - Tiempo Promedio (en horas)                                               │
+│  - Documentos Dentro de SLA                                                 │
+│  - Documentos Fuera de SLA                                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  SECCIÓN 3: TABLA DE DETALLE (parte inferior)                               │
+│  ─────────────────────────────────────────────                              │
+│  Una tabla con todos los documentos que muestra:                            │
+│  - Cliente                                                                  │
+│  - Proyecto                                                                 │
+│  - Contratista                                                              │
+│  - Nombre del documento                                                     │
+│  - Tiempo de revisión                                                       │
+│  - Número de rechazos                                                       │
+│  - Estado actual                                                            │
+│  - Botón para ver historial                                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+4. USO DE FILTROS
+================================================================================
+
+Los filtros te permiten ver solo la información que te interesa:
+
+CLIENTE
+-------
+  • Selecciona un cliente específico de la lista desplegable
+  • Si no seleccionas ninguno, verás datos de todos los clientes
+
+PROYECTO
+--------
+  • Selecciona un proyecto específico
+  • Si ya seleccionaste un cliente, solo aparecerán los proyectos de ese cliente
+  • Déjalo vacío para ver todos los proyectos
+
+CONTRATISTA
+-----------
+  • Selecciona un contratista específico
+  • Útil para analizar el desempeño de un proveedor en particular
+
+FECHA INICIO / FECHA FIN
+------------------------
+  • Define un rango de fechas para tu consulta
+  • Formato: selecciona del calendario que aparece al hacer clic
+  • Ejemplo: Del 01/11/2025 al 30/11/2025 para ver datos de noviembre
+
+CÓMO BUSCAR:
+  1. Selecciona los filtros que necesites (todos son opcionales)
+  2. Haz clic en el botón azul "Buscar"
+  3. Espera unos segundos mientras carga la información
+  4. Los resultados aparecerán en las tarjetas y la tabla
+
+================================================================================
+5. MÉTRICAS Y QUÉ SIGNIFICAN
+================================================================================
+
+CUMPLIMIENTO SLA (%)
+--------------------
+  ¿Qué es?    El porcentaje de documentos que fueron revisados dentro del
+              tiempo acordado (24 horas).
+  
+  Ejemplo:    Si dice "85%", significa que de cada 100 documentos, 
+              85 se revisaron en menos de 24 horas.
+  
+  Meta ideal: 80% o más es considerado buen desempeño.
+
+
+TIEMPO PROMEDIO (horas)
+-----------------------
+  ¿Qué es?    El tiempo promedio que tarda el equipo en revisar un documento
+              desde que el contratista lo sube hasta que se aprueba o rechaza.
+  
+  Ejemplo:    Si dice "8.5h", significa que en promedio los documentos 
+              se revisan en 8 horas y media.
+  
+  Meta ideal: Menos de 24 horas.
+
+
+DENTRO DE SLA (número)
+----------------------
+  ¿Qué es?    Cantidad de documentos que se revisaron a tiempo (menos de 24h).
+  
+  Ejemplo:    "120" significa que 120 documentos se revisaron a tiempo.
+
+
+FUERA DE SLA (número)
+---------------------
+  ¿Qué es?    Cantidad de documentos que tardaron más de 24 horas en revisarse.
+  
+  Ejemplo:    "15" significa que 15 documentos tardaron más de lo acordado.
+  
+  NOTA:       Estos documentos aparecen en rojo para identificarlos fácilmente.
+
+================================================================================
+6. VER HISTORIAL DE UN DOCUMENTO
+================================================================================
+
+Para ver el historial completo de cambios de un documento específico:
+
+Paso 1: Busca el documento en la tabla de detalle
+
+Paso 2: En la columna "Acciones", haz clic en el ícono de reloj (🕒)
+
+Paso 3: Se abrirá una ventana con el historial que muestra:
+
+        ┌────────────────────────────────────────────────────────┐
+        │  HISTORIAL: Certificado_Calidad.pdf                    │
+        │                                                        │
+        │  📅 15/10/2025 10:00 AM                                │
+        │     Estado: Enviado                                    │
+        │     Usuario: proveedor@empresa.com                     │
+        │                                                        │
+        │  📅 15/10/2025 04:30 PM                                │
+        │     Estado anterior: Enviado                           │
+        │     Estado nuevo: Rechazado                            │
+        │     Tiempo en revisión: 6.5 horas                      │
+        │     Revisado por: revisor@kapa.com                     │
+        │     Comentario: "Falta firma del representante"        │
+        │                                                        │
+        │  📅 16/10/2025 09:00 AM                                │
+        │     Estado anterior: Rechazado                         │
+        │     Estado nuevo: Enviado                              │
+        │     Usuario: proveedor@empresa.com                     │
+        │     (El proveedor corrigió y reenvió)                  │
+        │                                                        │
+        │  📅 16/10/2025 11:30 AM                                │
+        │     Estado anterior: Enviado                           │
+        │     Estado nuevo: Aprobado                             │
+        │     Tiempo en revisión: 2.5 horas                      │
+        │     Revisado por: revisor@kapa.com                     │
+        └────────────────────────────────────────────────────────┘
+
+Paso 4: Para cerrar la ventana, haz clic en la X o fuera de ella
+
+================================================================================
+7. DESCARGAR REPORTE EN EXCEL
+================================================================================
+
+Para descargar un archivo Excel con toda la información:
+
+Paso 1: Configura los filtros según lo que necesites (opcional)
+
+Paso 2: Haz clic en el botón verde "Descargar Excel"
+
+Paso 3: Espera unos segundos mientras se genera el archivo
+
+Paso 4: El archivo se descargará automáticamente con el nombre:
+        "reporte_auditoria_2025-12-10.xlsx" (con la fecha actual)
+
+EL ARCHIVO EXCEL CONTIENE 3 HOJAS:
+
+  HOJA 1 - "Resumen General"
+  ──────────────────────────
+  Métricas globales en formato de tabla:
+  • Total de Documentos Analizados
+  • Tiempo Promedio de Respuesta (horas)
+  • Total de Rechazos
+  • Documentos con Rechazos
+  • Porcentaje de Rechazo
+
+  HOJA 2 - "Detalle por Documento"
+  ────────────────────────────────
+  Una fila por cada documento con las columnas:
+  • Cliente
+  • Proyecto
+  • Contratista
+  • Criterio
+  • Subcriterio
+  • Empleado (si aplica)
+  • Nombre del Documento
+  • Primera Carga (fecha y hora)
+  • Última Revisión (fecha y hora)
+  • Tiempo en Revisión (horas)
+  • Número de Rechazos
+  • Estado Actual
+
+  HOJA 3 - "Timeline Completo"
+  ────────────────────────────
+  Historial cronológico de TODOS los cambios de estado:
+  • Fecha/Hora
+  • Cliente
+  • Proyecto
+  • Contratista
+  • Documento
+  • Estado Anterior
+  • Estado Nuevo
+  • Tiempo en Estado Anterior (horas)
+  • Cambiado Por (usuario)
+  • Comentarios
+
+================================================================================
+8. CASOS PRÁCTICOS
+================================================================================
+
+CASO 1: Un proveedor dice que tardamos mucho en revisar
+───────────────────────────────────────────────────────
+
+  Qué hacer:
+  1. Selecciona el contratista en el filtro
+  2. Define el rango de fechas del período en cuestión
+  3. Haz clic en "Buscar"
+  4. Muéstrale las métricas:
+     - "Mira, tu tiempo promedio de revisión fue de X horas"
+     - "El Y% de tus documentos se revisaron en menos de 24 horas"
+  5. Si quiere evidencia, descarga el Excel y compártelo
+
+
+CASO 2: Identificar documentos problemáticos
+────────────────────────────────────────────
+
+  Qué hacer:
+  1. Haz clic en "Buscar" sin filtros para ver todo
+  2. En la tabla, ordena por "Rechazos" (clic en el encabezado)
+  3. Identifica los documentos con más rechazos
+  4. Haz clic en el historial para ver por qué se rechazó cada vez
+  5. Usa esta información para capacitar al proveedor
+
+
+CASO 3: Informe mensual para gerencia
+─────────────────────────────────────
+
+  Qué hacer:
+  1. Selecciona las fechas del mes (ej: 01/11/2025 a 30/11/2025)
+  2. Haz clic en "Buscar"
+  3. Anota las métricas principales de las tarjetas
+  4. Descarga el Excel para tener el detalle completo
+  5. Incluye en tu informe:
+     - Cumplimiento de SLA del mes
+     - Tiempo promedio de respuesta
+     - Contratistas con más rechazos
+
+
+CASO 4: Comparar desempeño entre contratistas
+─────────────────────────────────────────────
+
+  Qué hacer:
+  1. Define el mismo rango de fechas para todos
+  2. Selecciona el primer contratista y haz clic en "Buscar"
+  3. Anota sus métricas (SLA%, tiempo promedio, rechazos)
+  4. Repite con cada contratista
+  5. Compara los resultados para identificar:
+     - Quién entrega documentos de mejor calidad
+     - Quién requiere más seguimiento
+
+================================================================================
+9. PREGUNTAS FRECUENTES
+================================================================================
+
+P: ¿Por qué no veo ningún dato cuando hago clic en Buscar?
+R: Puede ser que:
+   - No hay documentos en el rango de fechas seleccionado
+   - El contratista/proyecto seleccionado no tiene documentos
+   - Intenta ampliar el rango de fechas o quitar algunos filtros
+
+P: ¿Qué significa SLA?
+R: SLA significa "Service Level Agreement" (Acuerdo de Nivel de Servicio).
+   En este caso, es el compromiso de revisar documentos en 24 horas.
+
+P: ¿Por qué algunos documentos aparecen con tiempo en rojo?
+R: Significa que tardaron más de 24 horas en revisarse (fuera de SLA).
+
+P: ¿Puedo descargar el reporte en PDF?
+R: Actualmente solo está disponible la descarga en Excel.
+   Puedes abrir el Excel e imprimirlo como PDF si lo necesitas.
+
+P: ¿El sistema registra automáticamente los tiempos?
+R: Sí, cada vez que un documento cambia de estado (subido, aprobado, 
+   rechazado), el sistema registra automáticamente la fecha, hora y 
+   usuario que hizo el cambio.
+
+P: ¿Puedo ver documentos de meses anteriores?
+R: Sí, solo ajusta las fechas de inicio y fin para el período que 
+   necesites consultar.
+
+P: ¿Quién puede ver estos reportes?
+R: Solo usuarios con el permiso de "Reportes" o administradores.
+   Los contratistas NO pueden ver esta información.
+
+P: ¿Qué pasa si el Excel no se descarga?
+R: Intenta:
+   - Verificar tu conexión a internet
+   - Reducir el rango de fechas (menos datos = archivo más pequeño)
+   - Actualizar la página y volver a intentar
+   - Si persiste, contacta al soporte técnico
+
+================================================================================
+
+SOPORTE TÉCNICO
+---------------
+Si tienes dudas o problemas con el sistema, contacta al equipo de soporte.
+
+================================================================================
+                    Versión del documento: 1.0
+                    Fecha: Diciembre 2025
+                    Sistema KAPA - Reportes de Auditoría
+================================================================================

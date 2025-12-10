@@ -1,0 +1,378 @@
+================================================================================
+      MANUAL DE USUARIO - MÓDULO DE PARÁMETROS DEL SISTEMA KAPA
+                        Versión 1.0 - Diciembre 2025
+================================================================================
+
+ÍNDICE
+------
+1. Introducción
+2. Acceso al Módulo
+3. Categorías de Parámetros
+4. Descripción de Parámetros
+5. Cómo Modificar Parámetros
+6. Maestros ILV Agregados
+7. Integración con Schedulers
+8. Preguntas Frecuentes
+
+================================================================================
+1. INTRODUCCIÓN
+================================================================================
+
+El Módulo de Parámetros del Sistema permite configurar valores clave que 
+controlan el comportamiento de diferentes funcionalidades de KAPA sin necesidad 
+de modificar código.
+
+Características principales:
+- Configuración centralizada de valores del sistema
+- Interfaz gráfica intuitiva organizada por categorías
+- Validación automática de tipos de datos
+- Historial de cambios con auditoría
+- Valores por defecto seguros
+
+================================================================================
+2. ACCESO AL MÓDULO
+================================================================================
+
+Ruta de navegación:
+  Menú Principal → Configuración → Configuración del Sistema → Parámetros del Sistema
+
+Permisos requeridos:
+  - Rol: Administrador o Usuario con permisos de system_config
+  - Permiso específico: system_config:read (ver), system_config:write (editar)
+
+URL directa:
+  https://kapa.healtheworld.com.co/#/system-config/parameters
+
+================================================================================
+3. CATEGORÍAS DE PARÁMETROS
+================================================================================
+
+Los parámetros están organizados en 5 categorías:
+
+┌─────────────────┬────────────────────────────────────────────────────────────┐
+│ CATEGORÍA       │ DESCRIPCIÓN                                                │
+├─────────────────┼────────────────────────────────────────────────────────────┤
+│ General         │ Configuración general de la aplicación                     │
+│ ILV             │ Parámetros del módulo de Incidentes, Lesiones y Vigilancia│
+│ Inspecciones    │ Configuración del módulo de Inspecciones                   │
+│ Notificaciones  │ Control de envío de emails y recordatorios                 │
+│ Reportes        │ Configuración de generación de reportes                    │
+└─────────────────┴────────────────────────────────────────────────────────────┘
+
+================================================================================
+4. DESCRIPCIÓN DE PARÁMETROS
+================================================================================
+
+4.1 CATEGORÍA: GENERAL
+----------------------
+
+┌──────────────────┬─────────────┬─────────────────────────────────────────────┐
+│ Parámetro        │ Tipo        │ Descripción                                 │
+├──────────────────┼─────────────┼─────────────────────────────────────────────┤
+│ app_name         │ Texto       │ Nombre de la aplicación mostrado en emails  │
+│                  │             │ y documentos. Valor: "KAPA"                 │
+├──────────────────┼─────────────┼─────────────────────────────────────────────┤
+│ frontend_url     │ Texto       │ URL base del frontend para generar enlaces  │
+│                  │             │ en notificaciones.                          │
+│                  │             │ Valor: "https://kapa.healtheworld.com.co"   │
+└──────────────────┴─────────────┴─────────────────────────────────────────────┘
+
+4.2 CATEGORÍA: ILV (Incidentes, Lesiones y Vigilancia)
+------------------------------------------------------
+
+┌──────────────────┬─────────────┬─────────────────────────────────────────────┐
+│ Parámetro        │ Tipo        │ Descripción                                 │
+├──────────────────┼─────────────┼─────────────────────────────────────────────┤
+│ sla_days_ilv     │ Numérico    │ Días máximos para atender un reporte ILV    │
+│                  │             │ antes de enviar recordatorios.              │
+│                  │             │ Valor por defecto: 5 días                   │
+│                  │             │                                             │
+│                  │             │ IMPORTANTE: Este valor se usa en el         │
+│                  │             │ scheduler automático de recordatorios.      │
+└──────────────────┴─────────────┴─────────────────────────────────────────────┘
+
+4.3 CATEGORÍA: INSPECCIONES
+---------------------------
+
+┌──────────────────────┬─────────────┬─────────────────────────────────────────┐
+│ Parámetro            │ Tipo        │ Descripción                             │
+├──────────────────────┼─────────────┼─────────────────────────────────────────┤
+│ sla_days_inspeccion  │ Numérico    │ Días máximos para completar una         │
+│                      │             │ inspección antes de enviar alertas.     │
+│                      │             │ Valor por defecto: 5 días               │
+└──────────────────────┴─────────────┴─────────────────────────────────────────┘
+
+4.4 CATEGORÍA: NOTIFICACIONES
+-----------------------------
+
+┌─────────────────────────────────┬───────────┬────────────────────────────────┐
+│ Parámetro                       │ Tipo      │ Descripción                    │
+├─────────────────────────────────┼───────────┼────────────────────────────────┤
+│ notification_reminder_enabled   │ Booleano  │ Activa/desactiva el envío      │
+│                                 │           │ automático de recordatorios.   │
+│                                 │           │ true = activado                │
+│                                 │           │ false = desactivado            │
+├─────────────────────────────────┼───────────┼────────────────────────────────┤
+│ notification_reminder_hour      │ Numérico  │ Hora del día (0-23) en que se  │
+│                                 │           │ ejecuta el scheduler de        │
+│                                 │           │ recordatorios.                 │
+│                                 │           │ Valor por defecto: 8 (8:00 AM) │
+├─────────────────────────────────┼───────────┼────────────────────────────────┤
+│ email_mode                      │ Selección │ Modo de envío de correos:      │
+│                                 │           │                                │
+│                                 │           │ • "production": Envía a los    │
+│                                 │           │   destinatarios reales.        │
+│                                 │           │                                │
+│                                 │           │ • "test": Envía todos los      │
+│                                 │           │   correos a los destinatarios  │
+│                                 │           │   de prueba configurados.      │
+│                                 │           │                                │
+│                                 │           │ • "disabled": No envía correos.│
+├─────────────────────────────────┼───────────┼────────────────────────────────┤
+│ email_test_recipients           │ Texto     │ Lista de emails separados por  │
+│                                 │           │ coma para modo de prueba.      │
+│                                 │           │                                │
+│                                 │           │ Ejemplo:                       │
+│                                 │           │ "admin@empresa.com,qa@test.com"│
+└─────────────────────────────────┴───────────┴────────────────────────────────┘
+
+4.5 CATEGORÍA: REPORTES
+-----------------------
+
+┌─────────────────────────────────┬───────────┬────────────────────────────────┐
+│ Parámetro                       │ Tipo      │ Descripción                    │
+├─────────────────────────────────┼───────────┼────────────────────────────────┤
+│ sla_hours_revision              │ Numérico  │ Horas máximas para revisar un  │
+│                                 │           │ reporte antes de considerarlo  │
+│                                 │           │ vencido.                       │
+│                                 │           │ Valor por defecto: 24 horas    │
+├─────────────────────────────────┼───────────┼────────────────────────────────┤
+│ report_excel_max_rows           │ Numérico  │ Cantidad máxima de filas al    │
+│                                 │           │ exportar reportes a Excel.     │
+│                                 │           │ Valor por defecto: 10,000      │
+│                                 │           │                                │
+│                                 │           │ NOTA: Valores muy altos pueden │
+│                                 │           │ afectar el rendimiento.        │
+├─────────────────────────────────┼───────────┼────────────────────────────────┤
+│ report_default_date_range_days  │ Numérico  │ Rango de fechas por defecto    │
+│                                 │           │ en días para filtros de        │
+│                                 │           │ reportes.                      │
+│                                 │           │ Valor por defecto: 30 días     │
+└─────────────────────────────────┴───────────┴────────────────────────────────┘
+
+================================================================================
+5. CÓMO MODIFICAR PARÁMETROS
+================================================================================
+
+PASO 1: Acceder al módulo
+-------------------------
+   Navegue a: Configuración → Configuración del Sistema → Parámetros del Sistema
+
+PASO 2: Seleccionar categoría
+-----------------------------
+   Haga clic en la pestaña de la categoría que contiene el parámetro a modificar:
+   • General
+   • ILV
+   • Inspecciones
+   • Notificaciones
+   • Reportes
+
+PASO 3: Modificar valores
+-------------------------
+   Según el tipo de parámetro:
+   
+   • Texto: Escriba el nuevo valor en el campo de texto
+   • Numérico: Use las flechas o escriba el número
+   • Booleano: Active/desactive el interruptor (toggle)
+   • Selección: Elija una opción del menú desplegable
+
+PASO 4: Guardar cambios
+-----------------------
+   • El botón "Guardar Cambios" solo se habilita cuando hay modificaciones
+   • Al hacer clic, se guardan todos los cambios pendientes de la categoría actual
+   • Un mensaje de confirmación indicará si la operación fue exitosa
+
+VALIDACIONES AUTOMÁTICAS
+------------------------
+   El sistema valida automáticamente:
+   • Valores numéricos deben ser números válidos
+   • Valores booleanos solo aceptan true/false
+   • Campos requeridos no pueden quedar vacíos
+
+================================================================================
+6. MAESTROS ILV AGREGADOS
+================================================================================
+
+Se agregaron dos nuevos tipos de maestros al módulo ILV:
+
+6.1 TIPO_HID (Tipos de Hallazgo en Inspecciones de HID)
+-------------------------------------------------------
+
+┌────────┬────────────────────────┐
+│ Clave  │ Valor                  │
+├────────┼────────────────────────┤
+│ CI     │ Condición Insegura     │
+│ AI     │ Acto Inseguro          │
+│ CA     │ Casi Accidente         │
+│ OP     │ Observación Positiva   │
+│ MP     │ Mejora de Proceso      │
+└────────┴────────────────────────┘
+
+Uso: Clasificación de hallazgos encontrados durante inspecciones HID.
+
+6.2 TIPO_HSE (Tipos de HSE)
+---------------------------
+
+┌────────┬────────────────────────┐
+│ Clave  │ Valor                  │
+├────────┼────────────────────────┤
+│ SEG    │ Seguridad              │
+│ SO     │ Salud Ocupacional      │
+│ MA     │ Medio Ambiente         │
+│ HI     │ Higiene Industrial     │
+│ EME    │ Emergencias            │
+└────────┴────────────────────────┘
+
+Uso: Categorización por área de HSE (Health, Safety & Environment).
+
+Acceso a estos maestros:
+   Configuración → Configuración ILV → Datos Maestros ILV
+
+================================================================================
+7. INTEGRACIÓN CON SCHEDULERS
+================================================================================
+
+Los siguientes procesos automáticos utilizan los parámetros configurables:
+
+7.1 SCHEDULER DE RECORDATORIOS ILV
+----------------------------------
+
+   Archivo: ilv-scheduler.service.ts
+   
+   Funcionamiento:
+   1. Se ejecuta diariamente a las 8:00 AM (configurable)
+   2. Busca reportes ILV pendientes que excedan sla_days_ilv días
+   3. Si notification_reminder_enabled es true:
+      - En modo "production": envía a responsables reales
+      - En modo "test": envía a email_test_recipients
+      - En modo "disabled": no envía correos
+   
+   Parámetros utilizados:
+   • sla_days_ilv
+   • notification_reminder_enabled
+   • email_mode
+   • email_test_recipients
+
+7.2 SCHEDULER DE INSPECCIONES
+-----------------------------
+
+   Archivo: inspecciones-scheduler.service.ts
+   
+   Funcionamiento:
+   1. Se ejecuta diariamente a las 8:00 AM
+   2. Busca inspecciones pendientes que excedan sla_days_inspeccion días
+   3. Envía recordatorios según la configuración de notificaciones
+   
+   Parámetros utilizados:
+   • sla_days_inspeccion
+   • notification_reminder_enabled
+   • email_mode
+
+IMPORTANTE: Los cambios en parámetros toman efecto inmediatamente, pero los
+schedulers se ejecutan según su programación (generalmente una vez al día).
+
+================================================================================
+8. PREGUNTAS FRECUENTES
+================================================================================
+
+P: ¿Qué pasa si cambio el valor de sla_days_ilv?
+R: El nuevo valor se aplicará en la próxima ejecución del scheduler. Los
+   reportes existentes se evaluarán con el nuevo límite de días.
+
+P: ¿Cómo pruebo los correos sin afectar a usuarios reales?
+R: Configure email_mode en "test" y agregue su correo en email_test_recipients.
+   Todos los correos se enviarán solo a esas direcciones.
+
+P: ¿Puedo desactivar completamente las notificaciones?
+R: Sí, tiene dos opciones:
+   1. Poner email_mode en "disabled" (no se envía ningún correo)
+   2. Desactivar notification_reminder_enabled (no ejecuta recordatorios)
+
+P: ¿Los cambios requieren reiniciar el servidor?
+R: No. Los parámetros se leen de la base de datos en cada ejecución, por lo
+   que los cambios toman efecto inmediatamente.
+
+P: ¿Hay un historial de cambios en los parámetros?
+R: Sí. La tabla system_parameter tiene campos updated_at y el sistema registra
+   cada modificación con fecha y hora automáticamente.
+
+P: ¿Qué significa el campo "editable" de un parámetro?
+R: Los parámetros con editable=false son críticos del sistema y no pueden
+   modificarse desde la interfaz gráfica (solo por DBA en base de datos).
+
+P: ¿Puedo agregar nuevos parámetros?
+R: Actualmente solo se pueden agregar mediante script SQL. Contacte al
+   administrador del sistema para solicitar nuevos parámetros.
+
+================================================================================
+                              INFORMACIÓN TÉCNICA
+================================================================================
+
+Base de Datos
+-------------
+Tabla: system_parameter
+
+┌────────────────┬──────────────┬─────────────────────────────────────────────┐
+│ Columna        │ Tipo         │ Descripción                                 │
+├────────────────┼──────────────┼─────────────────────────────────────────────┤
+│ id             │ SERIAL       │ Identificador único                         │
+│ key            │ VARCHAR(100) │ Clave única del parámetro                   │
+│ value          │ TEXT         │ Valor almacenado como texto                 │
+│ data_type      │ VARCHAR(20)  │ Tipo: string, number, boolean, json         │
+│ category       │ VARCHAR(50)  │ Categoría para agrupación                   │
+│ label          │ VARCHAR(200) │ Etiqueta mostrada en la UI                  │
+│ description    │ TEXT         │ Descripción detallada                       │
+│ editable       │ BOOLEAN      │ Si el parámetro es editable desde UI        │
+│ created_at     │ TIMESTAMP    │ Fecha de creación                           │
+│ updated_at     │ TIMESTAMP    │ Fecha de última modificación                │
+└────────────────┴──────────────┴─────────────────────────────────────────────┘
+
+Endpoints API
+-------------
+GET  /api/system-config/parameters              - Listar todos los parámetros
+GET  /api/system-config/parameters/categories   - Listar categorías disponibles
+GET  /api/system-config/parameters/category/:c  - Parámetros de una categoría
+GET  /api/system-config/parameters/:key         - Obtener un parámetro
+PUT  /api/system-config/parameters/:key         - Actualizar un parámetro
+PUT  /api/system-config/parameters              - Actualizar múltiples parámetros
+
+Archivos de Código
+------------------
+Backend:
+  • /backend/src/database/entities/system-parameter.entity.ts
+  • /backend/src/modules/system-config/system-config.service.ts
+  • /backend/src/modules/system-config/system-config.controller.ts
+  • /backend/src/modules/ilv/services/ilv-scheduler.service.ts
+  • /backend/src/modules/inspecciones/services/inspecciones-scheduler.service.ts
+
+Frontend:
+  • /frontend/src/pages/SystemConfigParameters.vue
+  • /frontend/src/router/routes.js
+
+Migraciones:
+  • /backend/migrations/create_system_parameters.sql
+
+Seeds:
+  • /backend/seed-maestros-ilb.sql (tipo_hid, tipo_hse)
+
+================================================================================
+                           CONTACTO Y SOPORTE
+================================================================================
+
+Para soporte técnico o reportar problemas:
+  • Email: soporte@kapasas.com
+  • Documentación: Ver archivos en /var/www/kapa.healtheworld.com.co/*.md
+
+================================================================================
+               © 2025 KAPA - Sistema de Gestión de Seguridad y Salud
+================================================================================

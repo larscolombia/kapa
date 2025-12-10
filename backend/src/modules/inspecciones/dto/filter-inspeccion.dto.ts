@@ -13,6 +13,14 @@ export class FilterInspeccionDto {
   limit?: number;
 
   @IsOptional()
+  @IsString()
+  sortBy?: string;
+
+  @IsOptional()
+  @IsEnum(['ASC', 'DESC'])
+  order?: 'ASC' | 'DESC';
+
+  @IsOptional()
   @IsEnum(['tecnica', 'auditoria'])
   tipo?: 'tecnica' | 'auditoria';
 
@@ -45,6 +53,11 @@ export class FilterInspeccionDto {
   @Type(() => Number)
   @IsNumber()
   clasificacion_inspeccion_id?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  clasificacion_auditoria_id?: number;
 
   @IsOptional()
   @Type(() => Number)

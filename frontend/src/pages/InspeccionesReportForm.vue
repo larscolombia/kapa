@@ -154,6 +154,30 @@
                   :hint="!fields.tipo_inspeccion_id ? 'Seleccione primero el tipo' : ''"
                 />
 
+                <!-- Formularios Dinámicos asociados a la clasificación -->
+                <div v-if="fields.clasificacion_inspeccion_id" class="q-mt-lg">
+                  <q-separator class="q-mb-md" />
+                  <div class="text-subtitle1 text-weight-medium q-mb-sm">
+                    <q-icon name="dynamic_form" class="q-mr-xs" />
+                    Formularios de Inspección
+                  </div>
+                  <template v-if="currentReportId">
+                    <dynamic-forms-section
+                      :clasificacion-id="fields.clasificacion_inspeccion_id"
+                      :report-id="currentReportId"
+                      :readonly="form.estado === 'cerrado' && !isAdmin"
+                      @form-submitted="onFormSubmitted"
+                      @form-updated="onFormUpdated"
+                    />
+                  </template>
+                  <q-banner v-else class="bg-blue-1 text-blue-9 rounded-borders">
+                    <template v-slot:avatar>
+                      <q-icon name="info" color="blue" />
+                    </template>
+                    Guarde la inspección primero para poder llenar los formularios dinámicos.
+                  </q-banner>
+                </div>
+
                 <!-- 10. Estado -->
                 <q-select
                   v-model="form.estado"
@@ -291,6 +315,30 @@
                   dense
                   :rules="[val => !!val || 'Clasificación es requerida']"
                 />
+
+                <!-- Formularios Dinámicos asociados a la clasificación de auditoría -->
+                <div v-if="fields.clasificacion_auditoria_id" class="q-mt-lg">
+                  <q-separator class="q-mb-md" />
+                  <div class="text-subtitle1 text-weight-medium q-mb-sm">
+                    <q-icon name="dynamic_form" class="q-mr-xs" />
+                    Formularios de Auditoría
+                  </div>
+                  <template v-if="currentReportId">
+                    <dynamic-forms-section
+                      :clasificacion-id="fields.clasificacion_auditoria_id"
+                      :report-id="currentReportId"
+                      :readonly="form.estado === 'cerrado' && !isAdmin"
+                      @form-submitted="onFormSubmitted"
+                      @form-updated="onFormUpdated"
+                    />
+                  </template>
+                  <q-banner v-else class="bg-blue-1 text-blue-9 rounded-borders">
+                    <template v-slot:avatar>
+                      <q-icon name="info" color="blue" />
+                    </template>
+                    Guarde la inspección primero para poder llenar los formularios dinámicos.
+                  </q-banner>
+                </div>
 
                 <!-- 9. Estado -->
                 <q-select
@@ -495,6 +543,7 @@ import { useQuasar } from 'quasar'
 import { useAuthStore } from 'src/stores/auth'
 import inspeccionesService from 'src/services/inspeccionesService'
 import { api } from 'boot/axios'
+import DynamicFormsSection from 'src/components/form-builder/DynamicFormsSection.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -504,6 +553,7 @@ const authStore = useAuthStore()
 const saving = ref(false)
 const isLoading = ref(true) // Bandera para evitar que watchers limpien durante carga
 const isEdit = computed(() => !!route.params.id)
+const currentReportId = ref(null)
 
 const isAdmin = computed(() => {
   const roleId = authStore.user?.role_id ?? authStore.user?.role?.role_id
@@ -765,6 +815,9 @@ const loadExistingReport = async () => {
       await onTipoInspeccionChange(fields.value.tipo_inspeccion_id)
     }
 
+    // Establecer el ID del reporte actual para los formularios dinámicos
+    currentReportId.value = parseInt(route.params.id, 10)
+
   } catch (error) {
     console.error('Error loading report:', error)
     $q.notify({ type: 'negative', message: 'Error al cargar la inspección', position: 'top' })
@@ -841,6 +894,30 @@ const submitForm = async () => {
   } finally {
     saving.value = false
   }
+}
+
+// ============================================
+// FUNCIONES DE FORMULARIOS DINÁMICOS
+// ============================================
+
+const onFormSubmitted = (submission) => {
+  console.log('Formulario enviado:', submission)
+  $q.notify({
+    type: 'positive',
+    message: 'Formulario guardado correctamente',
+    position: 'top',
+    timeout: 2000
+  })
+}
+
+const onFormUpdated = (submission) => {
+  console.log('Formulario actualizado:', submission)
+  $q.notify({
+    type: 'positive',
+    message: 'Formulario actualizado correctamente',
+    position: 'top',
+    timeout: 2000
+  })
 }
 
 // ============================================

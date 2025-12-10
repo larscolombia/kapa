@@ -61,3 +61,19 @@ INSERT INTO ilv_maestro (tipo, clave, valor, activo, orden, aplica_a_tipo) VALUE
 ('tipo_evidencia', 'acta', 'Acta', true, 4, NULL),
 ('tipo_evidencia', 'checklist', 'Checklist', true, 5, NULL);
 
+-- Tipo HID (Hazard Identification - Tipos de reporte)
+INSERT INTO ilv_maestro (tipo, clave, valor, activo, orden, aplica_a_tipo) VALUES
+('tipo_hid', 'condicion_insegura', 'Condición Insegura', true, 1, 'hazard_id'),
+('tipo_hid', 'acto_inseguro', 'Acto Inseguro', true, 2, 'hazard_id'),
+('tipo_hid', 'casi_accidente', 'Casi Accidente', true, 3, 'hazard_id'),
+('tipo_hid', 'observacion_positiva', 'Observación Positiva', true, 4, 'hazard_id'),
+('tipo_hid', 'mejora_proceso', 'Mejora de Proceso', true, 5, 'hazard_id');
+
+-- Tipo HSE (Health, Safety & Environment)
+INSERT INTO ilv_maestro (tipo, clave, valor, activo, orden, aplica_a_tipo) VALUES
+('tipo_hse', 'seguridad', 'Seguridad', true, 1, NULL),
+('tipo_hse', 'salud', 'Salud Ocupacional', true, 2, NULL),
+('tipo_hse', 'ambiente', 'Medio Ambiente', true, 3, NULL),
+('tipo_hse', 'higiene_industrial', 'Higiene Industrial', true, 4, NULL),
+('tipo_hse', 'emergencias', 'Emergencias', true, 5, NULL);
+

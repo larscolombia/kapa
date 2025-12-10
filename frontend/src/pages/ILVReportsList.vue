@@ -6,6 +6,24 @@
         <p class="text-grey-6">Listado completo de reportes con filtros avanzados</p>
       </div>
       <div class="col-auto q-gutter-sm">
+        <q-btn-dropdown 
+          color="secondary" 
+          icon="download" 
+          label="Exportar"
+          :loading="exporting"
+        >
+          <q-list>
+            <q-item clickable v-close-popup @click="exportToExcel">
+              <q-item-section avatar>
+                <q-icon name="table_chart" color="green" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>Exportar a Excel</q-item-label>
+                <q-item-label caption>Tabla con filtros aplicados</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
         <q-btn 
           v-if="isAdmin && selected.length > 0"
           color="negative" 
@@ -25,7 +43,8 @@
     <!-- Filtros -->
     <q-card class="q-mb-lg">
       <q-card-section>
-        <div class="row q-gutter-md">
+        <div class="row q-gutter-md items-center">
+          <!-- Primera fila: Tipo, Estado, Centro de Trabajo -->
           <div class="col-md-2 col-sm-4 col-xs-12">
             <q-select
               v-model="filters.tipo"
@@ -56,6 +75,59 @@
             />
           </div>
 
+          <div class="col-md-3 col-sm-6 col-xs-12">
+            <q-select
+              v-model="filters.cliente_id"
+              :options="clientes"
+              option-value="client_id"
+              option-label="name"
+              label="Centro de Trabajo"
+              clearable
+              filled
+              emit-value
+              map-options
+              :loading="loadingClientes"
+              @update:model-value="onClienteChange"
+            />
+          </div>
+
+          <div class="col-md-3 col-sm-6 col-xs-12">
+            <q-select
+              v-model="filters.proyecto_id"
+              :options="proyectosFiltrados"
+              option-value="project_id"
+              option-label="name"
+              label="Proyecto"
+              clearable
+              filled
+              emit-value
+              map-options
+              :loading="loadingProyectos"
+              :disable="!filters.cliente_id"
+              @update:model-value="onProyectoChange"
+            />
+          </div>
+
+          <div class="col-md-2 col-sm-6 col-xs-12">
+            <q-select
+              v-model="filters.empresa_id"
+              :options="empresasFiltradas"
+              option-value="contractor_id"
+              option-label="name"
+              label="Empresa/Contratista"
+              clearable
+              filled
+              emit-value
+              map-options
+              :loading="loadingEmpresas"
+              :disable="!filters.proyecto_id"
+              @update:model-value="applyFilters"
+            />
+          </div>
+        </div>
+
+        <!-- Segunda fila: Fechas y botón limpiar -->
+        <div class="row q-gutter-md q-mt-sm items-center">
           <div class="col-md-3 col-sm-4 col-xs-12">
             <q-input
               v-model="filters.fecha_desde"
@@ -80,7 +152,7 @@
             <q-btn 
               flat 
               icon="clear" 
-              label="Limpiar" 
+              label="Limpiar Filtros" 
               @click="clearFilters"
             />
           </div>
@@ -140,7 +212,9 @@
               icon="visibility" 
               color="primary" 
               @click.stop="viewReport(props.row.report_id)"
-            />
+            >
+              <q-tooltip>Ver detalle</q-tooltip>
+            </q-btn>
             <q-btn 
               v-if="canEdit(props.row)"
               flat 
@@ -148,7 +222,19 @@
               icon="edit" 
               color="orange" 
               @click.stop="editReport(props.row.report_id)"
-            />
+            >
+              <q-tooltip>Editar</q-tooltip>
+            </q-btn>
+            <q-btn 
+              flat 
+              round 
+              icon="picture_as_pdf" 
+              color="red-7"
+              :loading="downloadingPdf === props.row.report_id"
+              @click.stop="downloadPdf(props.row.report_id)"
+            >
+              <q-tooltip>Descargar PDF</q-tooltip>
+            </q-btn>
           </q-td>
         </template>
       </q-table>
@@ -162,25 +248,55 @@ import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from 'src/stores/auth'
 import ilvService from 'src/services/ilvService'
+import { getClients } from 'src/services/clientService'
+import { getProjects } from 'src/services/projectService'
+import { getContractors } from 'src/services/contractorService'
+import { api } from 'boot/axios'
 
 const router = useRouter()
 const $q = useQuasar()
 const authStore = useAuthStore()
 
 const loading = ref(false)
+const loadingClientes = ref(false)
+const loadingProyectos = ref(false)
+const loadingEmpresas = ref(false)
+const exporting = ref(false)
+const downloadingPdf = ref(null)
 const reports = ref([])
 const selected = ref([])
+const clientes = ref([])
+const proyectos = ref([])
+const contratistas = ref([])
 
 const isAdmin = computed(() => {
   const roleId = authStore.user?.role_id ?? authStore.user?.role?.role_id
   return roleId === 1
 })
 
+// Proyectos filtrados por cliente seleccionado
+const proyectosFiltrados = computed(() => {
+  if (!filters.value.cliente_id) return proyectos.value
+  return proyectos.value.filter(p => p.client?.client_id === filters.value.cliente_id)
+})
+
+// Empresas/Contratistas filtrados por proyecto seleccionado
+const empresasFiltradas = computed(() => {
+  if (!filters.value.proyecto_id) return contratistas.value
+  const proyecto = proyectos.value.find(p => p.project_id === filters.value.proyecto_id)
+  if (!proyecto || !proyecto.projectContractors) return contratistas.value
+  // Extraer contratistas del proyecto
+  return proyecto.projectContractors.map(pc => pc.contractor || pc).filter(c => c)
+})
+
 const filters = ref({
   tipo: null,
   estado: null,
   fecha_desde: null,
-  fecha_hasta: null
+  fecha_hasta: null,
+  cliente_id: null,
+  proyecto_id: null,
+  empresa_id: null
 })
 
 const pagination = ref({
@@ -220,10 +336,25 @@ const columns = [
     sortable: true
   },
   {
+    name: 'cliente',
+    label: 'Centro de Trabajo',
+    align: 'left',
+    field: row => row.client?.name || 'N/A',
+    sortable: true
+  },
+  {
     name: 'proyecto',
     label: 'Proyecto',
     align: 'left',
-    field: row => row.project?.name || 'N/A'
+    field: row => row.project?.name || 'N/A',
+    sortable: true
+  },
+  {
+    name: 'empresa',
+    label: 'Empresa/Contratista',
+    align: 'left',
+    field: row => row.contractor?.name || 'N/A',
+    sortable: true
   },
   {
     name: 'creado_en',
@@ -287,12 +418,28 @@ const applyFilters = () => {
   onRequest({ pagination: pagination.value })
 }
 
+const onClienteChange = () => {
+  // Al cambiar cliente, limpiar proyecto y empresa
+  filters.value.proyecto_id = null
+  filters.value.empresa_id = null
+  applyFilters()
+}
+
+const onProyectoChange = () => {
+  // Al cambiar proyecto, limpiar empresa
+  filters.value.empresa_id = null
+  applyFilters()
+}
+
 const clearFilters = () => {
   filters.value = {
     tipo: null,
     estado: null,
     fecha_desde: null,
-    fecha_hasta: null
+    fecha_hasta: null,
+    cliente_id: null,
+    proyecto_id: null,
+    empresa_id: null
   }
   applyFilters()
 }
@@ -390,6 +537,83 @@ const deleteBulk = async () => {
   }
 }
 
+// Exportar tabla a Excel con filtros aplicados
+const exportToExcel = async () => {
+  exporting.value = true
+  try {
+    const params = new URLSearchParams()
+    if (filters.value.tipo) params.append('tipo', filters.value.tipo)
+    if (filters.value.estado) params.append('estado', filters.value.estado)
+    if (filters.value.cliente_id) params.append('cliente_id', filters.value.cliente_id)
+    if (filters.value.proyecto_id) params.append('proyecto_id', filters.value.proyecto_id)
+    if (filters.value.empresa_id) params.append('empresa_id', filters.value.empresa_id)
+    if (filters.value.fecha_desde) params.append('fecha_desde', filters.value.fecha_desde)
+    if (filters.value.fecha_hasta) params.append('fecha_hasta', filters.value.fecha_hasta)
+
+    const response = await api.get(`/ilv/reports/export/excel?${params}`, {
+      responseType: 'blob'
+    })
+
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `reportes_ilv_${new Date().toISOString().split('T')[0]}.xlsx`
+    link.click()
+    window.URL.revokeObjectURL(url)
+
+    $q.notify({
+      type: 'positive',
+      message: 'Excel descargado exitosamente',
+      position: 'top'
+    })
+  } catch (error) {
+    console.error('Error exporting to Excel:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Error al exportar a Excel',
+      position: 'top'
+    })
+  } finally {
+    exporting.value = false
+  }
+}
+
+// Descargar PDF individual de un reporte
+const downloadPdf = async (reportId) => {
+  downloadingPdf.value = reportId
+  try {
+    const response = await api.get(`/ilv/reports/export/pdf/${reportId}`, {
+      responseType: 'blob'
+    })
+
+    const blob = new Blob([response.data], { type: 'application/pdf' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `reporte_ilv_${reportId}_${new Date().toISOString().split('T')[0]}.pdf`
+    link.click()
+    window.URL.revokeObjectURL(url)
+
+    $q.notify({
+      type: 'positive',
+      message: 'PDF descargado exitosamente',
+      position: 'top'
+    })
+  } catch (error) {
+    console.error('Error downloading PDF:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Error al descargar PDF',
+      position: 'top'
+    })
+  } finally {
+    downloadingPdf.value = null
+  }
+}
+
 onMounted(async () => {
   // Asegurar que el authStore esté cargado
   if (!authStore.user) {
@@ -397,6 +621,29 @@ onMounted(async () => {
   }
   console.log('ILV Reports - User:', authStore.user)
   console.log('ILV Reports - Is Admin:', isAdmin.value)
+  
+  // Cargar datos para los filtros
+  try {
+    loadingClientes.value = true
+    loadingProyectos.value = true
+    loadingEmpresas.value = true
+    
+    const [clientesRes, proyectosRes, contratistasRes] = await Promise.all([
+      getClients(),
+      getProjects(),
+      getContractors()
+    ])
+    
+    clientes.value = clientesRes || []
+    proyectos.value = proyectosRes || []
+    contratistas.value = contratistasRes || []
+  } catch (error) {
+    console.error('Error loading filter data:', error)
+  } finally {
+    loadingClientes.value = false
+    loadingProyectos.value = false
+    loadingEmpresas.value = false
+  }
   
   onRequest({ pagination: pagination.value })
 })

@@ -30,10 +30,23 @@ const routes = [
       { path: 'ilv/test-data-load', name: 'ilvTestDataLoad', component: () => import('pages/TestILVDataLoad.vue'), meta: { requiresAuth: true } },
 
       // Rutas INSPECCIONES
+      { path: 'inspecciones/dashboard', name: 'inspeccionesDashboard', component: () => import('pages/InspeccionesDashboard.vue'), meta: { requiresAuth: true, module: 'inspecciones_management' } },
       { path: 'inspecciones', name: 'inspeccionesLista', component: () => import('pages/InspeccionesReportsList.vue'), meta: { requiresAuth: true, module: 'inspecciones_management' } },
       { path: 'inspecciones/nuevo', name: 'inspeccionesNuevo', component: () => import('pages/InspeccionesReportForm.vue'), meta: { requiresAuth: true, module: 'inspecciones_management' } },
       { path: 'inspecciones/:id', name: 'inspeccionesDetalle', component: () => import('pages/InspeccionesReportDetail.vue'), meta: { requiresAuth: true, module: 'inspecciones_management' } },
       { path: 'inspecciones/:id/editar', name: 'inspeccionesEditar', component: () => import('pages/InspeccionesReportForm.vue'), meta: { requiresAuth: true, module: 'inspecciones_management' } },
+
+      // Rutas FORM BUILDER
+      { path: 'form-builder', name: 'formBuilderList', component: () => import('pages/FormBuilderList.vue'), meta: { requiresAuth: true, module: 'form_builder_manage' } },
+      { path: 'form-builder/nuevo', name: 'formBuilderNew', component: () => import('pages/FormBuilderEditor.vue'), meta: { requiresAuth: true, module: 'form_builder_manage' } },
+      { path: 'form-builder/:id', name: 'formBuilderEdit', component: () => import('pages/FormBuilderEditor.vue'), meta: { requiresAuth: true, module: 'form_builder_manage' } },
+
+      // Rutas CONFIGURACIÓN DEL SISTEMA
+      { path: 'system-config', name: 'systemConfig', component: () => import('pages/SystemConfigPage.vue'), meta: { requiresAuth: true, module: 'system_config' } },
+      { path: 'system-config/work-centers', name: 'systemConfigWorkCenters', component: () => import('pages/SystemConfigWorkCenters.vue'), meta: { requiresAuth: true, module: 'system_config' } },
+      { path: 'system-config/ilv-maestros', name: 'systemConfigIlvMaestros', component: () => import('pages/SystemConfigIlvMaestros.vue'), meta: { requiresAuth: true, module: 'system_config' } },
+      { path: 'system-config/inspeccion-maestros', name: 'systemConfigInspeccionMaestros', component: () => import('pages/SystemConfigInspeccionMaestros.vue'), meta: { requiresAuth: true, module: 'system_config' } },
+      { path: 'system-config/parameters', name: 'systemConfigParameters', component: () => import('pages/SystemConfigParameters.vue'), meta: { requiresAuth: true, module: 'system_config' } },
     ]
   },
   {

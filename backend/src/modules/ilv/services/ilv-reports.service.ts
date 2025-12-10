@@ -15,6 +15,7 @@ import { IlvValidators } from '../utils/validators.util';
 import { IlvAuthService } from './ilv-auth.service';
 import { IlvNotificationsService } from './ilv-notifications.service';
 import { IlvMaestrosService } from './ilv-maestros.service';
+import { ExportService, PdfReportData, PdfSection } from '../../../common/services/export.service';
 
 @Injectable()
 export class IlvReportsService {
@@ -177,9 +178,24 @@ export class IlvReportsService {
 
     const page = filters.page || 1;
     const limit = filters.limit || 50;
+    const sortBy = filters.sortBy || 'creado_en';
+    const order = (filters.order?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC') as 'ASC' | 'DESC';
+
+    // Map frontend column names to database fields
+    const sortFieldMap: Record<string, string> = {
+      'report_id': 'r.report_id',
+      'tipo': 'r.tipo',
+      'estado': 'r.estado',
+      'creado_en': 'r.creado_en',
+      'proyecto': 'project.name',
+      'cliente': 'client.name',
+      'empresa': 'contractor.name'
+    };
+
+    const sortField = sortFieldMap[sortBy] || 'r.creado_en';
 
     qb.skip((page - 1) * limit).take(limit);
-    qb.orderBy('r.creado_en', 'DESC');
+    qb.orderBy(sortField, order);
 
     const [data, total] = await qb.getManyAndCount();
 
@@ -456,55 +472,237 @@ export class IlvReportsService {
     });
   }
 
+  /**
+   * Exportar listado de reportes ILV a Excel
+   */
   async exportToExcel(filters: FilterIlvReportDto, userId: number): Promise<Buffer> {
-    // Implementación básica para Excel
     const { data } = await this.findAll(filters, userId);
 
-    // Por ahora retornamos un CSV simple como placeholder
-    // TODO: Implementar Excel real con librería como 'exceljs'
-    const csvContent = this.generateCSV(data);
-    return Buffer.from(csvContent, 'utf-8');
+    const columns = [
+      { header: 'ID', key: 'report_id', width: 8 },
+      { header: 'Tipo', key: 'tipo_label', width: 20 },
+      { header: 'Estado', key: 'estado', width: 12 },
+      { header: 'Centro de Trabajo', key: 'cliente', width: 25 },
+      { header: 'Proyecto', key: 'proyecto', width: 25 },
+      { header: 'Empresa/Contratista', key: 'empresa', width: 25 },
+      { header: 'Creado Por', key: 'creador', width: 20 },
+      { header: 'Fecha Creación', key: 'fecha_creacion', width: 15 },
+      { header: 'Fecha Cierre', key: 'fecha_cierre', width: 15 },
+    ];
+
+    const tipoLabels: Record<string, string> = {
+      'hazard_id': 'Identificación de Peligros',
+      'wit': 'Walk & Talk',
+      'swa': 'Stop Work Authority',
+      'fdkar': 'Safety Cards'
+    };
+
+    const excelData = data.map(r => ({
+      report_id: r.report_id,
+      tipo_label: tipoLabels[r.tipo] || r.tipo,
+      estado: r.estado === 'abierto' ? 'Abierto' : 'Cerrado',
+      cliente: r.client?.name || 'N/A',
+      proyecto: r.project?.name || 'N/A',
+      empresa: r.contractor?.name || 'N/A',
+      creador: r.created_by?.name || 'N/A',
+      fecha_creacion: r.creado_en ? new Date(r.creado_en).toLocaleDateString('es-CO') : 'N/A',
+      fecha_cierre: r.fecha_cierre ? new Date(r.fecha_cierre).toLocaleDateString('es-CO') : 'N/A',
+    }));
+
+    let subtitle = 'Todos los reportes';
+    if (filters.tipo) subtitle = `Tipo: ${tipoLabels[filters.tipo] || filters.tipo}`;
+    if (filters.estado) subtitle += ` | Estado: ${filters.estado}`;
+    if (filters.fecha_desde || filters.fecha_hasta) {
+      subtitle += ` | Período: ${filters.fecha_desde || '*'} - ${filters.fecha_hasta || '*'}`;
+    }
+
+    return ExportService.generateExcel({
+      title: 'Reportes ILV - KAPA',
+      subtitle,
+      columns,
+      data: excelData,
+      sheetName: 'Reportes ILV'
+    });
   }
 
-  async exportToPdf(filters: FilterIlvReportDto, userId: number): Promise<Buffer> {
-    // Implementación básica para PDF
+  /**
+   * Exportar un reporte ILV individual a PDF
+   */
+  async exportToPdf(reportId: number): Promise<Buffer> {
+    const report = await this.findOne(reportId);
+
+    const tipoLabels: Record<string, string> = {
+      'hazard_id': 'Identificación de Peligros (HID)',
+      'wit': 'Walk & Talk (W&T)',
+      'swa': 'Stop Work Authority (SWA)',
+      'fdkar': 'Safety Cards (FDKAR)'
+    };
+
+    const fieldLabels: Record<string, string> = {
+      'fecha': 'Fecha',
+      'fecha_evento': 'Fecha del Evento',
+      'cliente': 'Centro de Trabajo',
+      'proyecto': 'Proyecto',
+      'empresa_pertenece': 'Empresa a la que pertenece',
+      'empresa_genera_reporte': 'Empresa a quien se genera el reporte',
+      'nombre_quien_reporta': 'Nombre de quien reporta',
+      'tipo_reporte_hid': 'Tipo de Reporte',
+      'categoria': 'Categoría',
+      'subcategoria': 'Subcategoría',
+      'ubicacion': 'Ubicación',
+      'severidad': 'Severidad',
+      'area': 'Área',
+      'descripcion_condicion': 'Descripción de la Condición',
+      'descripcion_hallazgo': 'Descripción del Hallazgo',
+      'causa_probable': 'Causa Probable',
+      'accion_inmediata': 'Acción Inmediata',
+      'nombre_ehs_contratista': 'Nombre EHS del Contratista',
+      'nombre_supervisor_obra': 'Nombre Supervisor de Obra',
+      'conducta_observada': 'Conducta Observada',
+      'recomendacion': 'Recomendación',
+      'tipo': 'Tipo',
+      'testigo': 'Testigo',
+      'hora_inicio_parada': 'Hora Inicio de Parada',
+      'hora_reinicio': 'Hora de Reinicio',
+      'tipo_tarjeta': 'Tipo de Tarjeta',
+      'observacion': 'Observación',
+      'descripcion_cierre': 'Descripción de Cierre',
+      'evidencia_cierre': 'Evidencia de Cierre',
+      'fecha_implantacion': 'Fecha de Implantación',
+      'estado': 'Estado'
+    };
+
+    // Información general del reporte
+    const infoGeneral: PdfSection = {
+      titulo: 'Información General',
+      campos: [
+        { label: 'ID del Reporte', value: report.report_id },
+        { label: 'Tipo de Reporte', value: tipoLabels[report.tipo] || report.tipo },
+        { label: 'Estado', value: report.estado === 'abierto' ? 'Abierto' : 'Cerrado' },
+        { label: 'Centro de Trabajo', value: report.client?.name || 'N/A' },
+        { label: 'Proyecto', value: report.project?.name || 'N/A' },
+        { label: 'Empresa/Contratista', value: report.contractor?.name || 'N/A' },
+        { label: 'Creado Por', value: report.created_by?.name || 'N/A' },
+        { label: 'Fecha de Creación', value: report.creado_en ? new Date(report.creado_en).toLocaleString('es-CO') : 'N/A' },
+      ]
+    };
+
+    if (report.estado === 'cerrado' && report.fecha_cierre) {
+      infoGeneral.campos.push({ label: 'Fecha de Cierre', value: new Date(report.fecha_cierre).toLocaleString('es-CO') });
+    }
+
+    // Campos dinámicos del formulario
+    const camposFormulario: PdfSection = {
+      titulo: 'Detalles del Reporte',
+      campos: []
+    };
+
+    for (const field of report.fields) {
+      // Omitir campos que ya están en información general
+      if (['cliente', 'proyecto', 'empresa_genera_reporte', 'empresa_pertenece'].includes(field.key)) {
+        continue;
+      }
+
+      const label = fieldLabels[field.key] || field.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      const value = field.value_display || field.value;
+
+      camposFormulario.campos.push({ label, value });
+    }
+
+    const secciones: PdfSection[] = [infoGeneral];
+    if (camposFormulario.campos.length > 0) {
+      secciones.push(camposFormulario);
+    }
+
+    // Información de adjuntos si existen
+    if (report.attachments && report.attachments.length > 0) {
+      secciones.push({
+        titulo: 'Archivos Adjuntos',
+        campos: report.attachments.map((att, idx) => ({
+          label: `Archivo ${idx + 1}`,
+          value: att.filename
+        }))
+      });
+    }
+
+    const pdfData: PdfReportData = {
+      titulo: `Reporte ILV #${report.report_id}`,
+      subtitulo: tipoLabels[report.tipo] || report.tipo,
+      fechaGeneracion: new Date(),
+      secciones
+    };
+
+    return ExportService.generatePdf(pdfData);
+  }
+
+  /**
+   * Exportar múltiples reportes a PDF (resumen)
+   */
+  async exportListToPdf(filters: FilterIlvReportDto, userId: number): Promise<Buffer> {
     const { data } = await this.findAll(filters, userId);
 
-    // Por ahora retornamos texto simple como placeholder
-    // TODO: Implementar PDF real con librería como 'puppeteer' o 'pdfkit'
-    const textContent = this.generatePdfText(data);
-    return Buffer.from(textContent, 'utf-8');
-  }
+    const tipoLabels: Record<string, string> = {
+      'hazard_id': 'Identificación de Peligros',
+      'wit': 'Walk & Talk',
+      'swa': 'Stop Work Authority',
+      'fdkar': 'Safety Cards'
+    };
 
-  private generateCSV(reports: IlvReport[]): string {
-    const headers = ['ID', 'Tipo', 'Estado', 'Proyecto', 'Cliente', 'Fecha Creación'];
-    const rows = reports.map(r => [
-      r.report_id,
-      r.tipo,
-      r.estado,
-      r.project?.name || 'N/A',
-      r.client?.name || 'N/A',
-      r.creado_en.toISOString().split('T')[0]
-    ]);
-
-    return [headers, ...rows].map(row => row.join(',')).join('\n');
-  }
-
-  private generatePdfText(reports: IlvReport[]): string {
-    let content = 'REPORTE ILV\n\n';
-    content += `Generado el: ${new Date().toLocaleString()}\n\n`;
-
-    reports.forEach(r => {
-      content += `ID: ${r.report_id}\n`;
-      content += `Tipo: ${r.tipo}\n`;
-      content += `Estado: ${r.estado}\n`;
-      content += `Proyecto: ${r.project?.name || 'N/A'}\n`;
-      content += `Cliente: ${r.client?.name || 'N/A'}\n`;
-      content += `Fecha: ${r.creado_en.toISOString().split('T')[0]}\n`;
-      content += '---\n\n';
+    // Estadísticas
+    const stats = {
+      total: data.length,
+      abiertos: data.filter(r => r.estado === 'abierto').length,
+      cerrados: data.filter(r => r.estado === 'cerrado').length,
+      porTipo: {} as Record<string, number>
+    };
+    
+    data.forEach(r => {
+      stats.porTipo[r.tipo] = (stats.porTipo[r.tipo] || 0) + 1;
     });
 
-    return content;
+    const secciones: PdfSection[] = [
+      {
+        titulo: 'Resumen',
+        campos: [
+          { label: 'Total de Reportes', value: stats.total },
+          { label: 'Reportes Abiertos', value: stats.abiertos },
+          { label: 'Reportes Cerrados', value: stats.cerrados },
+        ]
+      },
+      {
+        titulo: 'Distribución por Tipo',
+        campos: Object.entries(stats.porTipo).map(([tipo, count]) => ({
+          label: tipoLabels[tipo] || tipo,
+          value: count
+        }))
+      },
+      {
+        titulo: 'Listado de Reportes',
+        campos: [],
+        tabla: {
+          headers: ['ID', 'Tipo', 'Estado', 'Cliente', 'Proyecto', 'Fecha'],
+          rows: data.slice(0, 50).map(r => [ // Limitar a 50 para el PDF
+            r.report_id,
+            tipoLabels[r.tipo] || r.tipo,
+            r.estado === 'abierto' ? 'Abierto' : 'Cerrado',
+            r.client?.name || 'N/A',
+            r.project?.name || 'N/A',
+            r.creado_en ? new Date(r.creado_en).toLocaleDateString('es-CO') : 'N/A'
+          ])
+        }
+      }
+    ];
+
+    let subtitle = 'Todos los reportes';
+    if (filters.tipo) subtitle = `Tipo: ${tipoLabels[filters.tipo] || filters.tipo}`;
+    if (filters.estado) subtitle += ` | Estado: ${filters.estado}`;
+
+    return ExportService.generatePdf({
+      titulo: 'Reportes ILV - KAPA',
+      subtitulo: subtitle,
+      fechaGeneracion: new Date(),
+      secciones
+    });
   }
 
   async deleteBulk(ids: number[], userId: number): Promise<{ deleted: number }> {

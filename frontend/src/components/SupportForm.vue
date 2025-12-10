@@ -24,6 +24,8 @@
             :options="categoryOptions"
             label="Categoría *"
             hint="¿En qué sección debe aparecer este documento?"
+            emit-value
+            map-options
             lazy-rules
             :rules="[val => val || 'La categoría es obligatoria']"
           />

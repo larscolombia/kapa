@@ -1,0 +1,319 @@
+================================================================================
+        RESUMEN CONSOLIDADO - REQUERIMIENTOS VS IMPLEMENTACIÓN
+                    Sistema KAPA - Diciembre 2025
+================================================================================
+
+Este documento compara los requerimientos solicitados por el cliente contra
+lo que se ha implementado en el sistema.
+
+================================================================================
+                    REQUERIMIENTO 1: MÓDULO DE INDICADORES
+================================================================================
+
+El cliente solicitó un módulo que permita:
+- Seguimiento de tiempos de revisión de reportes
+- Indicadores de cumplimiento
+- Filtros por cliente, proyecto, empleado, fechas
+- Exportación a Excel/PDF
+
+┌─────────────────────────────────────────┬─────────────────────────────────────┐
+│            LO QUE PEDÍA                 │         LO QUE SE HIZO              │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Listado de reportes con tiempos         │ ✅ EXISTE - Módulo Reportes/Auditoría│
+│                                         │    Muestra todos los reportes con   │
+│                                         │    tiempos de revisión calculados   │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Filtro por Cliente                      │ ✅ EXISTE - Selector de cliente     │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Filtro por Proyecto                     │ ✅ EXISTE - Selector de proyecto    │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Filtro por Empleado                     │ ✅ EXISTE - Selector de empleado    │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Filtro por Rango de Fechas              │ ✅ EXISTE - Date picker con rango   │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Tiempo de revisión calculado            │ ✅ EXISTE - Columna con horas/días  │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Indicador visual de cumplimiento        │ ✅ EXISTE - Chips verde/rojo/amarillo│
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Exportación a Excel                     │ ✅ EXISTE - Botón "Exportar Excel"  │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Exportación a PDF                       │ ❌ FALTA - No implementado          │
+└─────────────────────────────────────────┴─────────────────────────────────────┘
+
+UBICACIÓN: Menú → Reportes → Auditoría
+
+ESTADO GENERAL: 90% COMPLETO (falta solo PDF)
+
+================================================================================
+               REQUERIMIENTO 2: FUNCIONALIDADES ADICIONALES
+================================================================================
+
+El cliente solicitó verificar/implementar:
+
+------------------------------------------------------------------------------
+2.1 MAESTRO DE PLANTILLAS DE CORREO (FASE 2)
+------------------------------------------------------------------------------
+Lo que pedía: Un maestro donde se puedan configurar las plantillas de correo
+             para aperturas, cierres y recordatorios de ILV e Inspecciones.
+
+┌─────────────────────────────────────────┬─────────────────────────────────────┐
+│            LO QUE PEDÍA                 │         LO QUE SE HIZO              │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ CRUD de plantillas de correo            │ ❌ NO EXISTE                        │
+│                                         │    Las plantillas están hardcoded   │
+│                                         │    en notification.service.ts       │
+└─────────────────────────────────────────┴─────────────────────────────────────┘
+
+ESTADO: PENDIENTE (marcado como Fase 2 - no prioritario)
+
+------------------------------------------------------------------------------
+2.2 LOGS DE NOTIFICACIÓN
+------------------------------------------------------------------------------
+Lo que pedía: Registro de cada correo enviado, estado y fecha.
+
+┌─────────────────────────────────────────┬─────────────────────────────────────┐
+│            LO QUE PEDÍA                 │         LO QUE SE HIZO              │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Tabla de logs de emails                 │ ✅ EXISTE - Tabla ilv_email_log     │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Registro de destinatario                │ ✅ EXISTE - Campo to_addr           │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Registro de asunto                      │ ✅ EXISTE - Campo subject           │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Estado (enviado, fallido)               │ ✅ EXISTE - Campo status            │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Fecha de envío                          │ ✅ EXISTE - Campo sent_at           │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Mensaje de error                        │ ✅ EXISTE - Campo error_message     │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ UI para consultar logs                  │ ⚠️ PARCIAL - Solo acceso por BD    │
+└─────────────────────────────────────────┴─────────────────────────────────────┘
+
+ESTADO: 85% COMPLETO (falta interfaz visual de consulta)
+
+------------------------------------------------------------------------------
+2.3 REPORTES PARAMETRIZABLES PDF/EXCEL
+------------------------------------------------------------------------------
+Lo que pedía: Generación de reportes en PDF y Excel con campos específicos.
+
+┌─────────────────────────────────────────┬─────────────────────────────────────┐
+│            LO QUE PEDÍA                 │         LO QUE SE HIZO              │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Exportación Excel                       │ ✅ EXISTE - Endpoint funcional      │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Exportación PDF                         │ ❌ FALTA - No implementado          │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Campo Cliente                           │ ✅ INCLUIDO                         │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Campo Proyecto                          │ ✅ INCLUIDO                         │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Campo Empresa (Contratista)             │ ✅ INCLUIDO                         │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Campo Estado                            │ ✅ INCLUIDO                         │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Campo Fecha de carga                    │ ✅ INCLUIDO                         │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Campo Tiempo de revisión                │ ✅ INCLUIDO                         │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ Campo Cumplimiento SLA                  │ ✅ INCLUIDO                         │
+└─────────────────────────────────────────┴─────────────────────────────────────┘
+
+ESTADO: 70% COMPLETO (falta PDF y algunos campos específicos ILV)
+
+------------------------------------------------------------------------------
+2.4 PARÁMETRO DÍAS ORDEN ABIERTA (SLA)
+------------------------------------------------------------------------------
+Lo que pedía: Configurar en UI cuántos días puede estar abierta una orden.
+
+┌─────────────────────────────────────────┬─────────────────────────────────────┐
+│         ANTES (ANÁLISIS)                │      DESPUÉS (IMPLEMENTACIÓN)       │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ ❌ Valor hardcoded (5 días) en código   │ ✅ Tabla system_parameter creada    │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ ❌ No había UI para configurar          │ ✅ Página SystemConfigParameters    │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ ❌ Cambiar requería modificar código    │ ✅ Configurable desde interfaz      │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ ❌ Un solo valor para todo              │ ✅ sla_days_ilv = 5                 │
+│                                         │ ✅ sla_days_inspeccion = 5          │
+│                                         │ ✅ sla_hours_revision = 24          │
+├─────────────────────────────────────────┼─────────────────────────────────────┤
+│ ❌ Schedulers usaban valores fijos      │ ✅ Schedulers leen parámetros de BD │
+└─────────────────────────────────────────┴─────────────────────────────────────┘
+
+IMPLEMENTAMOS EN ESTA SESIÓN:
+- Tabla system_parameter con 11 parámetros
+- Backend API completo (GET, PUT)
+- Frontend UI con tabs por categoría
+- Schedulers actualizados para usar parámetros dinámicos
+
+ESTADO: 100% COMPLETO ✅
+
+------------------------------------------------------------------------------
+2.5 MAESTROS ILV
+------------------------------------------------------------------------------
+
+┌────────────────────────┬─────────────────┬─────────────────────────────────────┐
+│       MAESTRO          │  ESTADO ANTES   │         ESTADO ACTUAL               │
+├────────────────────────┼─────────────────┼─────────────────────────────────────┤
+│ Subcategoría HID       │ ✅ Ya existía   │ ✅ COMPLETO - muestra padre         │
+│ (mostrar padre)        │                 │                                     │
+├────────────────────────┼─────────────────┼─────────────────────────────────────┤
+│ Motivo SWA             │ ✅ Ya existía   │ ✅ COMPLETO - 6 valores             │
+│                        │                 │ peligro_inminente, condicion_critica│
+│                        │                 │ falta_permisos, personal_no_calif,  │
+│                        │                 │ equipo_defectuoso, clima_adverso    │
+├────────────────────────┼─────────────────┼─────────────────────────────────────┤
+│ Clasificación FDKAR    │ ✅ Ya existía   │ ✅ COMPLETO - 5 valores (F,D,K,A,R) │
+├────────────────────────┼─────────────────┼─────────────────────────────────────┤
+│ Área                   │ ✅ Ya existía   │ ✅ COMPLETO - 5 valores             │
+│                        │                 │ Construcción, Mantenimiento,        │
+│                        │                 │ Operaciones, Logística, Administ.   │
+├────────────────────────┼─────────────────┼─────────────────────────────────────┤
+│ Causa                  │ ✅ Ya existía   │ ✅ COMPLETO - 6 valores             │
+├────────────────────────┼─────────────────┼─────────────────────────────────────┤
+│ Severidad              │ ✅ Ya existía   │ ✅ COMPLETO - 4 valores             │
+│                        │                 │ Baja, Media, Alta, Crítica          │
+├────────────────────────┼─────────────────┼─────────────────────────────────────┤
+│ Riesgo                 │ ✅ Ya existía   │ ✅ COMPLETO - 8 valores             │
+├────────────────────────┼─────────────────┼─────────────────────────────────────┤
+│ Tipo HID               │ ⚠️ Sin datos   │ ✅ COMPLETO - 5 valores agregados   │
+│                        │                 │ Condición Insegura, Acto Inseguro,  │
+│                        │                 │ Casi Accidente, Observ. Positiva,   │
+│                        │                 │ Mejora de Proceso                   │
+├────────────────────────┼─────────────────┼─────────────────────────────────────┤
+│ Tipo HSE               │ ⚠️ Sin datos   │ ✅ COMPLETO - 5 valores agregados   │
+│                        │                 │ Seguridad, Salud Ocupacional,       │
+│                        │                 │ Medio Ambiente, Higiene Ind.,       │
+│                        │                 │ Emergencias                         │
+└────────────────────────┴─────────────────┴─────────────────────────────────────┘
+
+IMPLEMENTAMOS EN ESTA SESIÓN:
+- Seeds para tipo_hid (5 valores)
+- Seeds para tipo_hse (5 valores)
+
+ESTADO MAESTROS: 100% COMPLETO ✅
+
+================================================================================
+                      RESUMEN EJECUTIVO FINAL
+================================================================================
+
+┌─────────────────────────────────────┬──────────┬───────────────────────────────┐
+│          FUNCIONALIDAD              │ ESTADO   │         NOTAS                 │
+├─────────────────────────────────────┼──────────┼───────────────────────────────┤
+│ Módulo Indicadores/Reportes         │   90%    │ Falta solo PDF                │
+├─────────────────────────────────────┼──────────┼───────────────────────────────┤
+│ Maestro Plantillas Correo           │    0%    │ FASE 2 - No prioritario       │
+├─────────────────────────────────────┼──────────┼───────────────────────────────┤
+│ Logs de Notificación                │   85%    │ Falta UI de consulta          │
+├─────────────────────────────────────┼──────────┼───────────────────────────────┤
+│ Exportación Excel                   │  100%    │ ✅ COMPLETO                   │
+├─────────────────────────────────────┼──────────┼───────────────────────────────┤
+│ Exportación PDF                     │    0%    │ Pendiente                     │
+├─────────────────────────────────────┼──────────┼───────────────────────────────┤
+│ Parámetros SLA configurables        │  100%    │ ✅ IMPLEMENTADO ESTA SESIÓN   │
+├─────────────────────────────────────┼──────────┼───────────────────────────────┤
+│ Maestros ILV (9 tipos)              │  100%    │ ✅ TODOS COMPLETOS            │
+├─────────────────────────────────────┼──────────┼───────────────────────────────┤
+│ - Subcategoría HID                  │  100%    │ Ya existía                    │
+│ - Motivo SWA                        │  100%    │ Ya existía                    │
+│ - Clasificación FDKAR               │  100%    │ Ya existía                    │
+│ - Área                              │  100%    │ Ya existía                    │
+│ - Causa                             │  100%    │ Ya existía                    │
+│ - Severidad                         │  100%    │ Ya existía                    │
+│ - Riesgo                            │  100%    │ Ya existía                    │
+│ - Tipo HID                          │  100%    │ ✅ AGREGADO ESTA SESIÓN       │
+│ - Tipo HSE                          │  100%    │ ✅ AGREGADO ESTA SESIÓN       │
+└─────────────────────────────────────┴──────────┴───────────────────────────────┘
+
+================================================================================
+                    LO QUE SE IMPLEMENTÓ EN ESTA SESIÓN
+================================================================================
+
+1. SISTEMA DE PARÁMETROS CONFIGURABLES (100% nuevo)
+   ─────────────────────────────────────────────────
+   - Tabla: system_parameter (11 parámetros)
+   - Entity: SystemParameter
+   - API: 6 endpoints nuevos en /api/system-config/parameters
+   - UI: SystemConfigParameters.vue (página completa con tabs)
+   - Integración: Schedulers usan parámetros dinámicos
+   
+   Parámetros disponibles:
+   • sla_days_ilv (5)
+   • sla_days_inspeccion (5)
+   • sla_hours_revision (24)
+   • notification_reminder_enabled (true)
+   • notification_reminder_hour (8)
+   • email_mode (test/production/disabled)
+   • email_test_recipients (lista de correos)
+   • app_name (KAPA)
+   • frontend_url (https://kapa.healtheworld.com.co)
+   • report_excel_max_rows (10000)
+   • report_default_date_range_days (30)
+
+2. SEEDS PARA MAESTROS FALTANTES
+   ─────────────────────────────────────────────────
+   - tipo_hid: 5 valores nuevos
+   - tipo_hse: 5 valores nuevos
+
+3. DOCUMENTACIÓN
+   ─────────────────────────────────────────────────
+   - MANUAL_PARAMETROS_SISTEMA.txt (completo)
+   - Este resumen consolidado
+
+================================================================================
+                         PENDIENTES PARA FUTURO
+================================================================================
+
+┌─────┬──────────────────────────────────────────┬──────────┬──────────────────┐
+│  #  │            FUNCIONALIDAD                 │ PRIORIDAD│     ESFUERZO     │
+├─────┼──────────────────────────────────────────┼──────────┼──────────────────┤
+│  1  │ Exportación PDF de reportes              │   ALTA   │ 2-3 días         │
+├─────┼──────────────────────────────────────────┼──────────┼──────────────────┤
+│  2  │ UI para consultar logs de correo         │   MEDIA  │ 1 día            │
+├─────┼──────────────────────────────────────────┼──────────┼──────────────────┤
+│  3  │ Maestro de plantillas de correo (Fase 2) │   BAJA   │ 3-5 días         │
+├─────┼──────────────────────────────────────────┼──────────┼──────────────────┤
+│  4  │ Agregar campos ILV al reporte Excel      │   MEDIA  │ 4 horas          │
+└─────┴──────────────────────────────────────────┴──────────┴──────────────────┘
+
+================================================================================
+                         ACCESOS RÁPIDOS
+================================================================================
+
+• Módulo de Reportes/Auditoría:
+  Menú → Reportes → Auditoría
+
+• Parámetros del Sistema (NUEVO):
+  Menú → Configuración → Configuración del Sistema → Parámetros del Sistema
+
+• Maestros ILV:
+  Menú → Configuración → Configuración ILV → Datos Maestros ILV
+
+================================================================================
+                      ARCHIVOS MODIFICADOS/CREADOS
+================================================================================
+
+CREADOS:
+  /backend/src/database/entities/system-parameter.entity.ts
+  /backend/migrations/create_system_parameters.sql
+  /frontend/src/pages/SystemConfigParameters.vue
+  /var/www/kapa.healtheworld.com.co/MANUAL_PARAMETROS_SISTEMA.txt
+  /var/www/kapa.healtheworld.com.co/RESUMEN_CONSOLIDADO_REQUERIMIENTOS.txt
+
+MODIFICADOS:
+  /backend/seed-maestros-ilb.sql (agregado tipo_hid, tipo_hse)
+  /backend/src/modules/system-config/system-config.service.ts
+  /backend/src/modules/system-config/system-config.controller.ts
+  /backend/src/modules/system-config/system-config.module.ts
+  /backend/src/modules/ilv/services/ilv-scheduler.service.ts
+  /backend/src/modules/ilv/ilv.module.ts
+  /backend/src/modules/inspecciones/services/inspecciones-scheduler.service.ts
+  /backend/src/modules/inspecciones/inspecciones.module.ts
+  /frontend/src/pages/SystemConfigPage.vue
+  /frontend/src/router/routes.js
+
+================================================================================
+                              FIN DEL RESUMEN
+                         Generado: 10 Diciembre 2025
+================================================================================

@@ -17,6 +17,13 @@
         <div class="col-auto">
           <q-btn-group>
             <q-btn 
+              color="red-7" 
+              icon="picture_as_pdf" 
+              label="Descargar PDF" 
+              :loading="downloadingPdf"
+              @click="downloadPdf"
+            />
+            <q-btn 
               v-if="canEdit"
               color="orange" 
               icon="edit" 
@@ -338,12 +345,14 @@ import { ref, computed, onMounted, getCurrentInstance } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
 import ilvService from 'src/services/ilvService'
+import { api } from 'boot/axios'
 
 const route = useRoute()
 const $q = useQuasar()
 const { proxy } = getCurrentInstance()
 
 const loading = ref(true)
+const downloadingPdf = ref(false)
 const report = ref(null)
 const attachments = ref([])
 const uploading = ref(false)
@@ -660,6 +669,39 @@ const deleteAttachment = async (attachment) => {
     })
   } finally {
     attachment.deleting = false
+  }
+}
+
+// Descargar PDF del reporte
+const downloadPdf = async () => {
+  downloadingPdf.value = true
+  try {
+    const response = await api.get(`/ilv/reports/export/pdf/${route.params.id}`, {
+      responseType: 'blob'
+    })
+
+    const blob = new Blob([response.data], { type: 'application/pdf' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `reporte_ilv_${route.params.id}_${new Date().toISOString().split('T')[0]}.pdf`
+    link.click()
+    window.URL.revokeObjectURL(url)
+
+    $q.notify({
+      type: 'positive',
+      message: 'PDF descargado exitosamente',
+      position: 'top'
+    })
+  } catch (error) {
+    console.error('Error downloading PDF:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Error al descargar PDF',
+      position: 'top'
+    })
+  } finally {
+    downloadingPdf.value = false
   }
 }
 

@@ -95,6 +95,19 @@ export default {
   },
 
   /**
+   * Obtener todas las clasificaciones técnicas (sin filtro de tipo)
+   * @returns {Promise<Array>} Lista de todas las clasificaciones técnicas
+   */
+  async getAllClasificacionesTecnicas() {
+    try {
+      const response = await api.get('/inspecciones/maestros/clasificaciones-tecnicas');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  /**
    * Obtener clasificaciones por tipo de inspección
    * @param {number} tipoId - ID del tipo de inspección
    * @returns {Promise<Array>} Lista de clasificaciones filtradas
@@ -277,6 +290,63 @@ export default {
   async deleteAttachment(reportId, attachmentId) {
     try {
       await api.delete(`/inspecciones/${reportId}/attachments/${attachmentId}`);
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // ========================================
+  // ESTADÍSTICAS
+  // ========================================
+
+  /**
+   * Obtener resumen de estadísticas
+   * @returns {Promise<Object>} Estadísticas generales
+   */
+  async getStats() {
+    try {
+      const response = await api.get('/inspecciones/stats/summary');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  /**
+   * Obtener tendencia de reportes
+   * @param {number} days - Días hacia atrás (default: 30)
+   * @returns {Promise<Array>} Array de {fecha, count}
+   */
+  async getTrend(days = 30) {
+    try {
+      const response = await api.get(`/inspecciones/stats/trend?days=${days}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  /**
+   * Obtener estadísticas por proyecto
+   * @returns {Promise<Array>} Array de estadísticas por proyecto
+   */
+  async getProjectStats() {
+    try {
+      const response = await api.get('/inspecciones/stats/by-project');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  /**
+   * Obtener estadísticas por tipo de inspección
+   * @returns {Promise<Array>} Array de estadísticas por tipo
+   */
+  async getStatsByTipo() {
+    try {
+      const response = await api.get('/inspecciones/stats/by-tipo');
+      return response.data;
     } catch (error) {
       throw error.response?.data || error;
     }
